@@ -14,7 +14,6 @@ class NAOController:
     def connect_to_camera(self, subscriber_id="Connect4NAO", camera_num=0, res=1, color_space=11, fps=10):
         try:
             self.subscriber_id = self.video_device.subscribeCamera(subscriber_id, camera_num, res, color_space, fps)
-            print "Connect ID : ", self.subscriber_id
         except BaseException, err:
             print "ERR: cannot connect to camera : %s" % err
             return -1
@@ -22,7 +21,6 @@ class NAOController:
 
     def disconnect_from_camera(self):
         try:
-            print "Disconnect ID : ", self.subscriber_id
             self.video_device.unsubscribe(self.subscriber_id)
         except BaseException, err:
             print "ERR: cannot disconnect from camera : %s" % err
