@@ -74,19 +74,19 @@ def correct_line(line, max_h_space=10, min_detected=6, max_missed=1):
         _dist = point_distance((circle[0], circle[1]), (current[0], current[1]))
         # if distance between the current and the next is enough
         if _dist < expected_dist:
-            # if the circles don't overlap
-            if min_dist < _dist:
-                _correct_line.append(circle)
-                if _dist < line_config[LINE_CONFIG_MIN_H_DIST]:
-                    line_config[LINE_CONFIG_MIN_H_DIST] = _dist
-                if _dist > line_config[LINE_CONFIG_MAX_H_DIST]:
-                    line_config[LINE_CONFIG_MAX_H_DIST] = _dist
-                total_dist += _dist
-                current = circle
-                i = i + 1
-            # if it overlaps, problem ! return/break the line
-            else:
-                break
+            # # if the circles don't overlap
+            # if min_dist < _dist:
+            _correct_line.append(circle)
+            if _dist < line_config[LINE_CONFIG_MIN_H_DIST]:
+                line_config[LINE_CONFIG_MIN_H_DIST] = _dist
+            if _dist > line_config[LINE_CONFIG_MAX_H_DIST]:
+                line_config[LINE_CONFIG_MAX_H_DIST] = _dist
+            total_dist += _dist
+            current = circle
+            i = i + 1
+            # # if it overlaps, problem ! return/break the line
+            # else:
+            #     break
             just_missed = False
         else:
             # if two consecutive miss : return/break the line
