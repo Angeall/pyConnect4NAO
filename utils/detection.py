@@ -1,6 +1,8 @@
 __author__ = 'Angeall'
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
+import random
+from Queue import Queue
 
 
 # Returns the vector made by the two input points
@@ -63,7 +65,8 @@ def cluster_vectors(filtered_connections, nb_clusters=4,):
     return kmeans(filtered_connections[0], nb_clusters)
 
 
-# Returns an array with vectors belonging to
+# Returns an array with vectors belonging to the cluster right and the cluster up
+# Array form : [[right vector couples], [up vector couples]]
 def filter_up_right_vectors(filtered_connections, clusters_centroids):
     max_x = (-np.infty, None)
     max_y = (-np.infty, None)
@@ -84,6 +87,58 @@ def filter_up_right_vectors(filtered_connections, clusters_centroids):
         if cluster == y:
             clusters[1].append(filtered_connections[1][index])
     return clusters
+
+
+def max_tuple(list_tuple):
+    current_max = -np.infty
+    for (a,b) in list_tuple:
+        if a > current_max:
+            current_max = a
+        if b > current_max:
+            current_max = b
+    return current_max
+
+
+def min_tuple(list_tuple):
+    current_min = np.infty
+    for (a,b) in list_tuple:
+        if a < current_min:
+            current_min = a
+        if b < current_min:
+            current_min = b
+    return current_min
+
+
+def breadth_first_search(vector_clusters, start_node):
+    frontier = Queue()
+    frontier.put(start_node)
+    explored = []
+    up_cost = 0
+    right_cost = 0
+    while len(frontier) != 0:
+        current_node = frontier.get()
+        if not(current_node in explored):
+            explored.append(current_node)
+        else:
+            continue
+        right_vectors = filter(lambda x: x[0]==current_node,vector_clusters[0])
+        up_vectors = filter(lambda x: x[0]==current_node,vector_clusters[1])
+        neg_right_vectors = filter(lambda x: x[1]==current_node,vector_clusters[0])
+        neg_up_vectors = filter(lambda x: x[1]==current_node,vector_clusters[1])
+    # TODO: Finish exploration, return the "positions"
+
+
+
+def detect_connect4(vector_clusters):
+    found = False
+    while not found:
+        rand_cluster = random.randint(0, 1)
+        rand_vector = random.randint(0, len(vector_clusters[rand_cluster])-1)
+        rand_element = random.randint(0, 1)
+        rand_node = vector_clusters[rand_cluster][rand_vector][rand_element]
+    # TODO: finish tests
+
+
 
 
 # TODO : Graph longest path with cost
