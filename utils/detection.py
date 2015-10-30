@@ -17,7 +17,7 @@ def point_distance(p1, p2):
 
 def normalize(vector):
     norm = np.linalg.norm(vector)
-    return [vector[0]/norm, vector[1]/norm]
+    return [vector[0] / norm, vector[1] / norm]
 
 
 # Returns a list with connections between keypoints.
@@ -28,14 +28,14 @@ def normalize(vector):
 # Elements of this list are :
 #   [vectors, circle_list_indices]
 def connect_keypoints(circles):
-    connections = [[],[]]
+    connections = [[], []]
     for i, keypoint in enumerate(circles):
         for j, compare_point in enumerate(circles):
             couple_dist = point_distance((keypoint[0], keypoint[1]), (compare_point[0], compare_point[1]))
             closer = True
-            if not(keypoint is compare_point):
+            if not (keypoint is compare_point):
                 for c in circles:
-                    if not(c is keypoint) and not(c is compare_point):
+                    if not (c is keypoint) and not (c is compare_point):
                         k_c_dist = point_distance((keypoint[0], keypoint[1]), (c[0], c[1]))
                         comp_c_dist = point_distance((compare_point[0], compare_point[1]), (c[0], c[1]))
                         if k_c_dist < couple_dist and comp_c_dist < couple_dist:
@@ -51,7 +51,7 @@ def filter_connections(connections, pixel_threshold=20, min_to_keep=5):
     for i, connection in enumerate(connections[0]):
         similar_counter = 1
         for other in connections[0]:
-            if not(connection is other):
+            if not (connection is other):
                 (x_diff, y_diff) = vectorize(connection, other)
                 if (abs(x_diff) <= pixel_threshold) and (abs(y_diff) <= pixel_threshold):
                     similar_counter += 1
@@ -61,7 +61,7 @@ def filter_connections(connections, pixel_threshold=20, min_to_keep=5):
     return to_keep
 
 
-def cluster_vectors(filtered_connections, nb_clusters=4,):
+def cluster_vectors(filtered_connections, nb_clusters=4, ):
     return kmeans(filtered_connections[0], nb_clusters)
 
 
@@ -91,7 +91,7 @@ def filter_up_right_vectors(filtered_connections, clusters_centroids):
 
 def max_tuple(list_tuple):
     current_max = -np.infty
-    for (a,b) in list_tuple:
+    for (a, b) in list_tuple:
         if a > current_max:
             current_max = a
         if b > current_max:
@@ -101,7 +101,7 @@ def max_tuple(list_tuple):
 
 def min_tuple(list_tuple):
     current_min = np.infty
-    for (a,b) in list_tuple:
+    for (a, b) in list_tuple:
         if a < current_min:
             current_min = a
         if b < current_min:
@@ -110,35 +110,39 @@ def min_tuple(list_tuple):
 
 
 def breadth_first_search(vector_clusters, start_node):
+    # Contains nodes and position of node
     frontier = Queue()
-    frontier.put(start_node)
+    frontier.put([start_node, (0, 0)])
+    mapping = {start_node: (0, 0)}
     explored = []
-    up_cost = 0
-    right_cost = 0
-    while len(frontier) != 0:
-        current_node = frontier.get()
-        if not(current_node in explored):
+    while not (frontier.empty()):
+        [current_node, (right_cost, up_cost)] = frontier.get()
+        if not (current_node in explored):
             explored.append(current_node)
-        else:
-            continue
-        right_vectors = filter(lambda x: x[0]==current_node,vector_clusters[0])
-        up_vectors = filter(lambda x: x[0]==current_node,vector_clusters[1])
-        neg_right_vectors = filter(lambda x: x[1]==current_node,vector_clusters[0])
-        neg_up_vectors = filter(lambda x: x[1]==current_node,vector_clusters[1])
-    # TODO: Finish exploration, return the "positions"
-
+            mapping[current_node] = (right_cost, up_cost)
+            right_vectors = filter(lambda x: x[0] == current_node, vector_clusters[0])
+            up_vectors = filter(lambda x: x[0] == current_node, vector_clusters[1])
+            neg_right_vectors = filter(lambda x: x[1] == current_node, vector_clusters[0])
+            neg_up_vectors = filter(lambda x: x[1] == current_node, vector_clusters[1])
+            for vector in right_vectors:
+                frontier.put([vector[1], (right_cost+1, up_cost)])
+            for vector in up_vectors:
+                frontier.put([vector[1], (right_cost, up_cost+1)])
+            for vector in neg_right_vectors:
+                frontier.put([vector[0], (right_cost-1, up_cost)])
+            for vector in neg_up_vectors:
+                frontier.put([vector[0], (right_cost, up_cost-1)])
+    return mapping
 
 
 def detect_connect4(vector_clusters):
     found = False
     while not found:
         rand_cluster = random.randint(0, 1)
-        rand_vector = random.randint(0, len(vector_clusters[rand_cluster])-1)
+        rand_vector = random.randint(0, len(vector_clusters[rand_cluster]) - 1)
         rand_element = random.randint(0, 1)
         rand_node = vector_clusters[rand_cluster][rand_vector][rand_element]
-    # TODO: finish tests
-
-
+        # TODO: finish tests
 
 
 # TODO : Graph longest path with cost
@@ -146,10 +150,17 @@ def detect_connect4(vector_clusters):
 # TODO : unit_test filter_connection with dumb values
 
 
-circle_list= [(0,  10), (6.3, 10), (0, 7.2), (6.1, 7.1), (0.4,4.12), (6.14,4.04)]
+circle_list = [(0, 10), (6.3, 10), (0, 7.2), (6.1, 7.1), (0.4, 4.12), (6.14, 4.04)]
 print connect_keypoints(circle_list)
 print filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3)
 print cluster_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))
-print filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3), cluster_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[0])
-
+print filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
+                              cluster_vectors(
+                                  filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
+                                  0])
+print breadth_first_search(filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
+                              cluster_vectors(
+                                  filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
+                                  0]),
+                           0)
 
