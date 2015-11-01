@@ -1,11 +1,9 @@
-import argparse
-import os
-from time import sleep
 import numpy as np
-import utils.filter as detection
-import naoqi
-import nao.nao_controller as naoc
 import cv2
+
+from src import utils as detection
+import src.nao.nao_controller as naoc
+
 __author__ = 'Angeall'
 robot_ip = "192.168.2.24"
 port = 9559

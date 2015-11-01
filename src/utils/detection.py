@@ -46,7 +46,7 @@ def connect_keypoints(circles):
     return connections
 
 
-def filter_connections(connections, pixel_threshold=20, min_to_keep=5):
+def filter_connections(connections, pixel_threshold=10, min_to_keep=15):
     to_keep = [[], []]
     for i, connection in enumerate(connections[0]):
         similar_counter = 1
@@ -149,18 +149,18 @@ def detect_connect4(vector_clusters):
 # TODO : Install scipy + scipy.cluster.vq.kmeans
 # TODO : unit_test filter_connection with dumb values
 
-
-circle_list = [(0, 10), (6.3, 10), (0, 7.2), (6.1, 7.1), (0.4, 4.12), (6.14, 4.04)]
-print connect_keypoints(circle_list)
-print filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3)
-print cluster_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))
-print filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
-                              cluster_vectors(
-                                  filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
-                                  0])
-print breadth_first_search(filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
-                              cluster_vectors(
-                                  filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
-                                  0]),
-                           0)
-
+#
+# circle_list = [(0, 10), (6.3, 10), (0, 7.2), (6.1, 7.1), (0.4, 4.12), (6.14, 4.04)]
+# print connect_keypoints(circle_list)
+# print filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3)
+# print cluster_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))
+# print filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
+#                               cluster_vectors(
+#                                   filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
+#                                   0])
+# print breadth_first_search(filter_up_right_vectors(filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3),
+#                               cluster_vectors(
+#                                   filter_connections(connect_keypoints(circle_list), pixel_threshold=1, min_to_keep=3))[
+#                                   0]),
+#                            0)
+#
