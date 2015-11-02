@@ -113,40 +113,40 @@ def breadth_first_search(vector_clusters, start_node):
     # Contains nodes and position of node
     frontier = Queue()
     frontier.put([start_node, (0, 0)])
-    mapping = {start_node: (0, 0)}
+    mapping = {(0, 0): start_node}
     explored = []
     while not (frontier.empty()):
         [current_node, (right_cost, up_cost)] = frontier.get()
         if not (current_node in explored):
             explored.append(current_node)
-            mapping[current_node] = (right_cost, up_cost)
+            mapping[(right_cost, up_cost)] = current_node
             right_vectors = filter(lambda x: x[0] == current_node, vector_clusters[0])
             up_vectors = filter(lambda x: x[0] == current_node, vector_clusters[1])
             neg_right_vectors = filter(lambda x: x[1] == current_node, vector_clusters[0])
             neg_up_vectors = filter(lambda x: x[1] == current_node, vector_clusters[1])
             for vector in right_vectors:
-                frontier.put([vector[1], (right_cost+1, up_cost)])
+                frontier.put([vector[1], (right_cost + 1, up_cost)])
             for vector in up_vectors:
-                frontier.put([vector[1], (right_cost, up_cost+1)])
+                frontier.put([vector[1], (right_cost, up_cost + 1)])
             for vector in neg_right_vectors:
-                frontier.put([vector[0], (right_cost-1, up_cost)])
+                frontier.put([vector[0], (right_cost - 1, up_cost)])
             for vector in neg_up_vectors:
-                frontier.put([vector[0], (right_cost, up_cost-1)])
+                frontier.put([vector[0], (right_cost, up_cost - 1)])
     return mapping
 
 
-def detect_connect4(vector_clusters):
-    found = False
-    while not found:
-        rand_cluster = random.randint(0, 1)
-        rand_vector = random.randint(0, len(vector_clusters[rand_cluster]) - 1)
-        rand_element = random.randint(0, 1)
-        rand_node = vector_clusters[rand_cluster][rand_vector][rand_element]
-        # TODO: finish tests
+# def detect_connect4(circles):
+#     if len(circles) < 25:
+#         return False, None
+#
+#     found = False
+#     while not found:
+#         rand_cluster = random.randint(0, 1)
+#         rand_vector = random.randint(0, len(vector_clusters[rand_cluster]) - 1)
+#         rand_element = random.randint(0, 1)
+#         rand_node = vector_clusters[rand_cluster][rand_vector][rand_element]
+#         # TODO: finish tests
 
-
-# TODO : Graph longest path with cost
-# TODO : Install scipy + scipy.cluster.vq.kmeans
 # TODO : unit_test filter_connection with dumb values
 
 #
