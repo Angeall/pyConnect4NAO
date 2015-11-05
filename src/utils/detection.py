@@ -174,8 +174,36 @@ def normalize_coord_mapping(mapping, x_shift=None, y_shift=None):
     return new_mapping
 
 
-# def select_from_mapping(mapping, x_max_coord, y_max_coord):
-# TODO : finish this function so that a rectangle 7*8 can be easily cutted into 4 different rectangels of 6*7
+# A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
+def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
+    # Make sure it is a rectangle
+    [[up_left, up_right], [down_left, down_right]] = rectangle
+    assert(up_left[1] == up_right[1])
+    assert(down_left[1] == down_right[1])
+    assert(up_left[0] == down_left[0])
+    assert(up_right[0] == down_right[0])
+    assert(up_left[0] < up_right[0])
+    assert(up_left[1] > down_left[1])
+    rectangles = []
+    width = up_right[0] - up_left[0] + 1
+    height = up_right[1] - down_right[1] + 1
+    if width < x_max_coord or height < y_max_coord:
+        return rectangles
+    elif width == x_max_coord and height == y_max_coord:
+        return rectangle
+    else:
+        x_diff = width - x_max_coord
+        y_diff = height - y_max_coord
+        for x_shift in range(x_diff+1):
+            for y_shift in range(y_diff+1):
+                x_base = down_left[0]+x_shift
+                y_base = down_left[1]+y_shift
+                rectangles.append([[(x_base, y_base + y_max_coord-1),
+                                    (x_base + x_max_coord-1, y_base + y_max_coord-1)],
+                                   [(x_base, y_base),
+                                    (x_base + x_max_coord-1, y_base)]])
+    return rectangles
+    # TODO : Finish unit testing this function
 
 
 def bfs_marking(vector_clusters, start_node):

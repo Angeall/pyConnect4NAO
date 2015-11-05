@@ -20,6 +20,22 @@ class DetectionTestCase(unittest.TestCase):
                 current_x = 0
             random.shuffle(connect4)
             return connect4
+        # OK 7x8 rectangle
+        self.rectangle_0 = [[(2, 7), (9, 7)], [(2, 1), (9, 1)]]
+        # OK 6x7 rectangle
+        self.rectangle_1 = [[(3, 6), (10, 6)], [(3, 0), (10, 0)]]
+        # OK 6x9 rectangle
+        self.rectangle_2 = [[(1, 0), (10, 0)], [(1, 6), (10, 6)]]
+        # OK 8x7 rectangle
+        self.rectangle_3 = [[(3, 8), (10, 8)], [(3, 0), (10, 0)]]
+        # Not a rectangle... x components : 0, 1, 7
+        self.rectangle_4 = [[(1, 10), (7, 10)], [(0, 2), (7, 2)]]
+        # Not a rectangle... y components : 2, 10, 11
+        self.rectangle_5 = [[(0, 11), (7, 10)], [(0, 2), (7, 2)]]
+        # Not a rectangle... x components : 0, 1, 7
+        self.rectangle_6 = [[(0, 10), (7, 10)], [(1, 2), (7, 2)]]
+        # Not a rectangle... y components : 2, 3, 10
+        self.rectangle_6 = [[(0, 10), (7, 10)], [(0, 2), (7, 3)]]
 
         # Almost perfect circle grid (no circle missing, no noise)
         self.circles_0 = [(0.17, 0.02), (5.08, 0.02), (5.03, 8.07), (10.0, 4.05), (10.05, 8.15),
@@ -279,3 +295,14 @@ class DetectionTestCase(unittest.TestCase):
                 self.assertDictEqual(result, {(0, 0): start_node})
             else:
                 self.assertDictEqual(expected, result)
+
+    def test_get_inner_rectangles_OK1(self):
+        rectangle = self.rectangle_0
+        expected = [[[(2, 6), (8, 6)], [(2, 1), (8, 1)]],
+                    [[(2, 7), (8, 7)], [(2, 2), (8, 2)]],
+                    [[(3, 6), (9, 6)], [(3, 1), (9, 1)]],
+                    [[(3, 7), (9, 7)], [(3, 2), (9, 2)]]]
+        result = get_inner_rectangles(rectangle, 6, 7)
+        self.assertTrue(result==expected)
+
+
