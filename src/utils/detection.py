@@ -146,6 +146,7 @@ def double_pass_filter(circle_centers, max_distance=0, pixel_threshold=10, min_t
     return filter_connections(connections, pixel_threshold, min_to_keep)
 
 
+# The lowest value of a mapping is now 0 (adapting other values as well)
 def normalize_coord_mapping(mapping, x_shift=None, y_shift=None):
     if x_shift is None and y_shift is None:
         (x_shift, y_shift) = min_tuple(mapping.keys())
@@ -203,9 +204,9 @@ def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
                                    [(x_base, y_base),
                                     (x_base + x_max_coord-1, y_base)]])
     return rectangles
-    # TODO : Finish unit testing this function
 
 
+# Explore the graph using a BFS that builds a
 def bfs_marking(vector_clusters, start_node):
     # Contains nodes and position of node
     frontier = Queue()
@@ -222,10 +223,6 @@ def bfs_marking(vector_clusters, start_node):
             up_vectors = filter(lambda x: x[0] == current_node, vector_clusters[1])
             neg_right_vectors = filter(lambda x: x[1] == current_node, vector_clusters[0])
             neg_up_vectors = filter(lambda x: x[1] == current_node, vector_clusters[1])
-            # print right_vectors, (right_cost + 1, up_cost)
-            # print up_vectors, (right_cost, up_cost + 1)
-            # print neg_right_vectors, (right_cost - 1, up_cost)
-            # print neg_up_vectors, (right_cost, up_cost - 1)
             for vector in right_vectors:
                 frontier.put([vector[1], (right_cost + 1, up_cost)])
             for vector in up_vectors:
@@ -238,7 +235,22 @@ def bfs_marking(vector_clusters, start_node):
     return new_mapping
 
 
-def detect_grid(circles, horizontal_length=7, vertical_length=6, min_circles=25,
+def count_rectangle_connections(rectangle, mapping, up_right_connections):
+    [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
+    circles = []
+    for (x, y) in mapping.keys():
+        if min_x <= x <= max_x and min_y <= y <= max_y:
+            circles.append(mapping[(x, y)])
+
+    nb_connection = filter(lambda (x, y): x in circles and y in circles, up_right_connections[0])
+    nb_connection += filter(lambda (x, y): x in circles and y in circles, up_right_connections[1])
+    return nb_connection
+
+
+
+# Returns a couple :
+#   (Control value, Mapping of the circles)
+def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
                 max_distance=0, pixel_threshold=10, min_to_keep=15):
     if len(circles) < min_circles:
         return False, None
@@ -252,10 +264,24 @@ def detect_grid(circles, horizontal_length=7, vertical_length=6, min_circles=25,
     for start_node in circle_indices:
         result = bfs_marking(filtered_connections, start_node)
         (max_x, max_y) = max_tuple(result.keys())
-        if max_x < horizontal_length or max_y < vertical_length:
+        if max_x+1 < horizontal_length or max_y+1 < vertical_length:
             continue
-        elif max_x == horizontal_length and max_y == vertical_length:
-            return result
+        elif max_x+1 == horizontal_length and max_y+1 == vertical_length:
+            return True, result
         else:
-            # TODO: case where grid detected is larger than expected: decompose into multiple grid and count connections
-            pass
+            # Rectangle too big, need to consider inner rectangles
+            rectangles = get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
+                                              vertical_length, horizontal_length)
+            max_connection = -np.infty
+            max_rectangle = None
+            for rectangle in rectangles:
+                [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
+                # Count the number of connection inside the rectangle
+                nb_connection = count_rectangle_connections(rectangle, result, filtered_connections)
+                if nb_connection > max_connection:
+                    max_rectangle = rectangle
+            [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = max_rectangle
+            # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
+            return True, {(x, y): v for (x, y), v in result.iteritems() if min_x <= x <= max_x and min_y <= y <= max_y}
+    return False, None
+    # TODO : Unit tests
