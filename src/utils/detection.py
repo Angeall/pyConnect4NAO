@@ -5,13 +5,26 @@ import random
 from Queue import Queue
 
 
-# Returns the vector made by the two input points
 def vectorize(p1, p2):
+    """
+    Computes the vector made by the two input points
+    :param p1: point 1
+    :type p1: tuple
+    :param p2: point 2
+    :type p2: tuple
+    :return: The vector made by p1 and p2
+    :rtype: tuple
+    """
     return float(p2[0]) - float(p1[0]), float(p2[1]) - float(p1[1])
 
 
-# Returns the distance between two points (the norm of the vector made by the input two points)
 def point_distance(p1, p2):
+    """
+    Returns the distance between two points (the norm of the vector made by the input two points)
+    :param p1:
+    :param p2:
+    :return: The distance between p1 and p2
+    """
     return np.linalg.norm(vectorize(p1, p2))
 
 
@@ -179,12 +192,12 @@ def normalize_coord_mapping(mapping, x_shift=None, y_shift=None):
 def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
     # Make sure it is a rectangle
     [[up_left, up_right], [down_left, down_right]] = rectangle
-    assert(up_left[1] == up_right[1])
-    assert(down_left[1] == down_right[1])
-    assert(up_left[0] == down_left[0])
-    assert(up_right[0] == down_right[0])
-    assert(up_left[0] < up_right[0])
-    assert(up_left[1] > down_left[1])
+    assert (up_left[1] == up_right[1])
+    assert (down_left[1] == down_right[1])
+    assert (up_left[0] == down_left[0])
+    assert (up_right[0] == down_right[0])
+    assert (up_left[0] < up_right[0])
+    assert (up_left[1] > down_left[1])
     rectangles = []
     width = up_right[0] - up_left[0] + 1
     height = up_right[1] - down_right[1] + 1
@@ -195,14 +208,14 @@ def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
     else:
         x_diff = width - x_max_coord
         y_diff = height - y_max_coord
-        for x_shift in range(x_diff+1):
-            for y_shift in range(y_diff+1):
-                x_base = down_left[0]+x_shift
-                y_base = down_left[1]+y_shift
-                rectangles.append([[(x_base, y_base + y_max_coord-1),
-                                    (x_base + x_max_coord-1, y_base + y_max_coord-1)],
+        for x_shift in range(x_diff + 1):
+            for y_shift in range(y_diff + 1):
+                x_base = down_left[0] + x_shift
+                y_base = down_left[1] + y_shift
+                rectangles.append([[(x_base, y_base + y_max_coord - 1),
+                                    (x_base + x_max_coord - 1, y_base + y_max_coord - 1)],
                                    [(x_base, y_base),
-                                    (x_base + x_max_coord-1, y_base)]])
+                                    (x_base + x_max_coord - 1, y_base)]])
     return rectangles
 
 
@@ -244,8 +257,7 @@ def count_rectangle_connections(rectangle, mapping, up_right_connections):
 
     nb_connection = filter(lambda (x, y): x in circles and y in circles, up_right_connections[0])
     nb_connection += filter(lambda (x, y): x in circles and y in circles, up_right_connections[1])
-    return nb_connection
-
+    return len(nb_connection)
 
 
 # Returns a couple :
@@ -259,14 +271,15 @@ def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
     random.shuffle(circle_indices)
     filtered_connections = filter_right_up_vectors(double_pass_filter(circles, max_distance,
                                                                       pixel_threshold, min_to_keep))
+
     found = False
     result = {}
     for start_node in circle_indices:
         result = bfs_marking(filtered_connections, start_node)
         (max_x, max_y) = max_tuple(result.keys())
-        if max_x+1 < horizontal_length or max_y+1 < vertical_length:
+        if max_x + 1 < horizontal_length or max_y + 1 < vertical_length:
             continue
-        elif max_x+1 == horizontal_length and max_y+1 == vertical_length:
+        elif max_x + 1 == horizontal_length and max_y + 1 == vertical_length:
             return True, result
         else:
             # Rectangle too big, need to consider inner rectangles
@@ -279,9 +292,12 @@ def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
                 # Count the number of connection inside the rectangle
                 nb_connection = count_rectangle_connections(rectangle, result, filtered_connections)
                 if nb_connection > max_connection:
+                    max_connection = nb_connection
                     max_rectangle = rectangle
             [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = max_rectangle
             # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
-            return True, {(x, y): v for (x, y), v in result.iteritems() if min_x <= x <= max_x and min_y <= y <= max_y}
+            new_mapping = normalize_coord_mapping({(x, y): v for (x, y), v in result.iteritems()
+                                                   if min_x <= x <= max_x and min_y <= y <= max_y})
+            return True, new_mapping
     return False, None
     # TODO : Unit tests
