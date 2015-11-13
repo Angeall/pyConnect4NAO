@@ -5,7 +5,7 @@ import random
 from Queue import Queue
 
 
-def vectorize(p1, p2):
+def vectorize((x0, x1), (y0, y1)):
     """
     Computes the vector made by the two input points
     :param p1: point 1
@@ -15,7 +15,7 @@ def vectorize(p1, p2):
     :return: The vector made by p1 and p2
     :rtype: tuple
     """
-    return float(p2[0]) - float(p1[0]), float(p2[1]) - float(p1[1])
+    return float(y0) - float(x0), float(y1) - float(x1)
 
 
 def point_distance(p1, p2):
@@ -29,23 +29,36 @@ def point_distance(p1, p2):
 
 
 def normalize(vector):
+    """
+    Normalize the input vector
+    :param vector:
+    :type vector: tuple
+    :return: The normalized form of vector
+    """
     norm = np.linalg.norm(vector)
     return vector[0] / norm, vector[1] / norm
 
 
-# Returns a list with connections between keypoints.
-#   Those connections are computed this way:
-#       For every couple of keypoints (a, b) such that a is not b:
-#           if there's no keypoint c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
-#           then add the vector (a,b) to the connection with the indices of the keypoints a and b
-# Elements of this list are :
-#   [vectors, circle_list_indices]
-def connect_keypoints(circles, max_distance=0, exclude_list=[]):
+def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
+    """
+    Returns a list with connections between keypoints.
+    For every couple of keypoints (a, b) such that a is not b:
+           if there's no keypoint c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
+           then add the vector (a,b) to the connection with the indices of the keypoints a and b
+    :param keypoints: The keypoints (list of 2D coordinates).
+    :type keypoints: list
+    :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
+    :type max_distance: float
+    :param exclude_list: A list of indices that indicates which keypoints are to be ignored during the connections.
+    :type exclude_list: list
+    :return: a list of connections: [vectors_between_couples, keypoints_indices]
+    :rtype: list
+    """
     connections = [[], []]
-    for i, keypoint in enumerate(circles):
+    for i, keypoint in enumerate(keypoints):
         if i in exclude_list:
             continue
-        for j, compare_point in enumerate(circles):
+        for j, compare_point in enumerate(keypoints):
             if j in exclude_list:
                 continue
             couple_dist = point_distance((keypoint[0], keypoint[1]), (compare_point[0], compare_point[1]))
@@ -53,7 +66,7 @@ def connect_keypoints(circles, max_distance=0, exclude_list=[]):
                 continue
             closer = True
             if not (keypoint is compare_point):
-                for l, c in enumerate(circles):
+                for l, c in enumerate(keypoints):
                     if l in exclude_list:
                         continue
                     if not (c is keypoint) and not (c is compare_point):
@@ -62,18 +75,25 @@ def connect_keypoints(circles, max_distance=0, exclude_list=[]):
                         if k_c_dist < couple_dist and comp_c_dist < couple_dist:
                             closer = False
                 if closer:
-                    connections[0].append(vectorize((circles[i][0], circles[i][1]), (circles[j][0], circles[j][1])))
+                    connections[0].append(
+                        vectorize((keypoints[i][0], keypoints[i][1]), (keypoints[j][0], keypoints[j][1])))
                     connections[1].append((i, j))
     return connections
 
 
-# Returns a list with connections between keypoints.
-#   Those connections are computed this way:
-#       For every existing connection, check that there's minimum "min_to_keep" other vectors with the same values
-#       (Same value following the threshold). If it's True, keep the connection, otherwise discard it
-# Elements of this list are :
-#   [vectors, circle_list_indices]
-def filter_connections(connections, pixel_threshold=10, min_to_keep=15):
+def filter_connections(connections, pixel_threshold=10., min_to_keep=15):
+    """
+    For every existing connection, check that there's minimum "min_to_keep" other vectors with the same values
+    (Same value following the threshold). If it's True, keep the connection, otherwise discard it
+    :param connections: Connections resulting from :py:func:connect_keypoints(keypoints, max_distance, exclude_list)
+    :type connections: list
+    :param pixel_threshold: The maximum accepted error around a vector.
+    :type pixel_threshold: float
+    :param min_to_keep: The minimum number of similar vector to keep a type of vector.
+    :type min_to_keep: int
+    :return: a list of filtered connections: [vectors_between_couples, keypoints_indices]
+    :rtype: list
+    """
     to_keep = [[], []]
     for i, connection in enumerate(connections[0]):
         similar_counter = 1
@@ -88,13 +108,29 @@ def filter_connections(connections, pixel_threshold=10, min_to_keep=15):
     return to_keep
 
 
-def cluster_vectors(filtered_connections, nb_clusters=4, ):
+def cluster_vectors(filtered_connections, nb_clusters=4):
+    """
+    Cluster vectors into "nb_clusters" clusters.
+    :param filtered_connections: The list resulting from
+           :py:func:filter_connections(connections, pixel_threshold=, min_to_keep)
+    :type filtered_connections: list
+    :param nb_clusters: The number of clusters returned
+    :return: A list with clusters and mean of clusters
+    :rtype: list
+    """
     return kmeans(filtered_connections[0], nb_clusters)
 
 
-# Returns an array with vectors belonging to the cluster right and the cluster up
-# Array form : [[right vector couples], [up vector couples]]
 def filter_right_up_vectors(filtered_connections):
+    """
+    Computes an array with vectors belonging to the cluster right and the cluster up
+    :param filtered_connections: The list of filtered connections resulting from
+                                 :py:func:filter_connections(connections, pixel_threshold=, min_to_keep)
+    :type filtered_connections: list
+    :return: A list of keypoint index couples belonging either to the "up" or the "right" cluster.
+             [[right_vector_couples], [up_vector_couples]]
+    :rtype: list
+    """
     clusters_centroids = cluster_vectors(filtered_connections)[0]
     max_x = (-np.infty, None)
     max_y = (-np.infty, None)
@@ -117,6 +153,13 @@ def filter_right_up_vectors(filtered_connections):
 
 
 def max_tuple(list_tuple):
+    """
+    Get the two max values of a list of tuple
+    :param list_tuple: A list of tuple to explore. [..., (x_i, y_i), ...]
+    :type list_tuple: list
+    :return: A tuple that contains (max_x, max_y)
+    :rtype: tuple
+    """
     x_max = -np.infty
     y_max = -np.infty
     for (a, b) in list_tuple:
@@ -128,6 +171,13 @@ def max_tuple(list_tuple):
 
 
 def min_tuple(list_tuple):
+    """
+    Get the two min values of a list of tuple
+    :param list_tuple: A list of tuple to explore. [..., (x_i, y_i), ...]
+    :type list_tuple: list
+    :return: A tuple that contains (min_x, min_y)
+    :rtype: tuple
+    """
     x_min = np.infty
     y_min = np.infty
     for (a, b) in list_tuple:
@@ -138,16 +188,28 @@ def min_tuple(list_tuple):
     return x_min, y_min
 
 
-# Goal : erase noise, then try to connect more true keypoints (by avoiding noise keypoints)
-# 1) Connect couple of centers, filter it
-# 2) Remove every center that is not linked with another center after the filter of 1)
-# 3) Re-connect couple of centers, ignoring the centers removed in 2) and re-filter
-# 4) Returns result of 3)
-def double_pass_filter(circle_centers, max_distance=0, pixel_threshold=10, min_to_keep=15):
-    connections = connect_keypoints(circle_centers, max_distance)
+def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_to_keep=15):
+    """
+     Goal : erase noise, then try to connect more true keypoints (by avoiding noise keypoints)
+     1) Connect couple of centers, filter it
+     2) Remove every center that is not linked with another center after the filter of 1)
+     3) Re-connect couple of centers, ignoring the centers removed in 2) and re-filter
+     4) Returns result of 3)
+    :param keypoints: The keypoints (list of 2D coordinates).
+    :type keypoints: list
+    :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
+    :type max_distance: float
+    :param pixel_threshold: The maximum accepted error around a vector.
+    :type pixel_threshold: float
+    :param min_to_keep: The minimum number of similar vector to keep a type of vector.
+    :type min_to_keep: int
+    :return: A list of double filtered connections: [vectors_between_couples, keypoints_indices]
+    :rtype: list
+    """
+    connections = connect_keypoints(keypoints, max_distance)
     filtered_connections = filter_connections(connections, pixel_threshold, min_to_keep)
     centers_to_keep = []
-    centers_to_remove = range(len(circle_centers))
+    centers_to_remove = range(len(keypoints))
     for (center1, center2) in filtered_connections[1]:
         if center1 not in centers_to_keep:
             centers_to_keep.append(center1)
@@ -155,7 +217,7 @@ def double_pass_filter(circle_centers, max_distance=0, pixel_threshold=10, min_t
         if center2 not in centers_to_keep:
             centers_to_keep.append(center2)
             centers_to_remove.remove(center2)
-    connections = connect_keypoints(circle_centers, max_distance, centers_to_remove)
+    connections = connect_keypoints(keypoints, max_distance, centers_to_remove)
     return filter_connections(connections, pixel_threshold, min_to_keep)
 
 
@@ -300,4 +362,3 @@ def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
                                                    if min_x <= x <= max_x and min_y <= y <= max_y})
             return True, new_mapping
     return False, None
-    # TODO : Unit tests
