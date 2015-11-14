@@ -1,7 +1,8 @@
 __author__ = 'Angeall'
 import unittest
-from src.utils.detection import *
 import random
+
+from src.connect4.generic.grid_detection import *
 
 
 class DetectionTestCase(unittest.TestCase):

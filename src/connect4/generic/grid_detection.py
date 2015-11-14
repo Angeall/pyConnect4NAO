@@ -362,3 +362,21 @@ def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
                                                    if min_x <= x <= max_x and min_y <= y <= max_y})
             return True, new_mapping
     return False, None
+
+
+def map_virtual_circle_grid(x_start=0, y_start=0, x_dist=65, y_dist=55, hor=7, ver=6):
+            grid = {}
+            current_x = x_start
+            current_y = y_start
+            y_pos = 0
+            x_pos = 0
+            for i in range(ver):
+                for j in range(hor):
+                    grid[(x_pos, y_pos)] = (current_x, current_y)
+                    current_x += x_dist
+                    x_pos += 1
+                x_pos = 0
+                current_x = 0
+                current_y += y_dist
+                y_pos += 1
+            return grid

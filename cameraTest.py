@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-from src import utils as detection
+from src import connect4 as detection
 import src.nao.nao_controller as naoc
 
 __author__ = 'Angeall'
