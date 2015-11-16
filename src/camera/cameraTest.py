@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-from src import connect4 as detection
+import src.connect4.connect4 as c4
 import src.nao.nao_controller as naoc
 
 __author__ = 'Angeall'
@@ -37,6 +37,7 @@ def get_nao_image(camera_num=0):
             return None
     return nao_c.get_image_from_camera()
 
+
 def close_camera():
     global nao_c, cap
     if nao_c is not None:
@@ -46,7 +47,7 @@ def close_camera():
         cap.release()
     return
 
-# Res 2
+
 def test():
     while True:
         #img = get_webcam_image()
@@ -56,8 +57,6 @@ def test():
         gray = cv2.medianBlur(gray, 3)
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,30,
                             param1=50,param2=11,minRadius=15,maxRadius=17)
-        # circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,10,
-        #                     param1=50,param2=10,minRadius=5,maxRadius=8)
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0,:]:
@@ -66,18 +65,10 @@ def test():
                 # draw the center of the circle
                 cv2.circle(img,(i[0],i[1]),2,(0,0,255),3)
         if circles is not None:
-            lines = detection.detect_connect_4_lines(circles[0], 25, 90, max_missed=3, min_detected=5)
-            for line in lines:
-                cv2.rectangle(img, (line[0][0]-20, line[0][1]-20), (line[-1][0]+20, line[-1][1]+20),(255,0,0))
-        # canny = cv2.Canny(gray, 10, 100)
-        # (cnts, _) = cv2.findContours(canny, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
-        # for c in cnts:
-        #     # draw the contour and show it
-        #     cv2.drawContours(img, [c], -1, (0, 0, 255), 2)
-        # lines = 0.
-        # cv2.HoughLines(canny, lines, 1., 1)
+            connect4 = c4.detect_connect4(circles[0], img)
+            if connect4 is not None:
+                cv2.imshow("Connect4", connect4)
         cv2.imshow("Original Image", img)
-        # cv2.imshow("Original Image", 255-img)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()

@@ -221,8 +221,21 @@ def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_to_kee
     return filter_connections(connections, pixel_threshold, min_to_keep)
 
 
-# The lowest value of a mapping is now 0 (adapting other values as well)
+#
 def normalize_coord_mapping(mapping, x_shift=None, y_shift=None):
+    """
+    Shift a mapping so that all values of the mapping are shifted by x_shift and y_shift.
+    If x_shift is None, The lowest x value will be 0 and other x values are adapted in consequence.
+    If y_shift is None, The lowest y value will be 0 and other y values are adapted in consequence.
+    :param mapping: The mapping to transform.
+    :type mapping: dict
+    :param x_shift: The horizontal shift to apply to the mapping.
+    :type x_shift: int
+    :param y_shift: The horizontal shift to apply to the mapping.
+    :type y_shift: int
+    :return: The transformed mapping
+    :rtype: dict
+    """
     if x_shift is None and y_shift is None:
         (x_shift, y_shift) = min_tuple(mapping.keys())
     elif x_shift is None:
@@ -250,8 +263,19 @@ def normalize_coord_mapping(mapping, x_shift=None, y_shift=None):
     return new_mapping
 
 
-# A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
-def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
+def get_inner_rectangles(rectangle, y_max_length, x_max_length):
+    """
+    Computes a list of inner rectangles of dimensions (y_max_length, x_max_length) that are included inside "rectangle".
+    :param rectangle: The rectangle to consider in the grid.
+                      A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
+    :type rectangle: list
+    :param y_max_length: The maximum vertical length of the searched grid.
+    :type y_max_length: int
+    :param x_max_length: The maximum horizontal length of the searched grid.
+    :type x_max_length: int
+    :return: A list of inner rectangles inside the rectangles defined in parameters
+    :rtype: list
+    """
     # Make sure it is a rectangle
     [[up_left, up_right], [down_left, down_right]] = rectangle
     assert (up_left[1] == up_right[1])
@@ -263,26 +287,35 @@ def get_inner_rectangles(rectangle, y_max_coord, x_max_coord):
     rectangles = []
     width = up_right[0] - up_left[0] + 1
     height = up_right[1] - down_right[1] + 1
-    if width < x_max_coord or height < y_max_coord:
+    if width < x_max_length or height < y_max_length:
         return rectangles
-    elif width == x_max_coord and height == y_max_coord:
+    elif width == x_max_length and height == y_max_length:
         return rectangle
     else:
-        x_diff = width - x_max_coord
-        y_diff = height - y_max_coord
+        x_diff = width - x_max_length
+        y_diff = height - y_max_length
         for x_shift in range(x_diff + 1):
             for y_shift in range(y_diff + 1):
                 x_base = down_left[0] + x_shift
                 y_base = down_left[1] + y_shift
-                rectangles.append([[(x_base, y_base + y_max_coord - 1),
-                                    (x_base + x_max_coord - 1, y_base + y_max_coord - 1)],
+                rectangles.append([[(x_base, y_base + y_max_length - 1),
+                                    (x_base + x_max_length - 1, y_base + y_max_length - 1)],
                                    [(x_base, y_base),
-                                    (x_base + x_max_coord - 1, y_base)]])
+                                    (x_base + x_max_length - 1, y_base)]])
     return rectangles
 
 
-# Explore the graph using a BFS that builds a
 def bfs_marking(vector_clusters, start_node):
+    """
+    Explore keypoints as a graph using vectors (filtered before).
+    Use Breadth First Search, starting from the keypoint "start_node"
+    :param vector_clusters: The up and right connections that were filtered before.
+    :type vector_clusters: list
+    :param start_node: The keypoint index from where the exploration starts.
+    :type start_node: int
+    :return: A mapping between relative coordinates ( (0, 0), (0, 1), ...) and keypoints indices.
+    :rtype: dict
+    """
     # Contains nodes and position of node
     frontier = Queue()
     frontier.put([start_node, (0, 0)])
@@ -311,6 +344,18 @@ def bfs_marking(vector_clusters, start_node):
 
 
 def count_rectangle_connections(rectangle, mapping, up_right_connections):
+    """
+    Count the keypoints connections inside a rectangle in the grid.
+    :param rectangle: The rectangle to consider in the grid.
+                      A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
+    :type rectangle: list
+    :param mapping: The grid mapping between relative coordinates and keypoint index representing the grid.
+    :type mapping: dict
+    :param up_right_connections: The up and right keypoints connections that were filtered.
+    :type up_right_connections: list
+    :return: The number of keypoints connections inside a rectangle in the grid.
+    :rtype: int
+    """
     [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
     circles = []
     for (x, y) in mapping.keys():
@@ -322,31 +367,45 @@ def count_rectangle_connections(rectangle, mapping, up_right_connections):
     return len(nb_connection)
 
 
-# Returns a couple :
-#   (Control value, Mapping of the circles)
-def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
+def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
                 max_distance=0, pixel_threshold=10, min_to_keep=15):
-    if len(circles) < min_circles:
+    """
+    Tries to detect a grid in the keypoints.
+    :param keypoints: The keypoints (list of 2D coordinates).
+    :type keypoints: list
+    :param hor: The number of keypoints horizontally.
+    :type hor: int
+    :param ver: The number of keypoints vertically.
+    :type ver: int
+    :param min_keypoints: The minimum keypoints to consider searching after a grid.
+    :type min_keypoints: int
+    :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
+    :type max_distance: float
+    :param pixel_threshold: The maximum accepted error around a vector.
+    :type pixel_threshold: float
+    :param min_to_keep: The minimum number of similar vector to keep a type of vector when filtering keypoints.
+    :type min_to_keep: int
+    :return: A tuple (Control value, Mapping of the keypoints) where the control value is True if the grid is found.
+    :rtype: tuple
+    """
+    if len(keypoints) < min_keypoints:
         return False, None
 
-    circle_indices = range(len(circles))
+    circle_indices = range(len(keypoints))
     random.shuffle(circle_indices)
-    filtered_connections = filter_right_up_vectors(double_pass_filter(circles, max_distance,
+    filtered_connections = filter_right_up_vectors(double_pass_filter(keypoints, max_distance,
                                                                       pixel_threshold, min_to_keep))
-
-    found = False
-    result = {}
     for start_node in circle_indices:
         result = bfs_marking(filtered_connections, start_node)
         (max_x, max_y) = max_tuple(result.keys())
-        if max_x + 1 < horizontal_length or max_y + 1 < vertical_length:
+        if max_x + 1 < hor or max_y + 1 < ver:
             continue
-        elif max_x + 1 == horizontal_length and max_y + 1 == vertical_length:
+        elif max_x + 1 == hor and max_y + 1 == ver:
             return True, result
         else:
             # Rectangle too big, need to consider inner rectangles
             rectangles = get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
-                                              vertical_length, horizontal_length)
+                                              ver, hor)
             max_connection = -np.infty
             max_rectangle = None
             for rectangle in rectangles:
@@ -364,19 +423,54 @@ def detect_grid(circles, vertical_length=6, horizontal_length=7, min_circles=20,
     return False, None
 
 
-def map_virtual_circle_grid(x_start=0, y_start=0, x_dist=65, y_dist=55, hor=7, ver=6):
-            grid = {}
-            current_x = x_start
-            current_y = y_start
-            y_pos = 0
-            x_pos = 0
-            for i in range(ver):
-                for j in range(hor):
-                    grid[(x_pos, y_pos)] = (current_x, current_y)
-                    current_x += x_dist
-                    x_pos += 1
-                x_pos = 0
-                current_x = 0
-                current_y += y_dist
-                y_pos += 1
-            return grid
+def map_virtual_circle_grid(x_start=50, y_start=50, x_dist=272, y_dist=272, hor=7, ver=6):
+    """
+    Create a virtual mapping using a pattern defined with the parameters
+    :param x_start: The starting x coordinate
+    :type x_start: int
+    :param y_start: The starting y coordinate
+    :type y_start: int
+    :param x_dist: The x distance between two keypoints
+    :type x_dist: int
+    :param y_dist: The y distance between two keypoints
+    :type y_dist: int
+    :param hor: The number of keypoints horizontally
+    :type hor: int
+    :param ver: The number of keypoints vertically
+    :type ver: int
+    :return: A mapping that defines a circle grid.
+             The keys are relative coordinates : (0, 0), (0, 1), ...
+             The values are pixel coordinates
+    :rtype: dict
+    """
+    grid = {}
+    current_x = x_start
+    current_y = y_start
+    y_pos = 0
+    x_pos = 0
+    for i in range(ver):
+        for j in range(hor):
+            grid[(x_pos, y_pos)] = (current_x, current_y)
+            current_x += x_dist
+            x_pos += 1
+        x_pos = 0
+        current_x = 0
+        current_y += y_dist
+        y_pos += 1
+    return grid
+
+
+def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
+    """
+    Transform an index mapping (indices referring to keypoints_list)  into a pixel mapping
+    :param index_mapping: The index mapping to transform.
+    :type index_mapping: dict
+    :param keypoints_list: The list that contains the values of the new pixel mapping
+    :type keypoints_list: list
+    :return: The new mapping, its values are pixels.
+    :rtype: dict
+    """
+    mapping_pixels = {}
+    for key in index_mapping.keys():
+        mapping_pixels[key] = keypoints_list[index_mapping[key]]
+    return mapping_pixels
