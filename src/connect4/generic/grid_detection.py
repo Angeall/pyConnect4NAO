@@ -457,7 +457,6 @@ def map_virtual_circle_grid(x_start=45, y_start=45, x_dist=68, y_dist=68, hor=7,
         current_x = x_start
         current_y += y_dist
         y_pos += 1
-    print grid
     return grid
 
 

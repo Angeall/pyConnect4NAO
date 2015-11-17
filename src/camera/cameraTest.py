@@ -37,6 +37,7 @@ def get_nao_image(camera_num=0):
     global cap, nao_c
     if nao_c is None:
         nao_c = naoc.NAOController(robot_ip, port)
+        clean()
         ret = nao_c.connect_to_camera(res=2, fps=10, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
@@ -55,18 +56,13 @@ def close_camera():
 
 
 def test():
-    clean()
     while True:
         i = 0
         # img = get_webcam_image()
         img = get_nao_image(0)
-        print "nao img"
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        print "gray"
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
-        print "gaussian"
         gray = cv2.medianBlur(gray, 3)
-        print "median"
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 30,
                                    param1=50, param2=11, minRadius=15, maxRadius=17)
         if circles is not None:
@@ -77,7 +73,6 @@ def test():
                 # draw the center of the circle
                 cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
         if circles is not None:
-            print "I get here!"
             connect4 = c4.detect_connect4(circles[0], img)
             if connect4 is not None:
                 cv2.imshow("Connect4", connect4)
