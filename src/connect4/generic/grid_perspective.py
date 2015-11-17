@@ -21,7 +21,7 @@ def mapping_homography(object_mapping, scene_mapping):
         scene.append(scene_mapping[key])
     obj = np.array(obj)
     scene = np.array(scene)
-    return cv2.findHomography(obj, scene, cv2.RANSAC)
+    return cv2.findHomography(obj, scene, cv2.RANSAC)[0]
 
 
 def get_object_in_scene(homography, object_img, scene_img):
@@ -36,7 +36,7 @@ def get_object_in_scene(homography, object_img, scene_img):
     :return: The scene, reshaped so only the object in the scene is visible, formatted as object_img
     """
     rows, cols, _ = object_img.shape
-    return cv2.warpPerspective(scene_img, homography, (cols, rows))
+    return cv2.warpPerspective(scene_img, homography, (cols, rows), flags=cv2.WARP_INVERSE_MAP)
 
 
 def get_perspective(object_mapping, scene_mapping, object_img, scene_img):

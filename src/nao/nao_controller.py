@@ -19,9 +19,12 @@ class NAOController:
             return -1
         return 0
 
-    def disconnect_from_camera(self):
+    def disconnect_from_camera(self, subscriber_id=None):
         try:
-            self.video_device.unsubscribe(self.subscriber_id)
+            if subscriber_id is None:
+                self.video_device.unsubscribe(self.subscriber_id)
+            else:
+                self.video_device.unsubscribe(subscriber_id)
         except BaseException, err:
             print "ERR: cannot disconnect from camera : %s" % err
 

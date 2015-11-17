@@ -1,11 +1,10 @@
 import numpy as np
 import cv2
-
 import src.connect4.connect4 as c4
 import src.nao.nao_controller as naoc
 
 __author__ = 'Angeall'
-robot_ip = "192.168.2.24"
+robot_ip = "192.168.2.16"
 port = 9559
 
 cap = None
@@ -16,9 +15,16 @@ def nothing(x):
     pass
 
 
+def clean():
+    global nao_c, cap
+    if nao_c is not None:
+        for i in range(7):
+            nao_c.disconnect_from_camera(subscriber_id="Connect4NAO_" + str(i))
+
+
 def get_webcam_image():
     global cap
-    if cap is None :
+    if cap is None:
         cap = cv2.VideoCapture(0)
     has_read, img = cap.read()
     if not has_read:
@@ -49,31 +55,40 @@ def close_camera():
 
 
 def test():
+    clean()
     while True:
-        #img = get_webcam_image()
+        i = 0
+        # img = get_webcam_image()
         img = get_nao_image(0)
+        print "nao img"
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        print "gray"
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        print "gaussian"
         gray = cv2.medianBlur(gray, 3)
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,30,
-                            param1=50,param2=11,minRadius=15,maxRadius=17)
+        print "median"
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 30,
+                                   param1=50, param2=11, minRadius=15, maxRadius=17)
         if circles is not None:
             circles = np.uint16(np.around(circles))
-            for i in circles[0,:]:
+            for i in circles[0, :]:
                 # draw the outer circle
-                cv2.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
+                cv2.circle(img, (i[0], i[1]), i[2], (0, 255, 0), 2)
                 # draw the center of the circle
-                cv2.circle(img,(i[0],i[1]),2,(0,0,255),3)
+                cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
         if circles is not None:
+            print "I get here!"
             connect4 = c4.detect_connect4(circles[0], img)
             if connect4 is not None:
                 cv2.imshow("Connect4", connect4)
+                cv2.waitKey(0)
         cv2.imshow("Original Image", img)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()
             break
     return 0
+
 
 # def test():
 #     while True:
@@ -117,18 +132,18 @@ if __name__ == '__main__':
     test()
 
 
-# cv2.namedWindow('Control', cv2.WINDOW_AUTOSIZE)
-# iLowH = 0
-# iHighH = 179
-# iLowS = 0
-# iHighS = 25
-# iLowV = 0
-# iHighV = 255
-# cv2.createTrackbar("LowH", "Control", iLowH, 179, nothing)
-# cv2.createTrackbar("HighH", "Control", iHighH, 179, nothing)
-# cv2.createTrackbar("LowS", "Control", iLowS, 255, nothing)
-# cv2.createTrackbar("HighS", "Control", iHighS, 255, nothing)
-# cv2.createTrackbar("LowV", "Control", iLowV, 255, nothing)
-# cv2.createTrackbar("HighV", "Control", iHighV, 255, nothing)
-# switch = '0 : OFF \n1 : ON'
-# cv2.createTrackbar(switch, 'Control',0,1,nothing)
+    # cv2.namedWindow('Control', cv2.WINDOW_AUTOSIZE)
+    # iLowH = 0
+    # iHighH = 179
+    # iLowS = 0
+    # iHighS = 25
+    # iLowV = 0
+    # iHighV = 255
+    # cv2.createTrackbar("LowH", "Control", iLowH, 179, nothing)
+    # cv2.createTrackbar("HighH", "Control", iHighH, 179, nothing)
+    # cv2.createTrackbar("LowS", "Control", iLowS, 255, nothing)
+    # cv2.createTrackbar("HighS", "Control", iHighS, 255, nothing)
+    # cv2.createTrackbar("LowV", "Control", iLowV, 255, nothing)
+    # cv2.createTrackbar("HighV", "Control", iHighV, 255, nothing)
+    # switch = '0 : OFF \n1 : ON'
+    # cv2.createTrackbar(switch, 'Control',0,1,nothing)

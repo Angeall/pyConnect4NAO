@@ -423,7 +423,7 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
     return False, None
 
 
-def map_virtual_circle_grid(x_start=50, y_start=50, x_dist=272, y_dist=272, hor=7, ver=6):
+def map_virtual_circle_grid(x_start=45, y_start=45, x_dist=68, y_dist=68, hor=7, ver=6):
     """
     Create a virtual mapping using a pattern defined with the parameters
     :param x_start: The starting x coordinate
@@ -450,13 +450,14 @@ def map_virtual_circle_grid(x_start=50, y_start=50, x_dist=272, y_dist=272, hor=
     x_pos = 0
     for i in range(ver):
         for j in range(hor):
-            grid[(x_pos, y_pos)] = (current_x, current_y)
+            grid[(x_pos, y_pos)] = np.array([current_x, current_y])
             current_x += x_dist
             x_pos += 1
         x_pos = 0
-        current_x = 0
+        current_x = x_start
         current_y += y_dist
         y_pos += 1
+    print grid
     return grid
 
 
@@ -472,5 +473,6 @@ def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
     """
     mapping_pixels = {}
     for key in index_mapping.keys():
-        mapping_pixels[key] = keypoints_list[index_mapping[key]]
+        keypoint = keypoints_list[index_mapping[key]]
+        mapping_pixels[key] = np.array([keypoint[0], keypoint[1]])
     return mapping_pixels
