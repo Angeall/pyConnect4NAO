@@ -38,7 +38,7 @@ def get_nao_image(camera_num=0):
     if nao_c is None:
         nao_c = naoc.NAOController(robot_ip, port)
         clean()
-        ret = nao_c.connect_to_camera(res=2, fps=10, camera_num=camera_num)
+        ret = nao_c.connect_to_camera(res=1, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
@@ -85,6 +85,54 @@ def test():
     return 0
 
 
+def test2():
+    clean()
+    while True:
+
+        img = get_nao_image(0)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        # gray = cv2.medianBlur(gray, 3)
+        edges = cv2.Canny(gray, 90, 150, apertureSize=3)
+        edges2 = cv2.Canny(gray, 90, 150, apertureSize=3)
+        _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in cnts:
+            approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True)*0.01, True)
+            # if cv2.contourArea(approx, False) > 40:
+            if len(approx) >= 3:
+                print len(approx)
+                for i in range(len(approx)-1):
+                    tuple0 = (approx[i][0][0], approx[i][0][1])
+                    tuple1 = (approx[i+1][0][0], approx[i+1][0][1])
+                    cv2.line(img, tuple0, tuple1, (0,0,255),2)
+                tuple0 = (approx[-1][0][0], approx[-1][0][1])
+                tuple1 = (approx[0][0][0], approx[0][0][1])
+                cv2.line(img, tuple0, tuple1, (0,0,255),2)
+        # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 175)
+        # if lines is not None:
+        #     print len(lines)
+        #     for line in lines:
+        #         rho, theta = line[0]
+        #         a = np.cos(theta)
+        #         b = np.sin(theta)
+        #         x0 = a * rho
+        #         y0 = b * rho
+        #         x1 = int(x0 + 1000 * (-b))
+        #         y1 = int(y0 + 1000 * (a))
+        #         x2 = int(x0 - 1000 * (-b))
+        #         y2 = int(y0 - 1000 * (a))
+        #
+        #         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        #
+        cv2.imshow('contours', img)
+        cv2.imshow('canny', edges)
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
+    return 0
+
+
 # def test():
 #     while True:
 #         #img = get_webcam_image()
@@ -124,8 +172,8 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
-
+    # test()
+    test2()
 
     # cv2.namedWindow('Control', cv2.WINDOW_AUTOSIZE)
     # iLowH = 0
