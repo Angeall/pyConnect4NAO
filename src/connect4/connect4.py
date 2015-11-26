@@ -3,7 +3,7 @@ import generic.grid_perspective as perspective
 import cv2
 __author__ = 'Angeall'
 
-connect4_img_name = "Connect4.jpg"
+connect4_img_name = "Connect4.png"
 connect4_img = cv2.imread(connect4_img_name)
 
 

@@ -8,7 +8,7 @@ class NAOController:
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
         self.subscriber_id = None
-        self.motion_proxy.wakeUp()
+        # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
     def connect_to_camera(self, res=1, fps=10, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):

@@ -84,6 +84,36 @@ def test():
             break
     return 0
 
+def test3():
+    dist = 1.0
+    while True:
+        i = 0
+        # img = get_webcam_image()
+        img = get_nao_image(0)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        gray = cv2.medianBlur(gray, 3)
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11/dist,
+                                   param1=60, param2=10.5, minRadius=int(round(5/dist)), maxRadius=int(round(8/dist)))
+        if circles is not None:
+            circles = np.uint16(np.around(circles))
+            img2 = img.copy()
+            for i in circles[0, :]:
+                # draw the outer circle
+                cv2.circle(img2, (i[0], i[1]), i[2], (0, 255, 0), 2)
+                # draw the center of the circle
+                cv2.circle(img2, (i[0], i[1]), 2, (0, 0, 255), 2)
+            connect4 = c4.detect_connect4(circles[0], img)
+            if connect4 is not None:
+                cv2.imshow("Connect4", connect4)
+                # cv2.waitKey(0)
+            cv2.imshow("Circles detected", img2)
+        cv2.imshow("Original picture", img)
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
+    return 0
 
 def test2():
     clean()
@@ -172,8 +202,8 @@ def test2():
 
 
 if __name__ == '__main__':
-    # test()
-    test2()
+    test3()
+    # test2()
 
     # cv2.namedWindow('Control', cv2.WINDOW_AUTOSIZE)
     # iLowH = 0

@@ -423,7 +423,7 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
     return False, None
 
 
-def map_virtual_circle_grid(x_start=45, y_start=45, x_dist=68, y_dist=68, hor=7, ver=6):
+def map_virtual_circle_grid(x_start=56, y_start=31, x_dist=68, y_dist=55, hor=7, ver=6):
     """
     Create a virtual mapping using a pattern defined with the parameters
     :param x_start: The starting x coordinate
