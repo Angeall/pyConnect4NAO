@@ -179,20 +179,20 @@ class DetectionTestCase(unittest.TestCase):
         grid = self.circles_0
         connections = connect_keypoints(grid)
         expected = connections[1]
-        result = filter_connections(connections, pixel_threshold=0.33, min_to_keep=4)[1]
+        result = filter_connections(connections, pixel_threshold=0.33, min_similar_vectors=4)[1]
         self.assertItemsEqual(result, expected)
 
     def test_filter_connection_missing(self):
         grid = self.circles_1
         connections = connect_keypoints(grid)
         expected = connections[1]
-        result = filter_connections(connections, pixel_threshold=0.33, min_to_keep=2)[1]
+        result = filter_connections(connections, pixel_threshold=0.33, min_similar_vectors=2)[1]
         self.assertItemsEqual(result, expected)
 
     def test_filter_connection_missing_noise(self):
         grid = self.circles_2
         connections = connect_keypoints(grid)
-        result = filter_connections(connections, pixel_threshold=1., min_to_keep=2)[1]
+        result = filter_connections(connections, pixel_threshold=1., min_similar_vectors=2)[1]
         expected = connections[1]
         expected.remove((0, 6))
         expected.remove((6, 0))
@@ -206,7 +206,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_perfect(self):
         grid = self.circles_0
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_to_keep=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(7, 2), (2, 4), (6, 8), (8, 3), (0, 1), (1, 5)], [(0, 6), (6, 7), (1, 8), (8, 2), (5, 3), (3, 4)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -214,7 +214,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_missing(self):
         grid = self.circles_1
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_to_keep=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(3, 0), (4, 1)], [(4, 0), (2, 1)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -222,7 +222,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_missing_noise(self):
         grid = self.circles_2
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=1., min_to_keep=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=1., min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(7, 4), (4, 1)], [(7, 3), (2, 1)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -230,13 +230,13 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_double_pass_filter_isolated_node(self):
         grid = self.circles_2
-        result = double_pass_filter(grid, pixel_threshold=0.22, min_to_keep=2)[1]
+        result = double_pass_filter(grid, pixel_threshold=0.22, min_similar_vectors=2)[1]
         expected = [(3, 7), (7, 3), (4, 1), (1, 4), (1, 2), (2, 1), (4, 7), (7, 4)]
         self.assertItemsEqual(expected, result)
 
     def test_double_pass_filter_recovering_noised(self):
         grid = self.circles_3
-        result = double_pass_filter(grid, pixel_threshold=0.22, min_to_keep=2)[1]
+        result = double_pass_filter(grid, pixel_threshold=0.22, min_similar_vectors=2)[1]
         expected = [(3, 6), (6, 3), (3, 0), (0, 3), (0, 4), (4, 0), (4, 1), (1, 4), (1, 2), (2, 1), (4, 6), (6, 4)]
         self.assertItemsEqual(expected, result)
 
@@ -252,7 +252,7 @@ class DetectionTestCase(unittest.TestCase):
                     (2, 1): 3,
                     (2, 2): 4}
         for start_node in range(len(grid)):
-            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.33, min_to_keep=2)),
+            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.33, min_similar_vectors=2)),
                                  start_node)
 
             self.assertDictEqual(expected, result)
@@ -265,7 +265,7 @@ class DetectionTestCase(unittest.TestCase):
                     (2, 0): 2,
                     (2, 1): 1}
         for start_node in range(len(grid)):
-            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=1., min_to_keep=2)),
+            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=1., min_similar_vectors=2)),
                                  start_node)
 
             self.assertDictEqual(expected, result)
@@ -278,7 +278,7 @@ class DetectionTestCase(unittest.TestCase):
                     (0, 1): 7,
                     (2, 1): 1}
         for start_node in range(len(grid)):
-            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.33, min_to_keep=2)),
+            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.33, min_similar_vectors=2)),
                                  start_node)
             # isolated nodes, not linked with the rest of the grid
             # 0 included, isolated because of noise
@@ -296,7 +296,7 @@ class DetectionTestCase(unittest.TestCase):
                     (1, 2): 0,
                     (2, 1): 1}
         for start_node in range(len(grid)):
-            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.5, min_to_keep=2)),
+            result = bfs_marking(filter_right_up_vectors(double_pass_filter(grid, pixel_threshold=0.5, min_similar_vectors=2)),
                                  start_node)
             # isolated nodes, not linked with the rest of the grid
             # 0 recovered by multi_pass

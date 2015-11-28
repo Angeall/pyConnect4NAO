@@ -81,16 +81,16 @@ def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
     return connections
 
 
-def filter_connections(connections, pixel_threshold=10., min_to_keep=15):
+def filter_connections(connections, pixel_threshold=10., min_similar_vectors=15):
     """
-    For every existing connection, check that there's minimum "min_to_keep" other vectors with the same values
+    For every existing connection, check that there's minimum "min_similar_vectors" other vectors with the same values
     (Same value following the threshold). If it's True, keep the connection, otherwise discard it
     :param connections: Connections resulting from :py:func:connect_keypoints(keypoints, max_distance, exclude_list)
     :type connections: list
     :param pixel_threshold: The maximum accepted error around a vector.
     :type pixel_threshold: float
-    :param min_to_keep: The minimum number of similar vector to keep a type of vector.
-    :type min_to_keep: int
+    :param min_similar_vectors: The minimum number of similar vector to keep a type of vector.
+    :type min_similar_vectors: int
     :return: a list of filtered connections: [vectors_between_couples, keypoints_indices]
     :rtype: list
     """
@@ -102,7 +102,7 @@ def filter_connections(connections, pixel_threshold=10., min_to_keep=15):
                 (x_diff, y_diff) = vectorize(connection, other)
                 if (abs(x_diff) <= pixel_threshold) and (abs(y_diff) <= pixel_threshold):
                     similar_counter += 1
-        if similar_counter >= min_to_keep:
+        if similar_counter >= min_similar_vectors:
             to_keep[0].append(connection)
             to_keep[1].append(connections[1][i])
     return to_keep
@@ -188,7 +188,7 @@ def min_tuple(list_tuple):
     return x_min, y_min
 
 
-def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_to_keep=15):
+def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_similar_vectors=15):
     """
      Goal : erase noise, then try to connect more true keypoints (by avoiding noise keypoints)
      1) Connect couple of centers, filter it
@@ -201,13 +201,13 @@ def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_to_kee
     :type max_distance: float
     :param pixel_threshold: The maximum accepted error around a vector.
     :type pixel_threshold: float
-    :param min_to_keep: The minimum number of similar vector to keep a type of vector.
-    :type min_to_keep: int
+    :param min_similar_vectors: The minimum number of similar vector to keep a type of vector.
+    :type min_similar_vectors: int
     :return: A list of double filtered connections: [vectors_between_couples, keypoints_indices]
     :rtype: list
     """
     connections = connect_keypoints(keypoints, max_distance)
-    filtered_connections = filter_connections(connections, pixel_threshold, min_to_keep)
+    filtered_connections = filter_connections(connections, pixel_threshold, min_similar_vectors)
     centers_to_keep = []
     centers_to_remove = range(len(keypoints))
     for (center1, center2) in filtered_connections[1]:
@@ -218,7 +218,8 @@ def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_to_kee
             centers_to_keep.append(center2)
             centers_to_remove.remove(center2)
     connections = connect_keypoints(keypoints, max_distance, centers_to_remove)
-    return filter_connections(connections, pixel_threshold, min_to_keep)
+    # return filter_connections(connections, pixel_threshold, min_similar_vectors)
+    return filter_connections(connections, pixel_threshold, min_similar_vectors)
 
 
 #
