@@ -1,9 +1,10 @@
-import numpy as np
 import cv2
-import src.connect4.connect4 as c4
+import numpy as np
+
+import src.camera.connect4.connect4 as c4
 import src.nao.nao_controller as naoc
 
-__author__ = 'Angeall'
+__author__ = 'Anthony Rouneau'
 robot_ip = "192.168.2.16"
 port = 9559
 
@@ -96,14 +97,14 @@ def test3():
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11/dist,
                                    param1=60, param2=10.5, minRadius=int(round(5/dist)), maxRadius=int(round(8/dist)))
         if circles is not None:
-            circles = np.uint16(np.around(circles))
+            # circles = np.uint16(np.around(circles))
             img2 = img.copy()
             for i in circles[0, :]:
                 # draw the outer circle
                 cv2.circle(img2, (i[0], i[1]), i[2], (0, 255, 0), 2)
                 # draw the center of the circle
                 cv2.circle(img2, (i[0], i[1]), 2, (0, 0, 255), 2)
-            connect4 = c4.detect_connect4(circles[0], img)
+            connect4, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
             if connect4 is not None:
                 cv2.imshow("Connect4", connect4)
                 # cv2.waitKey(0)

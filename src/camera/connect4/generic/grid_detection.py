@@ -1,3 +1,5 @@
+import time
+
 __author__ = 'Angeall'
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
@@ -54,11 +56,14 @@ def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
     :return: a list of connections: [vectors_between_couples, keypoints_indices]
     :rtype: list
     """
+    start = time.time()
     connections = [[], []]
-    for i, keypoint in enumerate(keypoints):
+    for i in range(len(keypoints)):
+        keypoint = keypoints[i]
         if i in exclude_list:
             continue
-        for j, compare_point in enumerate(keypoints):
+        for j in range(len(keypoints)):
+            compare_point = keypoints[j]
             if j in exclude_list:
                 continue
             couple_dist = point_distance((keypoint[0], keypoint[1]), (compare_point[0], compare_point[1]))
@@ -66,7 +71,8 @@ def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
                 continue
             closer = True
             if not (keypoint is compare_point):
-                for l, c in enumerate(keypoints):
+                for l in range(len(keypoints)):
+                    c = keypoints[l]
                     if l in exclude_list:
                         continue
                     if not (c is keypoint) and not (c is compare_point):
@@ -78,6 +84,8 @@ def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
                     connections[0].append(
                         vectorize((keypoints[i][0], keypoints[i][1]), (keypoints[j][0], keypoints[j][1])))
                     connections[1].append((i, j))
+    end = time.time()
+    print end - start
     return connections
 
 
@@ -367,7 +375,7 @@ def count_rectangle_connections(rectangle, mapping, up_right_connections):
     return len(nb_connection)
 
 
-def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
+def detect_grid(keypoints, ver=6, hor=7, min_keypoints=24,
                 max_distance=0, pixel_threshold=10, min_to_keep=15):
     """
     Tries to detect a grid in the keypoints.
@@ -385,11 +393,12 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
     :type pixel_threshold: float
     :param min_to_keep: The minimum number of similar vector to keep a type of vector when filtering keypoints.
     :type min_to_keep: int
-    :return: A tuple (Control value, Mapping of the keypoints) where the control value is True if the grid is found.
+    :return: A tuple (Control value, Mapping of the keypoints, Number of grid circles detected)
+             where the control value is True if the grid is found.
     :rtype: tuple
     """
     if len(keypoints) < min_keypoints:
-        return False, None
+        return False, None, None
 
     circle_indices = range(len(keypoints))
     random.shuffle(circle_indices)
@@ -401,7 +410,7 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
         if max_x + 1 < hor or max_y + 1 < ver:
             continue
         elif max_x + 1 == hor and max_y + 1 == ver:
-            return True, result
+            return True, result, len(result.values())
         else:
             # Rectangle too big, need to consider inner rectangles
             rectangles = get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
@@ -419,8 +428,8 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=20,
             # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
             new_mapping = normalize_coord_mapping({(x, y): v for (x, y), v in result.iteritems()
                                                    if min_x <= x <= max_x and min_y <= y <= max_y})
-            return True, new_mapping
-    return False, None
+            return True, new_mapping, len(new_mapping.values())
+    return False, None, None
 
 
 def map_virtual_circle_grid(x_start=56, y_start=31, x_dist=68, y_dist=55, hor=7, ver=6):

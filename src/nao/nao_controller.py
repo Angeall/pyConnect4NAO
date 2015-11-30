@@ -1,13 +1,17 @@
-__author__ = 'Angeall'
 from naoqi import ALProxy
 import numpy as np
+
+__author__ = "Anthony Rouneau"
+
+IP = "192.168.2.16"
+PORT = 9559
 
 
 class NAOController:
     def __init__(self, robot_ip, port):
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
-        self.subscriber_id = None
+        self.subscriber_id = "Connect4NAO"
         # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
@@ -32,10 +36,14 @@ class NAOController:
         try:
             img = self.video_device.getImageRemote(self.subscriber_id)
             if img is not None:
-                converted_img = np.reshape(np.frombuffer(img[6], dtype='%iuint8' % img[2]),(img[1], img[0], img[2]))
+                converted_img = np.reshape(np.frombuffer(img[6], dtype='%iuint8' % img[2]), (img[1], img[0], img[2]))
                 return converted_img
             else:
                 return None
         except BaseException, err:
             print "ERR: cannot get image from camera : %s" % err
             return None
+
+    def unsubscribe_all_cameras(self):
+        for i in range(7):
+            self.disconnect_from_camera(subscriber_id=self.subscriber_id + "_" + str(i))
