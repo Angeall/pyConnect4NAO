@@ -5,6 +5,7 @@ import numpy as np
 from scipy.cluster.vq import kmeans, vq
 import random
 from Queue import Queue
+import cv2
 
 
 def vectorize((x0, x1), (y0, y1)):
@@ -41,12 +42,26 @@ def normalize(vector):
     return vector[0] / norm, vector[1] / norm
 
 
-def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
+def rect_contains(rect, point) :
+    if point[0] < rect[0] :
+        return False
+    elif point[1] < rect[1] :
+        return False
+    elif point[0] > rect[2] :
+        return False
+    elif point[1] > rect[3] :
+        return False
+    return True
+
+
+def connect_keypoints(keypoints, rect=None, max_distance=0., exclude_list=[]):
     """
     Returns a list with connections between keypoints.
     For every couple of keypoints (a, b) such that a is not b:
            if there's no keypoint c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
            then add the vector (a,b) to the connection with the indices of the keypoints a and b
+    :param rect: The image dimensions
+    :type rect: tuple
     :param keypoints: The keypoints (list of 2D coordinates).
     :type keypoints: list
     :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
@@ -56,37 +71,106 @@ def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
     :return: a list of connections: [vectors_between_couples, keypoints_indices]
     :rtype: list
     """
-    start = time.time()
-    connections = [[], []]
+    circles_dict = {}
+    vectors_dict = {}
+    if rect is None:
+        tuple_min = min_tuple(keypoints)
+        tuple_max = max_tuple(keypoints)
+        rect = (int(tuple_min[0]), int(tuple_min[1]), int(tuple_max[0])+1, int(tuple_max[1])+1)
+    subdiv = cv2.Subdiv2D()
+    subdiv.initDelaunay(rect)
     for i in range(len(keypoints)):
         keypoint = keypoints[i]
-        if i in exclude_list:
-            continue
-        for j in range(len(keypoints)):
-            compare_point = keypoints[j]
-            if j in exclude_list:
-                continue
-            couple_dist = point_distance((keypoint[0], keypoint[1]), (compare_point[0], compare_point[1]))
-            if max_distance != 0 and couple_dist > max_distance:
-                continue
-            closer = True
-            if not (keypoint is compare_point):
-                for l in range(len(keypoints)):
-                    c = keypoints[l]
-                    if l in exclude_list:
-                        continue
-                    if not (c is keypoint) and not (c is compare_point):
-                        k_c_dist = point_distance((keypoint[0], keypoint[1]), (c[0], c[1]))
-                        comp_c_dist = point_distance((compare_point[0], compare_point[1]), (c[0], c[1]))
-                        if k_c_dist < couple_dist and comp_c_dist < couple_dist:
-                            closer = False
-                if closer:
-                    connections[0].append(
-                        vectorize((keypoints[i][0], keypoints[i][1]), (keypoints[j][0], keypoints[j][1])))
-                    connections[1].append((i, j))
-    end = time.time()
-    print end - start
-    return connections
+        if keypoint not in exclude_list:
+            key = (float(keypoint[0]), float(keypoint[1]))
+            circles_dict[key] = i
+            subdiv.insert(key)
+
+    triangle_list = subdiv.getTriangleList()
+    edge_list = subdiv.getEdgeList()
+    for edge in edge_list:
+        pt1 = (edge[0], edge[1])
+        pt2 = (edge[2], edge[3])
+        if rect_contains(rect, pt1) and rect_contains(rect, pt2):
+            vectors_dict[(pt1, pt2)] = vectorize(pt1, pt2)
+            vectors_dict[(pt2, pt1)] = vectorize(pt2, pt1)
+
+    for triangle in triangle_list :
+        pt1 = (triangle[0], triangle[1])
+        pt2 = (triangle[2], triangle[3])
+        pt3 = (triangle[4], triangle[5])
+        if rect_contains(rect, pt1) and rect_contains(rect, pt2) and rect_contains(rect, pt3) :
+            dist1 = point_distance(pt1, pt2)
+            dist2 = point_distance(pt2, pt3)
+            dist3 = point_distance(pt3, pt1)
+            max_dist = max(dist1, dist2, dist3)
+            if max_dist == dist1:
+                if vectors_dict.has_key((pt1, pt2)) and vectors_dict.has_key((pt2, pt1)):
+                    vectors_dict.pop((pt1, pt2))
+                    vectors_dict.pop((pt2, pt1))
+            elif max_dist == dist2:
+                if vectors_dict.has_key((pt2, pt3)) and vectors_dict.has_key((pt3, pt2)):
+                    vectors_dict.pop((pt2, pt3))
+                    vectors_dict.pop((pt3, pt2))
+            else:
+                if vectors_dict.has_key((pt1, pt3)) and vectors_dict.has_key((pt3, pt1)):
+                    vectors_dict.pop((pt3, pt1))
+                    vectors_dict.pop((pt1, pt3))
+    vectors = []
+    indices = []
+    for (pt1, pt2) in vectors_dict:
+        vectors.append(vectors_dict[(pt1, pt2)])
+        indices.append((circles_dict[pt1], circles_dict[pt2]))
+    return [vectors, indices]
+
+
+
+# def connect_keypoints(keypoints, max_distance=0., exclude_list=[]):
+#     """
+#     Returns a list with connections between keypoints.
+#     For every couple of keypoints (a, b) such that a is not b:
+#            if there's no keypoint c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
+#            then add the vector (a,b) to the connection with the indices of the keypoints a and b
+#     :param keypoints: The keypoints (list of 2D coordinates).
+#     :type keypoints: list
+#     :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
+#     :type max_distance: float
+#     :param exclude_list: A list of indices that indicates which keypoints are to be ignored during the connections.
+#     :type exclude_list: list
+#     :return: a list of connections: [vectors_between_couples, keypoints_indices]
+#     :rtype: list
+#     """
+#     start = time.time()
+#     connections = [[], []]
+#     for i in range(len(keypoints)):
+#         keypoint = keypoints[i]
+#         if i in exclude_list:
+#             continue
+#         for j in range(len(keypoints)):
+#             compare_point = keypoints[j]
+#             if j in exclude_list:
+#                 continue
+#             couple_dist = point_distance((keypoint[0], keypoint[1]), (compare_point[0], compare_point[1]))
+#             if max_distance != 0 and couple_dist > max_distance:
+#                 continue
+#             closer = True
+#             if not (keypoint is compare_point):
+#                 for l in range(len(keypoints)):
+#                     c = keypoints[l]
+#                     if l in exclude_list:
+#                         continue
+#                     if not (c is keypoint) and not (c is compare_point):
+#                         k_c_dist = point_distance((keypoint[0], keypoint[1]), (c[0], c[1]))
+#                         comp_c_dist = point_distance((compare_point[0], compare_point[1]), (c[0], c[1]))
+#                         if k_c_dist < couple_dist and comp_c_dist < couple_dist:
+#                             closer = False
+#                 if closer:
+#                     connections[0].append(
+#                         vectorize((keypoints[i][0], keypoints[i][1]), (keypoints[j][0], keypoints[j][1])))
+#                     connections[1].append((i, j))
+#     end = time.time()
+#     print end - start
+#     return connections
 
 
 def filter_connections(connections, pixel_threshold=10., min_similar_vectors=15):
@@ -196,7 +280,7 @@ def min_tuple(list_tuple):
     return x_min, y_min
 
 
-def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_similar_vectors=15):
+def double_pass_filter(keypoints, rect=None, max_distance=0, pixel_threshold=10, min_similar_vectors=15):
     """
      Goal : erase noise, then try to connect more true keypoints (by avoiding noise keypoints)
      1) Connect couple of centers, filter it
@@ -214,7 +298,7 @@ def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_simila
     :return: A list of double filtered connections: [vectors_between_couples, keypoints_indices]
     :rtype: list
     """
-    connections = connect_keypoints(keypoints, max_distance)
+    connections = connect_keypoints(keypoints, rect, max_distance)
     filtered_connections = filter_connections(connections, pixel_threshold, min_similar_vectors)
     centers_to_keep = []
     centers_to_remove = range(len(keypoints))
@@ -225,7 +309,7 @@ def double_pass_filter(keypoints, max_distance=0, pixel_threshold=10, min_simila
         if center2 not in centers_to_keep:
             centers_to_keep.append(center2)
             centers_to_remove.remove(center2)
-    connections = connect_keypoints(keypoints, max_distance, centers_to_remove)
+    connections = connect_keypoints(keypoints, rect, max_distance, centers_to_remove)
     # return filter_connections(connections, pixel_threshold, min_similar_vectors)
     return filter_connections(connections, pixel_threshold, min_similar_vectors)
 
@@ -377,7 +461,7 @@ def count_rectangle_connections(rectangle, mapping, up_right_connections):
 
 
 def detect_grid(keypoints, ver=6, hor=7, min_keypoints=24,
-                max_distance=0, pixel_threshold=10, min_to_keep=15):
+                max_distance=0, rect=None, pixel_threshold=10, min_to_keep=15):
     """
     Tries to detect a grid in the keypoints.
     :param keypoints: The keypoints (list of 2D coordinates).
@@ -403,7 +487,7 @@ def detect_grid(keypoints, ver=6, hor=7, min_keypoints=24,
 
     circle_indices = range(len(keypoints))
     random.shuffle(circle_indices)
-    filtered_connections = filter_right_up_vectors(double_pass_filter(keypoints, max_distance,
+    filtered_connections = filter_right_up_vectors(double_pass_filter(keypoints, rect, max_distance,
                                                                       pixel_threshold, min_to_keep))
     for start_node in circle_indices:
         result = bfs_marking(filtered_connections, start_node)
