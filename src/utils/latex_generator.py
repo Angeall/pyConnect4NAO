@@ -20,7 +20,7 @@ def generate_longtable(titles, file_name, table):
             else:
                 latex = latex + " \\\\\n" + "\\hline\n"
     latex += "\\end{longtable}"
-    output = open("../../latex/generated_" + file_name + ".tex", mode="w")
+    output = open(file_name + ".tex", mode="w")
     output.write(latex)
     output.close()
 

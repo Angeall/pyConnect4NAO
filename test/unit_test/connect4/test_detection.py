@@ -212,7 +212,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_perfect(self):
         grid = self.circles_0
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_similar_vectors=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.1, min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(7, 2), (2, 4), (6, 8), (8, 3), (0, 1), (1, 5)], [(0, 6), (6, 7), (1, 8), (8, 2), (5, 3), (3, 4)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -220,7 +220,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_missing(self):
         grid = self.circles_1
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.33, min_similar_vectors=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.1, min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(3, 0), (4, 1)], [(4, 0), (2, 1)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -228,7 +228,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_filter_up_right_missing_noise(self):
         grid = self.circles_2
-        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=1., min_similar_vectors=2)
+        filtered_connections = filter_connections(connect_keypoints(grid), pixel_threshold=0.1, min_similar_vectors=2)
         result = filter_right_up_vectors(filtered_connections)
         expected = [[(7, 4), (4, 1)], [(7, 3), (2, 1)]]
         self.assertItemsEqual(result[0], expected[0])
@@ -242,7 +242,7 @@ class DetectionTestCase(unittest.TestCase):
 
     def test_double_pass_filter_recovering_noised(self):
         grid = self.circles_3
-        result = double_pass_filter(grid, pixel_threshold=0.22, min_similar_vectors=2)[1]
+        result = double_pass_filter(grid, pixel_threshold=0, min_similar_vectors=2)[1]
         expected = [(3, 6), (6, 3), (3, 0), (0, 3), (0, 4), (4, 0), (4, 1), (1, 4), (1, 2), (2, 1), (4, 6), (6, 4)]
         self.assertItemsEqual(expected, result)
 
