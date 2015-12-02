@@ -153,33 +153,21 @@ class DetectionTestCase(unittest.TestCase):
         grid = self.circles_0
         expected_1 = [(7, 2), (2, 7), (2, 4), (4, 2), (6, 8), (8, 6), (8, 3), (3, 8), (0, 1), (1, 0), (1, 5), (5, 1),
                       (7, 6), (6, 7), (6, 0), (0, 6), (2, 8), (8, 2), (8, 1), (1, 8), (4, 3), (3, 4), (3, 5), (5, 3)]
-        expected_0 = []
-        for (i, j) in expected_1:
-            expected_0.append(vectorize(grid[i], grid[j]))
         result = connect_keypoints(grid)
         self.assertItemsEqual(result[1], expected_1)
-        self.assertItemsEqual(result[0], expected_0)
 
     def test_connect_keypoints_missing(self):
         grid = self.circles_1
         expected_1 = [(3, 0), (0, 3), (0, 4), (4, 0), (4, 1), (1, 4), (1, 2), (2, 1)]
-        expected_0 = []
-        for (i, j) in expected_1:
-            expected_0.append(vectorize(grid[i], grid[j]))
         result = connect_keypoints(grid)
         self.assertItemsEqual(result[1], expected_1)
-        self.assertItemsEqual(result[0], expected_0)
 
     def test_connect_keypoints_missing_noise(self):
         grid = self.circles_2
         expected_1 = [(3, 5), (5, 3), (0, 6), (6, 0), (4, 1), (1, 4), (1, 2), (2, 1),
                       (5, 0), (0, 5), (6, 4), (4, 6), (3, 7), (7, 3), (7, 4), (4, 7)]
-        expected_0 = []
-        for (i, j) in expected_1:
-            expected_0.append(vectorize(grid[i], grid[j]))
         result = connect_keypoints(grid)
         self.assertItemsEqual(result[1], expected_1)
-        self.assertItemsEqual(result[0], expected_0)
 
     def test_filter_connection_perfect(self):
         grid = self.circles_0

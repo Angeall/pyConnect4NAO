@@ -1,11 +1,10 @@
 import time
-
-__author__ = 'Angeall'
 import numpy as np
-from scipy.cluster.vq import kmeans, vq
 import random
 from Queue import Queue
+from scipy.spatial import KDTree
 import cv2
+__author__ = 'Angeall'
 
 
 def vectorize((x0, x1), (y0, y1)):
@@ -18,7 +17,7 @@ def vectorize((x0, x1), (y0, y1)):
     :return: The vector made by p1 and p2
     :rtype: tuple
     """
-    return float(y0) - float(x0), float(y1) - float(x1)
+    return np.array([float(y0) - float(x0), float(y1) - float(x1)])
 
 
 def point_distance(p1, p2):
@@ -138,16 +137,20 @@ def filter_connections(connections, pixel_threshold=10., min_similar_vectors=15)
     :rtype: list
     """
     to_keep = [[], []]
-    for i, connection in enumerate(connections[0]):
-        similar_counter = 1
-        for other in connections[0]:
-            if not (connection is other):
-                (x_diff, y_diff) = vectorize(connection, other)
-                if (abs(x_diff) <= pixel_threshold) and (abs(y_diff) <= pixel_threshold):
-                    similar_counter += 1
-        if similar_counter >= min_similar_vectors:
-            to_keep[0].append(connection)
-            to_keep[1].append(connections[1][i])
+    if len(connections[0]) > 0:
+        t = KDTree(connections[0])
+        for j, connection in enumerate(connections[0]):
+            keeper = True
+            nearest_neighbours = t.query(connection, min_similar_vectors)[1]
+            i = 0
+            while keeper and i < len(nearest_neighbours) and i < len(connections[0]):
+                if (point_distance(connection, connections[0][nearest_neighbours[i]])) > pixel_threshold:
+                    keeper = False
+                    break
+                i += 1
+            if keeper:
+                to_keep[0].append(connection)
+                to_keep[1].append(connections[1][j])
     return to_keep
 
 
@@ -161,9 +164,13 @@ def cluster_vectors(filtered_connections, nb_clusters=4):
     :return: A list with clusters and mean of clusters
     :rtype: list
     """
-    result = [[],[]]
-    while len(result[0]) != nb_clusters:
-        result = kmeans(filtered_connections[0], nb_clusters, check_finite=False)
+    result = [[], [], []]
+    if len(filtered_connections[0]) > 3:
+        data = np.array(filtered_connections[0], dtype=np.float32)
+        while len(result[2]) != nb_clusters:
+            result = cv2.kmeans(data, nb_clusters, None,
+                                (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0), 10, cv2.KMEANS_PP_CENTERS)
+        # print result[2]
     return result
 
 
@@ -179,7 +186,8 @@ def filter_right_up_vectors(filtered_connections):
     """
     if len(filtered_connections[0]) == 0:
         return []
-    clusters_centroids = cluster_vectors(filtered_connections)[0]
+    clustering = cluster_vectors(filtered_connections)
+    clusters_centroids = clustering[2]
     max_x = (-np.infty, None)
     max_y = (-np.infty, None)
     for i in range(len(clusters_centroids)):
@@ -190,7 +198,7 @@ def filter_right_up_vectors(filtered_connections):
             max_y = (centroid[1], i)
     x = max_x[1]
     y = max_y[1]
-    belongs_to_cluster = vq(filtered_connections[0], clusters_centroids)[0]
+    belongs_to_cluster = clustering[1]
     clusters = [[], []]
     for index, cluster in enumerate(belongs_to_cluster):
         if cluster == x:

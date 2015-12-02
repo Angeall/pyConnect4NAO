@@ -3,7 +3,8 @@ __author__ = 'Anthony Rouneau'
 
 def generate_longtable(titles, file_name, table):
     assert(len(titles) == len(table[0]))
-    latex = "\\begin{longtable}"
+    latex = "\\documentclass[letterpaper, 12pt]{article}\n\\usepackage{longtable}\n" \
+            "\\begin{document}\n\\begin{longtable}"
     latex = latex + "{|" + "c|" * len(titles) + "}" + "\n"
     latex += ("\\hline" + "\n")
     for i, title in enumerate(titles):
@@ -20,6 +21,7 @@ def generate_longtable(titles, file_name, table):
             else:
                 latex = latex + " \\\\\n" + "\\hline\n"
     latex += "\\end{longtable}"
+    latex += "\\end{document}"
     output = open(file_name + ".tex", mode="w")
     output.write(latex)
     output.close()
