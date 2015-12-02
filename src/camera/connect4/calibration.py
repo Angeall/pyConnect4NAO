@@ -59,7 +59,8 @@ def calibration_param2(dist, images, must_latex=True):
         results.append(best_value)
         print "radius : image " + str(counter) + " finished"
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" + str(counter), table)
+            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" +
+                                               str(dist) + "_" + str(counter), table)
         counter += 1
     return results
 
@@ -108,7 +109,8 @@ def calibration_param1(dist, images, must_latex=True):
         results.append(best_value)
         print "param1 : image " + str(counter) + " finished"
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_param1_" + str(counter), table)
+            latex_generator.generate_longtable(titles, "../../../latex/generated_param1_" +
+                                               str(dist) + "_" + str(counter), table)
         counter += 1
     return results
 
@@ -165,7 +167,8 @@ def calibration_radius_error(dist, images, must_latex=True):
         print "radius : image " + str(counter) + " finished"
         results.append(best_value)
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" + str(counter), table)
+            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" +
+                                               str(dist) + "_" + str(counter), table)
         counter += 1
     return results
 
