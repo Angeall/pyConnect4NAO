@@ -23,10 +23,11 @@ def calibration_param2(dist, images, must_latex=True):
               "Total", "Score"]
     results = []
     counter = 0
-    min_dist = int((5/dist)*1.195)
-    min_radius = int(5./dist)
+    max_radius = estimate_maxradius(dist)
+    min_radius = estimate_minradius(dist)
+    min_dist = int(min_radius*1.195)
     param1 = 60
-    max_radius = int(9./dist)
+
     for img in images:
         table = []
         best_value = []
@@ -70,9 +71,9 @@ def calibration_param1(dist, images, must_latex=True):
               "Total", "Score"]
     results = []
     counter = 0
-    min_radius = int(5./dist)
-    max_radius = int(9./dist)
-    min_dist = int((5./dist)*1.195)
+    min_radius = estimate_minradius(dist)
+    max_radius = estimate_maxradius(dist)
+    min_dist = int(min_radius*1.195)
     param2 = 10.5
     for img in images:
         table = []
@@ -115,6 +116,14 @@ def calibration_param1(dist, images, must_latex=True):
     return results
 
 
+def estimate_minradius(dist):
+    return int(4.4143*(dist**(-1.1446)))
+
+
+def estimate_maxradius(dist):
+    return int(round(8.5468*(dist**(-0.7126))))
+
+
 def calibration_radius_error(dist, images, must_latex=True):
     titles = ["\\texttt{minRadius}", "\\texttt{maxRadius}", "\\texttt{minDist}", "Grid circles", "Noise circles",
               "Total", "Score"]
@@ -138,7 +147,7 @@ def calibration_radius_error(dist, images, must_latex=True):
                 while lower_bound>(one_meter_value/factor)/dist:
                     min_radius = int(lower_bound)
                     max_radius = int(upper_bound)
-                    min_dist = round(lower_bound*1.195, 2)
+                    min_dist = round(lower_bound*1.125, 2)
                     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=48, param2=10.5,
                                                minRadius=min_radius, maxRadius=max_radius)
                     if circles is None:
