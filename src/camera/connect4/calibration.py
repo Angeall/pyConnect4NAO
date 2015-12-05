@@ -66,6 +66,48 @@ def calibration_param2(dist, images, must_latex=True):
     return results
 
 
+def plotting_param2(dist, images):
+    results = {}
+    counter = 0
+    max_radius = estimate_maxradius(dist)
+    min_radius = estimate_minradius(dist)
+    min_dist = int(min_radius*1.195)
+    param1 = 60
+
+    for img in images:
+        best_score = -1000
+        # how many pixels for a circle radius on a 320x240px image when standing one meter away
+        param2 = 5.
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        gray = cv2.medianBlur(gray, 3)
+        while param2 < 17:
+            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=param1, param2=param2,
+                                       minRadius=min_radius, maxRadius=max_radius)
+            if circles is None:
+                nb_of_grid_circles = 0
+                circles = [[]]
+                score = -1
+            else:
+                # circles = np.uint16(np.around(circles))
+                _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
+                if nb_of_grid_circles is None:
+                    nb_of_grid_circles = 0
+                    score = -1
+                else:
+                    score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+
+            param2 += 0.25
+            key = str(round(param2, 2))
+            if results.has_key(key):
+                results[key].append(score)
+            else:
+                results[key] = [score]
+        print "radius : image " + str(counter) + " finished"
+        counter += 1
+    return results
+
+
 def calibration_param1(dist, images, must_latex=True):
     titles = ["\\texttt{param1}", "Grid circles", "Noise circles",
               "Total", "Score"]
@@ -112,6 +154,46 @@ def calibration_param1(dist, images, must_latex=True):
         if must_latex:
             latex_generator.generate_longtable(titles, "../../../latex/generated_param1_" +
                                                str(dist) + "_" + str(counter), table)
+        counter += 1
+    return results
+
+
+def plotting_param1(dist, images):
+    results = {}
+    counter = 0
+    min_radius = estimate_minradius(dist)
+    max_radius = estimate_maxradius(dist)
+    min_dist = int(min_radius*1.195)
+    param2 = 10.5
+    for img in images:
+        best_score = -1
+        # how many pixels for a circle radius on a 320x240px image when standing one meter away
+        param1 = 30
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        gray = cv2.medianBlur(gray, 3)
+        while param1 < 200:
+            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=param1, param2=param2,
+                                       minRadius=min_radius, maxRadius=max_radius)
+            if circles is None:
+                score = -1
+                nb_of_grid_circles = 0
+                circles = [[]]
+            else:
+                # circles = np.uint16(np.around(circles))
+                _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
+                if nb_of_grid_circles is None:
+                    score = -1
+                    nb_of_grid_circles = 0
+                else:
+                    score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+
+            param1 += 1
+            if results.has_key(param1):
+                results[param1].append(score)
+            else:
+                results[param1] = [score]
+        print "param1 : image " + str(counter) + " finished"
         counter += 1
     return results
 
@@ -223,12 +305,34 @@ def load_images(dist):
     return images
 
 
+def prepare_plot(scores, param_name):
+    data_file = open("../../../plot/" + param_name + ".dat", 'w')
+    big_dict = {}
+    for dico in scores:
+        for key in dico:
+            if big_dict.has_key(key):
+                big_dict[key].extend(dico[key])
+            else:
+                big_dict[key] = dico[key]
+    data = "#" + param_name + " mean vr\n"
+    for key in big_dict:
+        mean = round(np.mean(big_dict[key]), 2)
+        var = round(np.var(big_dict[key]), 2)
+        data += str(key) + " " + str(mean) + " " + str(var) + '\n'
+    data_file.write(data)
+    data_file.close()
+
 if __name__ == "__main__":
-    dists = [0.4, 0.5, 1, 1.5, 2, 2.5, 3]
+    dists = [0.4, 0.5, 1, 1.5, 2]#, 2.5]
     # images = get_images(dist)
+    scores = []
     for dist in dists:
         print "-"*20 + str(dist) + "-"*20
         images = load_images(dist)
         #print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
-        print evaluate(calibration_param1(dist, images), "param1", dist)
+        #print evaluate(calibration_param1(dist, images), "param1", dist)
         #print evaluate(calibration_param2(dist, images), "param2", dist)
+        #scores.append(plotting_param1(dist, images))
+        scores.append(plotting_param2(dist, images))
+    # prepare_plot(scores, "param1")
+    prepare_plot(scores, "param2")
