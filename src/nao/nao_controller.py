@@ -15,7 +15,7 @@ class NAOController:
         # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
-    def connect_to_camera(self, res=1, fps=10, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
+    def connect_to_camera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
         try:
             self.subscriber_id = self.video_device.subscribeCamera(subscriber_id, camera_num, res, color_space, fps)
         except BaseException, err:

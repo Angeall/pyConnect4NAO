@@ -10,12 +10,13 @@ from src.utils import latex_generator
 __author__ = 'Anthony Rouneau'
 
 
-def get_score(nb_grid_circles, nb_noise_circles):
+def get_f_score(nb_grid_circles, nb_noise_circles):
     total_circles = float((nb_grid_circles+nb_noise_circles))
-    if total_circles == 0:
-        return -2
-    return (float(nb_grid_circles)/42.0) - \
-           (float(nb_noise_circles)/total_circles)
+    if total_circles == 0 or nb_grid_circles == 0:
+        return 0
+    recall = float(nb_grid_circles)/total_circles
+    precision = float(nb_grid_circles)/42.0
+    return (2*precision*recall) / (precision + recall)
 
 
 def calibration_param2(dist, images, must_latex=True):
@@ -48,7 +49,7 @@ def calibration_param2(dist, images, must_latex=True):
                 _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
                 if nb_of_grid_circles is None:
                     nb_of_grid_circles = 0
-            score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+            score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
             if score > best_score:
                 best_score = score
                 best_value = [param2]
@@ -87,15 +88,15 @@ def plotting_param2(dist, images):
             if circles is None:
                 nb_of_grid_circles = 0
                 circles = [[]]
-                score = -1
+                score = 0
             else:
                 # circles = np.uint16(np.around(circles))
                 _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
                 if nb_of_grid_circles is None:
                     nb_of_grid_circles = 0
-                    score = -1
+                    score = 0
                 else:
-                    score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+                    score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
 
             param2 += 0.25
             key = str(round(param2, 2))
@@ -103,7 +104,7 @@ def plotting_param2(dist, images):
                 results[key].append(score)
             else:
                 results[key] = [score]
-        print "radius : image " + str(counter) + " finished"
+        print "param2 : image " + str(counter) + " finished"
         counter += 1
     return results
 
@@ -120,7 +121,7 @@ def calibration_param1(dist, images, must_latex=True):
     for img in images:
         table = []
         best_value = []
-        best_score = -1000
+        best_score = 0
         # how many pixels for a circle radius on a 320x240px image when standing one meter away
         param1 = 30
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -130,17 +131,17 @@ def calibration_param1(dist, images, must_latex=True):
             circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=param1, param2=param2,
                                        minRadius=min_radius, maxRadius=max_radius)
             if circles is None:
-                score = -1000
+                score = 0
                 nb_of_grid_circles = 0
                 circles = [[]]
             else:
                 # circles = np.uint16(np.around(circles))
                 _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
                 if nb_of_grid_circles is None:
-                    score = -1000
+                    score = 0
                     nb_of_grid_circles = 0
                 else:
-                    score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+                    score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                 if score > best_score:
                     best_score = score
                     best_value = [param1]
@@ -176,17 +177,17 @@ def plotting_param1(dist, images):
             circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=param1, param2=param2,
                                        minRadius=min_radius, maxRadius=max_radius)
             if circles is None:
-                score = -1
+                score = 0
                 nb_of_grid_circles = 0
                 circles = [[]]
             else:
                 # circles = np.uint16(np.around(circles))
                 _, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
                 if nb_of_grid_circles is None:
-                    score = -1
+                    score = 0
                     nb_of_grid_circles = 0
                 else:
-                    score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+                    score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
 
             param1 += 1
             if results.has_key(param1):
@@ -243,7 +244,7 @@ def calibration_radius_error(dist, images, must_latex=True):
                             score = -1000
                             nb_of_grid_circles = 0
                         else:
-                            score = round(get_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
+                            score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                         if score > best_score:
                             best_score = score
                             best_value = [(min_radius, max_radius)]
@@ -323,7 +324,7 @@ def prepare_plot(scores, param_name):
     data_file.close()
 
 if __name__ == "__main__":
-    dists = [0.4, 0.5, 1, 1.5, 2]#, 2.5]
+    dists = [0.4, 0.5, 1, 1.5, 2, 2.5]
     # images = get_images(dist)
     scores = []
     for dist in dists:
@@ -332,7 +333,7 @@ if __name__ == "__main__":
         #print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
         #print evaluate(calibration_param1(dist, images), "param1", dist)
         #print evaluate(calibration_param2(dist, images), "param2", dist)
-        #scores.append(plotting_param1(dist, images))
-        scores.append(plotting_param2(dist, images))
-    # prepare_plot(scores, "param1")
-    prepare_plot(scores, "param2")
+        scores.append(plotting_param1(dist, images))
+        #scores.append(plotting_param2(dist, images))
+    prepare_plot(scores, "param1")
+    #prepare_plot(scores, "param2")
