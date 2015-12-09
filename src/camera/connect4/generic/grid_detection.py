@@ -386,6 +386,7 @@ def bfs_marking(vector_clusters, start_node):
     adj_up_dict = {}
     mapping = {}
     explored = []
+    #TODO : modify explore to be a dict with every node in it and a boolean that represents if it was explored or not.
 
     for (x, y) in vector_clusters[0]:
         if adj_right_dict.has_key(x):
