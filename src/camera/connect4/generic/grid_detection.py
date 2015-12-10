@@ -87,6 +87,7 @@ def connect_keypoints(keypoints, rect=None, max_distance=0., exclude_list=[]):
 
     triangle_list = subdiv.getTriangleList()
     edge_list = subdiv.getEdgeList()
+    # An edge is the coordinates of two points. 1st coordinate = (edge[0], edge[1]), 2nd = (edge[2], edge[3])
     for edge in edge_list:
         pt1 = (edge[0], edge[1])
         pt2 = (edge[2], edge[3])
