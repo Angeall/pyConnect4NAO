@@ -1,7 +1,7 @@
 __author__ = 'Angeall'
 import random
 import unittest
-from src.camera.connect4.generic.grid_detection import *
+from src.camera.connect4.generic.connect4 import *
 
 
 class DetectionTestCase(unittest.TestCase):
