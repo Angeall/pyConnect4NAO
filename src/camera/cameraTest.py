@@ -20,7 +20,7 @@ def clean():
     global nao_c, cap
     if nao_c is not None:
         for i in range(7):
-            nao_c.disconnect_from_camera(subscriber_id="Connect4NAO_" + str(i))
+            nao_c.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
 
 
 def get_webcam_image():
@@ -39,17 +39,17 @@ def get_nao_image(camera_num=0):
     if nao_c is None:
         nao_c = naoc.NAOController(robot_ip, port)
         clean()
-        ret = nao_c.connect_to_camera(res=1, fps=30, camera_num=camera_num)
+        ret = nao_c.connectToCamera(res=1, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
-    return nao_c.get_image_from_camera()
+    return nao_c.getImageFromCamera()
 
 
 def close_camera():
     global nao_c, cap
     if nao_c is not None:
-        nao_c.disconnect_from_camera()
+        nao_c.disconnectFromCamera()
         return
     else:
         cap.release()
@@ -57,6 +57,7 @@ def close_camera():
 
 
 def test():
+    c4_detector = c4.Connect4Detector()
     while True:
         i = 0
         # img = get_webcam_image()
@@ -74,10 +75,12 @@ def test():
                 # draw the center of the circle
                 cv2.circle(img, (i[0], i[1]), 2, (0, 0, 255), 3)
         if circles is not None:
-            connect4 = c4.detect_connect4(circles[0], img)
-            if connect4 is not None:
+            try:
+                c4_detector.runDetection(circles[0], img=img)
+                connect4 = c4_detector.getPerspective()
                 cv2.imshow("Connect4", connect4)
-                cv2.waitKey(0)
+            except c4.CircleGridNotFoundException:
+                pass
         cv2.imshow("Original Image", img)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
@@ -86,6 +89,7 @@ def test():
     return 0
 
 def test3():
+    c4_detector = c4.Connect4Detector()
     dist = 1.0
     while True:
         i = 0
@@ -104,11 +108,13 @@ def test3():
                 cv2.circle(img2, (i[0], i[1]), i[2], (0, 255, 0), 2)
                 # draw the center of the circle
                 cv2.circle(img2, (i[0], i[1]), 2, (0, 0, 255), 2)
-            connect4, nb_of_grid_circles = c4.detect_connect4(circles[0], img)
-            if connect4 is not None:
-                cv2.imshow("Connect4", connect4)
-                # cv2.waitKey(0)
             cv2.imshow("Circles detected", img2)
+            try:
+                c4_detector.runDetection(circles[0], img=img)
+                connect4 = c4_detector.getPerspective()
+                cv2.imshow("Connect4", connect4)
+            except c4.CircleGridNotFoundException :
+                pass
         cv2.imshow("Original picture", img)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"

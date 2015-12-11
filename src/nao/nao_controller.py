@@ -15,7 +15,7 @@ class NAOController:
         # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
-    def connect_to_camera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
+    def connectToCamera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
         try:
             self.subscriber_id = self.video_device.subscribeCamera(subscriber_id, camera_num, res, color_space, fps)
         except BaseException, err:
@@ -23,7 +23,7 @@ class NAOController:
             return -1
         return 0
 
-    def disconnect_from_camera(self, subscriber_id=None):
+    def disconnectFromCamera(self, subscriber_id=None):
         try:
             if subscriber_id is None:
                 self.video_device.unsubscribe(self.subscriber_id)
@@ -32,7 +32,7 @@ class NAOController:
         except BaseException, err:
             print "ERR: cannot disconnect from camera : %s" % err
 
-    def get_image_from_camera(self):
+    def getImageFromCamera(self):
         try:
             img = self.video_device.getImageRemote(self.subscriber_id)
             if img is not None:
@@ -44,6 +44,6 @@ class NAOController:
             print "ERR: cannot get image from camera : %s" % err
             return None
 
-    def unsubscribe_all_cameras(self):
+    def unsubscribeAllCameras(self):
         for i in range(7):
-            self.disconnect_from_camera(subscriber_id=self.subscriber_id + "_" + str(i))
+            self.disconnectFromCamera(subscriber_id=self.subscriber_id + "_" + str(i))

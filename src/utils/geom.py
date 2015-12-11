@@ -47,8 +47,8 @@ def cluster_vectors(vectors, nb_clusters=4):
     :rtype: list
     """
     result = [[], [], []]
-    if len(vectors[0]) > 3:
-        data = np.array(vectors[0], dtype=np.float32)
+    if len(vectors) > 3:
+        data = np.array(vectors, dtype=np.float32)
         while len(result[2]) != nb_clusters:
             result = cv2.kmeans(data, nb_clusters, None,
                                 (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,

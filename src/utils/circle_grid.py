@@ -6,93 +6,109 @@ from scipy.spatial import KDTree
 import src.utils.geom as geom
 __author__ = 'Anthony Rouneau'
 
+
 class CircleGridException(Exception):
     """
-    Exception raised when the detector fails to detect a circle grid with the given parameters
+    Exception raised when there was an error while detecting a circle grid
+    """
+    pass
+
+
+class CircleGridNotFoundException(Exception):
+    """
+    Exception raised when the detector detect no circle grids with the given parameters
     """
     NO_GRID = "Could not find a circle grid with the given parameters"
     def __init__(self, message=NO_GRID):
-        super(CircleGridException, self).__init__(message)
+        super(CircleGridNotFoundException, self).__init__(message)
+
 
 class CircleGridDetector(object):
-    def __init__(self, grid_shape, circles, pixel_error_margin=10, min_similar_vectors=15,
-                 reference_image=None, reference_mapping=None, img=None):
-        """
-
-        :param grid_shape: The shape of the grid to detect (e.g. (6, 7) for a Connect 4 grid)
-        :type grid_shape: tuple
-        :param reference_image:
-        :param reference_mapping:
-        :param circles:
-        :param img:
-        :param pixel_error_margin:
-        :param min_similar_vectors:
-        :return:
-        """
-        self.referenceImg = reference_image
-        self.referenceMapping = reference_mapping
-        self.circles = circles
-        self.img = img
-        self.gridShape = grid_shape
-        self.pixelErrorMargin = pixel_error_margin
-        self.minSimilarVectors = min_similar_vectors
-        img_shape = img.shape
-        self.imageRect = [0, 0, img_shape[0] + 1, img_shape[1] + 1]
-        self.exception = CircleGridException()
-        self.relativeCoordinates = {}
-        self.filteredArcIndices = []
-        self.filteredArcVectors = []
+    """
+    Class used to detect a circle grid using circles detected in a picture.
+    """
+    def __init__(self):
+        self.referenceImg = None
+        self.referenceMapping = None
+        self.circles = None
+        self.img = None
+        self.gridShape = None
+        self.pixelErrorMargin = None
+        self.minSimilarVectors = None
+        self.bounds = [0, 0, 0, 0]
+        self.exception = CircleGridNotFoundException()
+        self.relativeCoordinates = None
+        self.filteredArcIndices = None
+        self.filteredArcVectors = None
         self.noiseCircles = []
-        self.originalArcIndices = []
-        self.originalArcVectors = []
-        self.circleGridMapping = {}
+        self.originalArcIndices = None
+        self.originalArcVectors = None
+        self.circleGridMapping = None
         self.objectPerspective = None
 
-        self.detectCircleGrid()
 
     def clear(self):
         """
         Private method: Clear the private parameters of the object
         """
-        self.relativeCoordinates = {}
-        self.filteredArcIndices = []
-        self.filteredArcVectors = []
+        self.relativeCoordinates = None
+        self.filteredArcIndices = None
+        self.filteredArcVectors = None
         self.noiseCircles = []
-        self.originalArcIndices = []
-        self.originalArcVectors = []
-        self.circleGridMapping = {}
-        self.detectCircleGrid()
-        self.objectPerspective = np.ndarray()
+        self.originalArcIndices = None
+        self.originalArcVectors = None
+        self.circleGridMapping = None
+        self.objectPerspective = None
 
-    def changeImage(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None):
+    def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
+                       ref_img=None, ref_mapping=None, grid_shape=None):
         """
-        Change the image in which detect the circle grid
-        :param circles:
-        :param pixel_error_margin:
-        :param min_similar_vectors:
-        :param img:
-        :return:
+        Public method.
+        Runs a new detection to find a Connect 4
+        :param circles: The circles in which detect a circle grid
+        :type circles: list
+        :param pixel_error_margin: The error margin allowed to consider two vectors equal
+        :type pixel_error_margin: float
+        :param min_similar_vectors: The minimum number of similar vectors a considered vector must have in order
+                                    to be considered as non-noise
+        :type min_similar_vectors: int
+        :param img: The image in which the circle grid must be detected, can be None
+        :type img: numpy.ndarray
+        :param ref_img: The image of reference that represents the circle grid searched, can be None
+        :type ref_img: numpy.ndarray
+        :param ref_mapping: The reference mapping that is a dict with relative positions as key and pixel coordinates
+                            (pointing to the ref_img) as values
+        :type ref_mapping: dict
+        :param grid_shape: The shape of the grid to detect (e.g. (6, 7) for a 6x7 connect 4 board)
+        :type grid_shape: tuple
         """
-        self.circles = circles
-        self.img = img
-        self.pixelErrorMargin = pixel_error_margin
-        self.minSimilarVectors = min_similar_vectors
-        img_shape = img.shape
-        self.imageRect = [0, 0, img_shape[0] + 1, img_shape[1] + 1]
         self.clear()
-        self.detectCircleGrid()
+        if grid_shape is None:
+            raise CircleGridException("No grid_shape set, don't know what type of grid is searched")
+        if img is not None:
+            bounds = (0, 0, img.shape[0] + 1, img.shape[1] + 1)
+        else:
+            bounds = None
+        self.prepareConnection(circles, bounds)
+        self.connectCircles() # Fills originalArcIndices and originalArcVectors
 
+        self.prepareFiltering(pixel_error_margin, min_similar_vectors)
+        self.doublePassFilter()# Fills filteredArcIndices, filteredArcVectors and noiseCircles
 
-    def detectCircleGrid(self):
-        """
-        Private method : method that launches the detection routine
-        """
-        self.connectCircles()  # Fill originalArcIndices and originalArcVectors
-        self.doublePassFilter() # Fill filteredArcIndices, filteredArcVectors and noiseCircles
-        self.bfsMarking() # Fill relativeCoordinates
+        self.prepareBFS()
+        self.bfsMarking() # Fills relativeCoordinates
+
+        self.prepareGrid(grid_shape)
         self.checkForGrid()
-        self.circleGridMapping = geom.index_mapping_into_pixel_mapping(self.relativeCoordinates, self.circles)
-        self.findPerspective()
+
+        self.referenceMapping = ref_mapping
+        self.referenceImg = ref_img
+        self.img = img
+
+        if ref_mapping is not None:
+            self.circleGridMapping = geom.index_mapping_into_pixel_mapping(self.relativeCoordinates, self.circles)
+            if ref_img is not None and img is not None:
+                self.findPerspective()
 
     def getCircleGrid(self):
         """
@@ -103,39 +119,53 @@ class CircleGridDetector(object):
         """
         return self.circleGridMapping
 
-    def rectContains(self, point):
-        if point[0] < self.imageRect[0]:
+    def checkInBounds(self, point):
+        """
+        Check if a point is included in the boundaries of the analysis
+        :param point: The point to check if included in the boundaries
+        """
+        if point[0] < self.bounds[0]:
             return False
-        elif point[1] < self.imageRect[1]:
+        elif point[1] < self.bounds[1]:
             return False
-        elif point[0] > self.imageRect[2]:
+        elif point[0] > self.bounds[2]:
             return False
-        elif point[1] > self.imageRect[3]:
+        elif point[1] > self.bounds[3]:
             return False
         return True
 
+    def prepareConnection(self, circles, bounds=None):
+        """
+        Method to call before self.connectCircles to set the object parameters properly
+        :param circles: The circles in which a circle grid will be detected
+        :type circles: list
+        :param bounds: The boundaries of the image in which the circles have been detected
+        :type bounds: list
+        """
+        self.circles = circles
+        for i in range(len(circles)):
+            self.noiseCircles.append(False)
+        if bounds is None:
+            tuple_max = geom.max_tuple(circles)
+            tuple_min = geom.min_tuple(circles)
+            bounds = (int(tuple_min[0]), int(tuple_min[1]), int(tuple_max[0])+1, int(tuple_max[1])+1)
+        self.bounds = bounds
+
     def connectCircles(self):
         """
-        Returns a list with connections between keypoints.
-        For every couple of keypoints (a, b) such that a is not b:
-               if there's no keypoint c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
-               then add the vector (a,b) to the connection with the indices of the keypoints a and b
+        Computes a list with connections between circle centres.
+        For every couple of centres (a, b) such that a is not b:
+               if there's no centre c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
+               then add the vector (a,b) to the connection with the indices of the centres a and b
 
-        :param rect: The image dimensions
-        :type rect: tuple
-        :param keypoints: The keypoints (list of 2D coordinates).
-        :type keypoints: list
-        :param exclude_list: A list of indices that indicates which keypoints are to be ignored during the connections.
-        :type exclude_list: list
-        :return: a list of connections: [vectors_between_couples, keypoints_indices]
-        :rtype: list
+        self.prepareGraph must be set before use
         """
         keypoints = self.circles
         circles_dict = {}
         vectors_dict = {}
 
         subdiv = cv2.Subdiv2D()
-        subdiv.initDelaunay(self.imageRect)
+        subdiv.initDelaunay(self.bounds)
         for i in range(len(keypoints)):
             keypoint = keypoints[i]
             if not self.noiseCircles[i]: # If the circle i is not a noisy circle
@@ -149,7 +179,7 @@ class CircleGridDetector(object):
         for edge in edge_list:
             pt1 = (edge[0], edge[1])
             pt2 = (edge[2], edge[3])
-            if self.rectContains(pt1) and self.rectContains(pt2):
+            if self.checkInBounds(pt1) and self.checkInBounds(pt2):
                 vectors_dict[(pt1, pt2)] = geom.vectorize(pt1, pt2)
                 vectors_dict[(pt2, pt1)] = geom.vectorize(pt2, pt1)
 
@@ -157,7 +187,7 @@ class CircleGridDetector(object):
             pt1 = (triangle[0], triangle[1])
             pt2 = (triangle[2], triangle[3])
             pt3 = (triangle[4], triangle[5])
-            if self.rectContains(pt1) and self.rectContains(pt2) and self.rectContains(pt3):
+            if self.checkInBounds(pt1) and self.checkInBounds(pt2) and self.checkInBounds(pt3):
                 dist1 = geom.point_distance(pt1, pt2)
                 dist2 = geom.point_distance(pt2, pt3)
                 dist3 = geom.point_distance(pt3, pt1)
@@ -182,19 +212,24 @@ class CircleGridDetector(object):
         self.originalArcVectors = vectors
         self.originalArcIndices = indices
 
+    def prepareFiltering(self, pixel_error_margin=10., min_similar_vectors=15):
+        """
+        must be called after self.connectCircles
+        :param pixel_error_margin: The error margin allowed to consider two vector as equal
+        :type pixel_error_margin: float
+        :param min_similar_vectors: The minimum number of similar vector a considered vector must have to be
+                                    considered as non-noise
+        :type min_similar_vectors: int
+        """
+        if self.originalArcVectors is None or self.originalArcIndices is None:
+            raise CircleGridException("connectCircles must be performed before prepareFiltering")
+        self.pixelErrorMargin = pixel_error_margin
+        self.minSimilarVectors = min_similar_vectors
 
     def filterConnections(self):
         """
         For every existing connection, check that there's minimum "min_similar_vectors" other vectors with the same values
         (Same value following the threshold). If it's True, keep the connection, otherwise discard it
-        :param connections: Connections resulting from :py:func:connect_keypoints(keypoints, max_distance, exclude_list)
-        :type connections: list
-        :param pixel_threshold: The maximum accepted error around a vector.
-        :type pixel_threshold: float
-        :param min_similar_vectors: The minimum number of similar vector to keep a type of vector.
-        :type min_similar_vectors: int
-        :return: a list of filtered connections: [vectors_between_couples, keypoints_indices]
-        :rtype: list
         """
         filteredArcVectors = []
         filteredArcIndices = []
@@ -213,23 +248,11 @@ class CircleGridDetector(object):
 
     def doublePassFilter(self):
         """
-         Goal : erase noise, then try to connect more true keypoints (by avoiding noise keypoints)
-         1) Connect couple of centers, filter it
-         2) Remove every center that is not linked with another center after the filter of 1)
-         3) Re-connect couple of centers, ignoring the centers removed in 2) and re-filter
-         4) Returns result of 3)
-        :param keypoints: The keypoints (list of 2D coordinates).
-        :type keypoints: list
-        :param rect: The image dimensions
-        :type rect: tuple
-        :param max_distance: The maximum distance between two keypoints for them to be considered as couple (connected).
-        :type max_distance: float
-        :param pixel_threshold: The maximum accepted error around a vector.
-        :type pixel_threshold: float
-        :param min_similar_vectors: The minimum number of similar vector to keep a type of vector.
-        :type min_similar_vectors: int
-        :return: A list of double filtered connections: [vectors_between_couples, keypoints_indices]
-        :rtype: list
+         Goal : erase noise, then try to connect more true circle centres (by avoiding noise)
+         1) Connect into a graph
+         2)filter it
+         3) Remove every centre that is not linked with another centre after 2)
+         4) Re-connect couple of centres, ignoring the centers removed in 3) and re-filter
         """
         self.filterConnections()
         centers_to_remove = []
@@ -248,13 +271,9 @@ class CircleGridDetector(object):
 
     def filterRightUpVectors(self):
         """
-        Computes an array with vectors belonging to the cluster right and the cluster up
-        :param filtered_connections: The list of filtered connections resulting from
-                                     :py:func:filter_connections(connections, pixel_threshold=, min_to_keep)
-        :type filtered_connections: list
-        :return: A list of keypoint index couples belonging either to the "up" or the "right" cluster.
-                 [[right_vector_couples], [up_vector_couples]]
-        :rtype: list
+        Computes vectors belonging to the cluster right and the cluster up
+        Sets self.upVectors and self.rightVectors lists of index couples that forms vectors belonging
+                 either to the "up" or the "right" cluster.
         """
         if len(self.filteredArcVectors) == 0:
             raise self.exception
@@ -281,20 +300,22 @@ class CircleGridDetector(object):
         self.upVectors = up_vectors
         self.rightVectors = right_vectors
 
+    def prepareBFS(self):
+        if self.filteredArcIndices is None or self.filteredArcVectors is None or self.circles is None:
+            raise CircleGridException("filtering must be performed before prepareBFS")
+        self.filterRightUpVectors()
+
     def bfsMarking(self):
         """
-        Explore keypoints as a graph using vectors (filtered before).
-        Use Breadth First Search, starting from the keypoint "start_node"
-        :param vector_clusters: The up and right connections that were filtered before.
-        :type vector_clusters: list
-        :param start_node: The keypoint index from where the exploration starts.
-        :type start_node: int
-        :return: A mapping between relative coordinates ( (0, 0), (0, 1), ...) and keypoints indices.
-        :rtype: dict
+        Must execute prepareBFS first.
+        Explore circle centres as a graph using vectors (filtered before) marking
+        with relative positions.
+        Use Breadth First Search.
         """
-        # Contains nodes and position of node
-        frontier = Queue()
+        frontier = Queue() # Contains nodes and position of node
         start_node = 0
+        while self.noiseCircles[start_node]:
+            start_node += 1
         frontier.put([start_node, (0, 0)])
         adj_right_dict = {}
         adj_up_dict = {}
@@ -358,14 +379,6 @@ class CircleGridDetector(object):
         Shift a mapping so that all values of the mapping are shifted by x_shift and y_shift.
         If x_shift is None, The lowest x value will be 0 and other x values are adapted in consequence.
         If y_shift is None, The lowest y value will be 0 and other y values are adapted in consequence.
-        :param mapping: The mapping to transform.
-        :type mapping: dict
-        :param x_shift: The horizontal shift to apply to the mapping.
-        :type x_shift: int
-        :param y_shift: The horizontal shift to apply to the mapping.
-        :type y_shift: int
-        :return: The transformed mapping
-        :rtype: dict
         """
         if x_shift is None and y_shift is None:
             (x_shift, y_shift) = geom.min_tuple(self.relativeCoordinates.keys())
@@ -416,7 +429,19 @@ class CircleGridDetector(object):
         nb_connection += filter(lambda (x, y): x in circles and y in circles, self.upVectors)
         return len(nb_connection)
 
+    def prepareGrid(self, grid_shape):
+        if self.relativeCoordinates is None or self.rightVectors is None or self.upVectors is None:
+            raise CircleGridException("prepareBFS and bfsMarking must be called before prepareForGrid")
+        self.gridShape = grid_shape
+
     def checkForGrid(self):
+        """
+        Checks for a grid inside a mapping done with bfsMarking.
+        bfsMarking can detect multiple possible grids, this method will check if there is at least one possible grid.
+
+        It will also decide, in the case of multiple possible grids, which grid is the good one by counting the
+          number of vectors detected earlier inside the grid (the bigger amount of vectors, the better the grid)
+        """
         (max_x, max_y) = geom.max_tuple(self.relativeCoordinates.keys())
         if max_x + 1 < self.gridShape[1] or max_y + 1 < self.gridShape[0]:
             raise self.exception
@@ -449,13 +474,7 @@ class CircleGridDetector(object):
     def mappingHomography(self):
         """
         Find a homography between an object and a scene, represented by two mappings with similar keys.
-        Warning : keys of scene_mapping must be included in the keys of object_mapping.
-        :param object_mapping: The mapping between relative coordinates and pixel coordinates of the searched object.
-        :type object_mapping: dict
-        :param scene_mapping: The mapping between relative coordinates and pixel coordinates of the object in the scene.
-        :type scene_mapping: dict
-        :return: The homography, computed by OpenCV, between the object and the scene
-        :rtype: np.matrix
+        /!\ Warning /!\ keys of scene_mapping must be included in the keys of object_mapping.
         """
         obj = []
         scene = []
@@ -470,32 +489,17 @@ class CircleGridDetector(object):
     def findPerspective(self):
         """
         Use OpenCV's warpPerspective to isolate the object in the scene.
-        :param homography: The homography, result of mapping_homography
-        :type homography: np.matrix
-        :param object_img: The image representing the object to find in the scene
-        :type object_img: np.matrix
-        :param scene_img: The scene in which you want to find the object
-        :type scene_img: np.matrix
-        :return: The scene, reshaped so only the object in the scene is visible, formatted as object_img
+
+        Sets self.objectPerspective to the scene image, reshaped and transformed so that
+        only the object in the scene is visible, formatted as object_img
         """
         rows, cols, _ = self.referenceImg.shape
-        if self.img is not None and self.referenceImg is not None and self.referenceMapping is not None:
-            self.mappingHomography()
-            self.objectPerspective =  cv2.warpPerspective(self.img, self.homography,(cols, rows),flags=cv2.WARP_INVERSE_MAP)
+        self.mappingHomography()
+        self.objectPerspective =  cv2.warpPerspective(self.img, self.homography,(cols, rows),flags=cv2.WARP_INVERSE_MAP)
 
 
-    def get_perspective(self):
+    def getPerspective(self):
         """
-        Get the image of a specific object in a scene
-        :param object_mapping: The mapping between relative coordinates and pixel coordinates of the searched object.
-        :type object_mapping: dict
-        :param scene_mapping: The mapping between relative coordinates and pixel coordinates of the object in the scene.
-        :type scene_mapping: dict
-        :param object_img: The image representing the object to find in the scene
-        :type object_img: np.matrix
-        :param scene_img: The scene in which you want to find the object
-        :type scene_img: np.matrix
-        :return: The image of the object in the scene
-        :rtype: np.matrix
+        Get an image cropped and transformed of a specific object in a scene image
         """
         return self.objectPerspective
