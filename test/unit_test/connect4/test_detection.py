@@ -1,7 +1,7 @@
 __author__ = 'Angeall'
 import unittest
 
-from src.camera.connect4.connect4 import *
+from src.camera.connect4.connect4detector import *
 from src.utils.geom import *
 
 

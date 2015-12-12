@@ -3,6 +3,49 @@ import cv2
 __author__ = 'Anthony Rouneau'
 
 
+class ImpossibleEquationException(Exception):
+    pass
+
+'''
+def al_kashi(a=None, b=None, c=None, angle=None):
+    """
+    Solve the Al-Khachi equation :  a^2 = b^2 + c^2 - 2*b*c*Cos(angle)
+    There must be one and only one parameter set to None, it is the unknown
+    :param a: The variable a in the equation
+    :type a: float
+    :param b: The variable b in the equation
+    :type b: float
+    :param c: The variable c in the equation
+    :type c: float
+    :param angle: The angle in the equation in radians
+    :type angle: float
+    :return: The unknown of the equation
+    :rtype: float
+    """
+    nones = []
+    args = [a, b, c, angle]
+    for i in args:
+        if i is None:
+            nones.append(i)
+    if len(nones)>1:
+        raise ImpossibleEquationException("Too many unknown in equation")
+    elif len(nones) == 1:
+        if a is None:
+            return np.sqrt(np.power(b, 2) + np.power(c, 2) - (2*b*c*np.cos(angle)))
+        elif b is None:
+            return max(np.roots([1, 2*c*np.cos(angle), - np.power(a, 2) + np.power(c, 2)]))
+        elif c is None:
+            return max(np.roots([1, 2*b*np.cos(angle), - np.power(a, 2) + np.power(b, 2)]))
+        elif angle is None:
+            a = float(a)
+            b = float(b)
+            c = float(c)
+            return np.arccos(np.divide(np.power(c, 2) - np.power(a, 2) + np.power(b, 2), 2*b*c))
+    else:
+        raise ImpossibleEquationException("There is no unknown")
+'''
+
+
 def vectorize((x0, x1), (y0, y1)):
     """
     Computes the vector made by the two input points

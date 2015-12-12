@@ -3,7 +3,7 @@ import time
 import cv2
 import numpy as np
 
-import connect4 as c4
+import connect4detector as c4
 import src.nao.nao_controller as nao
 from src.utils import latex_generator
 

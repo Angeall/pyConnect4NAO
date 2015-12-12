@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-import src.camera.connect4.connect4 as c4
+import src.camera.connect4.connect4detector as c4
 import src.nao.nao_controller as naoc
 
 __author__ = 'Anthony Rouneau'
