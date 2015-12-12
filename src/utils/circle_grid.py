@@ -19,6 +19,7 @@ class CircleGridNotFoundException(Exception):
     Exception raised when the detector detect no circle grids with the given parameters
     """
     NO_GRID = "Could not find a circle grid with the given parameters"
+
     def __init__(self, message=NO_GRID):
         super(CircleGridNotFoundException, self).__init__(message)
 
@@ -45,7 +46,9 @@ class CircleGridDetector(object):
         self.originalArcVectors = None
         self.circleGridMapping = None
         self.objectPerspective = None
-
+        self.upVectors = None
+        self.rightVectors = None
+        self.homography = None
 
     def clear(self):
         """
@@ -59,6 +62,9 @@ class CircleGridDetector(object):
         self.originalArcVectors = None
         self.circleGridMapping = None
         self.objectPerspective = None
+        self.upVectors = None
+        self.rightVectors = None
+        self.homography = None
 
     def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
                        ref_img=None, ref_mapping=None, grid_shape=None):
@@ -231,8 +237,8 @@ class CircleGridDetector(object):
         For every existing connection, check that there's minimum "min_similar_vectors" other vectors with the same values
         (Same value following the threshold). If it's True, keep the connection, otherwise discard it
         """
-        filteredArcVectors = []
-        filteredArcIndices = []
+        filtered_arc_vectors = []
+        filtered_arc_indices = []
         if self.minSimilarVectors > len(self.originalArcVectors):
             raise self.exception
         if len(self.originalArcVectors) > 0:
@@ -241,10 +247,10 @@ class CircleGridDetector(object):
                 nearest_neighbours = t.query(connection, self.minSimilarVectors)[1]
                 if (geom.point_distance(connection, self.originalArcVectors[nearest_neighbours
                                                         [(self.minSimilarVectors-1)]])) <= self.pixelErrorMargin:
-                    filteredArcVectors.append(connection)
-                    filteredArcIndices.append(self.originalArcIndices[j])
-        self.filteredArcVectors = filteredArcVectors
-        self.filteredArcIndices = filteredArcIndices
+                    filtered_arc_vectors.append(connection)
+                    filtered_arc_indices.append(self.originalArcIndices[j])
+        self.filteredArcVectors = filtered_arc_vectors
+        self.filteredArcIndices = filtered_arc_indices
 
     def doublePassFilter(self):
         """
@@ -267,7 +273,6 @@ class CircleGridDetector(object):
         self.noiseCircles = centers_to_remove
         self.connectCircles()
         self.filterConnections()
-
 
     def filterRightUpVectors(self):
         """
@@ -412,12 +417,6 @@ class CircleGridDetector(object):
         :param rectangle: The rectangle to consider in the grid.
                           A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
         :type rectangle: list
-        :param mapping: The grid mapping between relative coordinates and keypoint index representing the grid.
-        :type mapping: dict
-        :param up_right_connections: The up and right keypoints connections that were filtered.
-        :type up_right_connections: list
-        :return: The number of keypoints connections inside a rectangle in the grid.
-        :rtype: int
         """
         [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
         circles = []
@@ -485,7 +484,6 @@ class CircleGridDetector(object):
         scene = np.array(scene)
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
 
-
     def findPerspective(self):
         """
         Use OpenCV's warpPerspective to isolate the object in the scene.
@@ -496,7 +494,6 @@ class CircleGridDetector(object):
         rows, cols, _ = self.referenceImg.shape
         self.mappingHomography()
         self.objectPerspective =  cv2.warpPerspective(self.img, self.homography,(cols, rows),flags=cv2.WARP_INVERSE_MAP)
-
 
     def getPerspective(self):
         """

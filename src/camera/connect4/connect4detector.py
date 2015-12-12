@@ -6,8 +6,6 @@ from src.utils.circle_grid import CircleGridDetector, CircleGridNotFoundExceptio
 __author__ = 'Angeall'
 
 
-
-
 class Connect4DetectionException(Exception):
     """
     Exception raised when there was an error during the detection
@@ -20,8 +18,10 @@ class Connect4DetectionNotFoundException(CircleGridNotFoundException):
     Exception that will be raised when a Grid could not be found in the picture
     """
     NO_GRID = "Could not find a Connect 4 with the given parameters"
+
     def __init__(self, message=NO_GRID):
         super(Connect4DetectionNotFoundException, self).__init__(message)
+
 
 class Connect4Detector(CircleGridDetector):
     """

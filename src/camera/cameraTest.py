@@ -211,19 +211,3 @@ def test2():
 if __name__ == '__main__':
     test3()
     # test2()
-
-    # cv2.namedWindow('Control', cv2.WINDOW_AUTOSIZE)
-    # iLowH = 0
-    # iHighH = 179
-    # iLowS = 0
-    # iHighS = 25
-    # iLowV = 0
-    # iHighV = 255
-    # cv2.createTrackbar("LowH", "Control", iLowH, 179, nothing)
-    # cv2.createTrackbar("HighH", "Control", iHighH, 179, nothing)
-    # cv2.createTrackbar("LowS", "Control", iLowS, 255, nothing)
-    # cv2.createTrackbar("HighS", "Control", iHighS, 255, nothing)
-    # cv2.createTrackbar("LowV", "Control", iLowV, 255, nothing)
-    # cv2.createTrackbar("HighV", "Control", iHighV, 255, nothing)
-    # switch = '0 : OFF \n1 : ON'
-    # cv2.createTrackbar(switch, 'Control',0,1,nothing)
