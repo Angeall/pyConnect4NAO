@@ -4,6 +4,14 @@ import numpy as np
 __author__ = 'Anthony Rouneau'
 
 
+def estimate_minradius(dist):
+    return int(4.4143*(dist**(-1.1446)))
+
+
+def estimate_maxradius(dist):
+    return int(round(8.5468*(dist**(-0.7126))))
+
+
 class Connect4(object):
     def __init__(self, disc=5.6, length=51.9, width=6.6, height=33.7,
                  hole_length=5.85, hole_width=0.95, hole_h_space=0.95, hole_v_margin=0.4, hole_h_margin=2.75,
@@ -22,18 +30,18 @@ class Connect4(object):
         self.circle_v_space = circle_v_space
         self.circles_h_margin = circle_h_margin
         self.circles_v_margin = circle_v_margin
-    ''' Useless...
-    def computeMaxPixelErrorMargin(self, min_radius, max_radius):
+
+    def computeMaxRadiusRatio(self, distance):
         """
-        Computes the max error margin to allow between two vectors inside the grid for the detector
-        :param min_radius:
+        Computes the max ratio between the radius of the circle that is the farthest from the robot
+        and the radius of the circle that is the closest from the robot.
         :param distance: The distance between the robot and the farthest circle in the Connect 4 grid in cm
-        :return: The max error margin in cm
+        :return: The max radius ratio
         """
         max_angle = np.pi / 2.
         ab = distance  # The length of the vector between the robot and the
         #                farthest point of the farthest vector
-        bc = self.circle_h_space + self.circle  # The length of the vector between two grid circles
+        bc = self.circle  # The length of the vector of a circle
         ac = geom.al_kashi(b=ab, c=bc, angle=max_angle)   # The length of the vector between the robot and the closest
         #                                                   point of the farthest vector
         beta = geom.al_kashi(a=bc, b=ab, c=ac)  # Angle of vision of the robot to the farthest vector
@@ -46,5 +54,11 @@ class Connect4(object):
         #                                                  closest point of the closest vector
         alpha = geom.al_kashi(a=de, b=ad, c=ae)  # Angle of vision of the robot to the closest vector
         max_error = geom.point_distance()
-        return bc - (beta/alpha)*bc
-    '''
+        return alpha/beta
+
+    def computeMinMaxRadius(self, distance):
+        min_radius = estimate_minradius(distance)
+        max_radius = estimate_maxradius(distance)
+        radius_ratio = self.computeMaxRadiusRatio(distance)
+        max_radius = max_radius * radius_ratio
+        return min_radius, max_radius

@@ -6,7 +6,7 @@ __author__ = 'Anthony Rouneau'
 class ImpossibleEquationException(Exception):
     pass
 
-'''
+
 def al_kashi(a=None, b=None, c=None, angle=None):
     """
     Solve the Al-Khachi equation :  a^2 = b^2 + c^2 - 2*b*c*Cos(angle)
@@ -43,7 +43,6 @@ def al_kashi(a=None, b=None, c=None, angle=None):
             return np.arccos(np.divide(np.power(c, 2) - np.power(a, 2) + np.power(b, 2), 2*b*c))
     else:
         raise ImpossibleEquationException("There is no unknown")
-'''
 
 
 def vectorize((x0, x1), (y0, y1)):

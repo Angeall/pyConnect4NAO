@@ -11,6 +11,7 @@ __author__ = 'Anthony Rouneau'
 
 detector = c4.Connect4Detector()
 
+
 def get_f_score(nb_grid_circles, nb_noise_circles):
     total_circles = float((nb_grid_circles+nb_noise_circles))
     if total_circles == 0 or nb_grid_circles == 0:
@@ -205,14 +206,6 @@ def plotting_param1(dist, images):
         print "param1 : image " + str(counter) + " finished"
         counter += 1
     return results
-
-
-def estimate_minradius(dist):
-    return int(4.4143*(dist**(-1.1446)))
-
-
-def estimate_maxradius(dist):
-    return int(round(8.5468*(dist**(-0.7126))))
 
 
 def calibration_radius_error(dist, images, must_latex=True):
