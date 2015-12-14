@@ -56,9 +56,10 @@ class Connect4(object):
         max_error = geom.point_distance()
         return alpha/beta
 
-    def computeMinMaxRadius(self, distance):
+    def computeMinMaxRadius(self, distance, sloped=False):
         min_radius = estimate_minradius(distance)
         max_radius = estimate_maxradius(distance)
-        radius_ratio = self.computeMaxRadiusRatio(distance)
-        max_radius = max_radius * radius_ratio
+        if sloped:
+            radius_ratio = self.computeMaxRadiusRatio(distance)
+            max_radius *= radius_ratio
         return min_radius, max_radius
