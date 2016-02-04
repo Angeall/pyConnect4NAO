@@ -1,6 +1,8 @@
 from naoqi import ALProxy
 import numpy as np
 
+from nao.connect4tracker import Connect4Tracker
+
 __author__ = "Anthony Rouneau"
 
 IP = "192.168.2.16"
@@ -11,9 +13,13 @@ class NAOController:
     def __init__(self, robot_ip, port):
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
+        self.world_repr = ALProxy("ALWorldRepresentation", robot_ip, port)
         self.subscriber_id = "Connect4NAO"
+        self.camera_matrix = np.eye(3)
+        self.dist_coeff = np.array([0, 0, 0])
         # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
+        self.tracker = None
 
     def connectToCamera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
         try:
@@ -47,3 +53,19 @@ class NAOController:
     def unsubscribeAllCameras(self):
         for i in range(7):
             self.disconnectFromCamera(subscriber_id=self.subscriber_id + "_" + str(i))
+
+    def initializeTracking(self, rvec, tvec):
+        camera_position = self.motion_proxy.getPosition("CameraTop",
+                                                        self.motion_proxy.FRAME_WORLD,
+                                                        True)
+        self.tracker = Connect4Tracker(camera_position, rvec, tvec, self.camera_matrix, self.dist_coeff)
+
+    def refreshConnect4Position(self, rvec, tvec):
+        """
+        Refresh the connect 4 position in the World Representation of NAO
+
+        """
+        pass
+        # self.tracker.getPositio
+        # new_position_nao_world = self.tracker.transformPosition(model_position)
+        # self.world_repr.updatePosition(object_name, new_position_nao_world)

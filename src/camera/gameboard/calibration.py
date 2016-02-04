@@ -1,35 +1,97 @@
 import time
-
 import cv2
 import numpy as np
-
 import connect4detector as c4
-import src.nao.nao_controller as nao
-from src.utils import latex_generator
+import nao.nao_controller as nao
+from utils import latex_generator
+from connect4 import *
 
 __author__ = 'Anthony Rouneau'
 
+robot_ip = "192.168.2.16"
+port = 9559
 detector = c4.Connect4Detector()
+connect4 = Connect4()
+nao_c = None
+
+
+def clean():
+    global nao_c, cap
+    if nao_c is not None:
+        for i in range(7):
+            nao_c.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
+
+
+def get_nao_image(camera_num=0):
+    global cap, nao_c
+    if nao_c is None:
+        nao_c = nao.NAOController(robot_ip, port)
+        clean()
+        ret = nao_c.connectToCamera(res=1, fps=30, camera_num=camera_num)
+        if ret < 0:
+            print "Could not open camera"
+            return None
+    return nao_c.getImageFromCamera()
+
+
+def get_camera_information():
+    # termination criteria
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+    objp = np.zeros((6*7,3), np.float32)
+    objp[:, :2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
+
+    # Arrays to store object points and image points from all the images.
+    objpoints = []  # 3d point in real world space
+    imgpoints = []  # 2d points in image plane.
+
+    ret = False
+
+    while not ret:
+        img = get_nao_image()
+        if img is not None:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            # Find the chess board corners
+            ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
+
+            # If found, add object points, image points (after refining them)
+            if ret:
+                objpoints.append(objp)
+
+                cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                imgpoints.append(corners)
+
+                # Draw and display the corners
+                cv2.drawChessboardCorners(img, (7, 6), corners, ret)
+                cv2.imshow('img', img)
+                cv2.waitKey(500)
+
+    cv2.destroyAllWindows()
+    ret, mtx, disto, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
+    return mtx, disto
 
 
 def get_f_score(nb_grid_circles, nb_noise_circles):
-    total_circles = float((nb_grid_circles+nb_noise_circles))
+    total_circles = float((nb_grid_circles + nb_noise_circles))
     if total_circles == 0 or nb_grid_circles == 0:
         return 0
-    recall = float(nb_grid_circles)/total_circles
-    precision = float(nb_grid_circles)/42.0
-    return (2*precision*recall) / (precision + recall)
+    recall = float(nb_grid_circles) / total_circles
+    precision = float(nb_grid_circles) / 42.0
+    return (2 * precision * recall) / (precision + recall)
 
 
 def calibration_param2(dist, images, must_latex=True):
-    global detector
+    global detector, connect4
     titles = ["\\texttt{param2}", "Grid circles", "Noise circles",
               "Total", "Score"]
     results = []
     counter = 0
-    max_radius = estimate_maxradius(dist)
-    min_radius = estimate_minradius(dist)
-    min_dist = int(min_radius*1.195)
+    max_radius = connect4.estimate_maxradius(dist)
+    min_radius = connect4.estimate_minradius(dist)
+    max_error = connect4.computeMaxPixelError(min_radius)
+    min_dist = int(min_radius * 1.195)
     param1 = 60
 
     for img in images:
@@ -49,7 +111,7 @@ def calibration_param2(dist, images, must_latex=True):
                 circles = [[]]
             else:
                 try:
-                    detector.runDetection(circles[0])
+                    detector.runDetection(circles[0], pixel_error_margin=max_error)
                     nb_of_grid_circles = len(detector.relativeCoordinates)
                 except c4.CircleGridNotFoundException:
                     nb_of_grid_circles = 0
@@ -57,7 +119,7 @@ def calibration_param2(dist, images, must_latex=True):
             if score > best_score:
                 best_score = score
                 best_value = [param2]
-            elif abs(score-best_score)<0.00001:
+            elif abs(score - best_score) < 0.00001:
                 best_value.append(param2)
             line = [param2, nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles, len(circles[0]), score]
             table.append(line)
@@ -72,12 +134,13 @@ def calibration_param2(dist, images, must_latex=True):
 
 
 def plotting_param2(dist, images):
-    global detector
+    global detector, connect4
     results = {}
     counter = 0
-    max_radius = estimate_maxradius(dist)
-    min_radius = estimate_minradius(dist)
-    min_dist = int(min_radius*1.195)
+    max_radius = connect4.estimate_maxradius(dist)
+    min_radius = connect4.estimate_minradius(dist)
+    max_error = connect4.computeMaxPixelError(min_radius)
+    min_dist = int(min_radius * 1.195)
     param1 = 60
 
     for img in images:
@@ -96,7 +159,7 @@ def plotting_param2(dist, images):
             else:
                 # circles = np.uint16(np.around(circles))
                 try:
-                    detector.runDetection(circles[0])
+                    detector.runDetection(circles[0], pixel_error_margin=max_error)
                     nb_of_grid_circles = len(detector.relativeCoordinates)
                     score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                 except c4.CircleGridNotFoundException:
@@ -115,14 +178,15 @@ def plotting_param2(dist, images):
 
 
 def calibration_param1(dist, images, must_latex=True):
-    global detector
+    global detector, connect4
     titles = ["\\texttt{param1}", "Grid circles", "Noise circles",
               "Total", "Score"]
     results = []
     counter = 0
-    min_radius = estimate_minradius(dist)
-    max_radius = estimate_maxradius(dist)
-    min_dist = int(min_radius*1.195)
+    min_radius = connect4.estimate_minradius(dist)
+    max_radius = connect4.estimate_maxradius(dist)
+    max_error = connect4.computeMaxPixelError(min_radius)
+    min_dist = int(min_radius * 1.195)
     param2 = 10.5
     for img in images:
         table = []
@@ -142,7 +206,7 @@ def calibration_param1(dist, images, must_latex=True):
                 circles = [[]]
             else:
                 try:
-                    detector.runDetection(circles[0])
+                    detector.runDetection(circles[0], pixel_error_margin=max_error)
                     nb_of_grid_circles = len(detector.relativeCoordinates)
                     score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                 except c4.CircleGridNotFoundException:
@@ -151,7 +215,7 @@ def calibration_param1(dist, images, must_latex=True):
                 if score > best_score:
                     best_score = score
                     best_value = [param1]
-                elif abs(score-best_score)<0.00001:
+                elif abs(score - best_score) < 0.00001:
                     best_value.append(param1)
             line = [param1, nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles, len(circles[0]), score]
             table.append(line)
@@ -166,12 +230,13 @@ def calibration_param1(dist, images, must_latex=True):
 
 
 def plotting_param1(dist, images):
-    global detector
+    global detector, connect4
     results = {}
     counter = 0
-    min_radius = estimate_minradius(dist)
-    max_radius = estimate_maxradius(dist)
-    min_dist = int(min_radius*1.195)
+    min_radius = connect4.estimate_minradius(dist)
+    max_radius = connect4.estimate_maxradius(dist)
+    max_error = connect4.computeMaxPixelError(min_radius)
+    min_dist = int(min_radius * 1.195)
     param2 = 10.5
     for img in images:
         best_score = -1
@@ -189,7 +254,7 @@ def plotting_param1(dist, images):
                 circles = [[]]
             else:
                 try:
-                    detector.runDetection(circles[0])
+                    detector.runDetection(circles[0], pixel_error_margin=max_error)
                     nb_of_grid_circles = len(detector.relativeCoordinates)
                     score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                 except c4.CircleGridNotFoundException:
@@ -209,12 +274,12 @@ def plotting_param1(dist, images):
 
 
 def calibration_radius_error(dist, images, must_latex=True):
-    global detector
+    global detector, connect4
     titles = ["\\texttt{minRadius}", "\\texttt{maxRadius}", "\\texttt{minDist}", "Grid circles", "Noise circles",
               "Total", "Score"]
     results = []
     counter = 0
-    factor = 3.0*dist
+    factor = 3.0 * dist
     for img in images:
         table = []
         best_score = -1000
@@ -225,14 +290,15 @@ def calibration_radius_error(dist, images, must_latex=True):
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
         gray = cv2.medianBlur(gray, 3)
         while one_meter_value < 8:
-            dist_value = int(round(one_meter_value/dist))
-            upper_bound = (dist_value+1)
-            while upper_bound<(factor*one_meter_value)/dist:
-                lower_bound = (dist_value-1)
-                while lower_bound>(one_meter_value/factor)/dist:
+            dist_value = int(round(one_meter_value / dist))
+            upper_bound = (dist_value + 1)
+            while upper_bound < (factor * one_meter_value) / dist:
+                lower_bound = (dist_value - 1)
+                while lower_bound > (one_meter_value / factor) / dist:
                     min_radius = int(lower_bound)
                     max_radius = int(upper_bound)
-                    min_dist = round(lower_bound*1.125, 2)
+                    max_error = connect4.computeMaxPixelError(min_radius)
+                    min_dist = round(lower_bound * 1.125, 2)
                     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist, param1=48, param2=10.5,
                                                minRadius=min_radius, maxRadius=max_radius)
                     if circles is None:
@@ -242,7 +308,7 @@ def calibration_radius_error(dist, images, must_latex=True):
                     else:
                         # circles = np.uint16(np.around(circles))
                         try:
-                            detector.runDetection(circles[0])
+                            detector.runDetection(circles[0], pixel_error_margin=max_error)
                             nb_of_grid_circles = len(detector.relativeCoordinates)
                             score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
                         except c4.CircleGridNotFoundException:
@@ -251,10 +317,10 @@ def calibration_radius_error(dist, images, must_latex=True):
                         if score > best_score:
                             best_score = score
                             best_value = [(min_radius, max_radius)]
-                        elif abs(score-best_score)<0.00001:
+                        elif abs(score - best_score) < 0.00001:
                             best_value.append((min_radius, max_radius))
                     line = [lower_bound, upper_bound, min_dist, nb_of_grid_circles,
-                                  len(circles[0]) - nb_of_grid_circles, len(circles[0]), score]
+                            len(circles[0]) - nb_of_grid_circles, len(circles[0]), score]
                     table.append(line)
                     lower_bound -= 1
                 upper_bound += 1
@@ -276,7 +342,7 @@ def get_images(dist):
     max_time = 15
     start = time.time()
     current = time.time()
-    while current-start < max_time:
+    while current - start < max_time:
         images.append(nao_c.getImageFromCamera())
         current = time.time()
     for i, img in enumerate(images):
@@ -286,7 +352,7 @@ def get_images(dist):
 
 def evaluate(best_values, param, dist):
     scores = {}
-    titles = ["\\texttt{param" + param + "}","Occurrences"]
+    titles = ["\\texttt{param" + param + "}", "Occurrences"]
     table = []
     for iteration in best_values:
         for value in iteration:
@@ -318,25 +384,27 @@ def prepare_plot(scores, param_name):
                 big_dict[key].extend(dico[key])
             else:
                 big_dict[key] = dico[key]
-    data = "#" + param_name + " mean vr\n"
+    data = "#" + param_name + " mean var\n"
     for key in big_dict:
-        mean = round(np.mean(big_dict[key]), 2)
-        var = round(np.var(big_dict[key]), 2)
+        mean = round(np.mean(big_dict[key]), 4)
+        var = round(np.var(big_dict[key]), 4)
         data += str(key) + " " + str(mean) + " " + str(var) + '\n'
     data_file.write(data)
     data_file.close()
 
+
 if __name__ == "__main__":
-    dists = [0.4, 0.5, 1, 1.5, 2, 2.5]
+    dists = [0.4, 0.5, 1, 1.5, 2, 2.5, 3]
     # images = get_images(dist)
-    scores = []
+    scores2 = []
+    scores1 = []
     for dist in dists:
-        print "-"*20 + str(dist) + "-"*20
+        print "-" * 20 + str(dist) + "-" * 20
         images = load_images(dist)
-        #print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
-        print evaluate(calibration_param1(dist, images), "param1", dist)
-        #print evaluate(calibration_param2(dist, images), "param2", dist)
-        #scores.append(plotting_param1(dist, images))
-        #scores.append(plotting_param2(dist, images))
-    #prepare_plot(scores, "param1")
-    #prepare_plot(scores, "param2")
+        # print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
+        # print evaluate(calibration_param1(dist, images), "param1", dist)
+        # print evaluate(calibration_param2(dist, images), "param2", dist)
+        scores1.append(plotting_param1(dist, images))
+        # scores2.append(plotting_param2(dist, images))
+    prepare_plot(scores1, "param1")
+    # prepare_plot(scores2, "param2")

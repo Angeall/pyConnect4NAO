@@ -1,8 +1,8 @@
 __author__ = 'Angeall'
 import unittest
 
-from src.camera.connect4.connect4detector import *
-from src.utils.geom import *
+from camera.gameboard.connect4detector import *
+from utils.geom import *
 
 
 class DetectionTestCase(unittest.TestCase):
@@ -19,7 +19,7 @@ class DetectionTestCase(unittest.TestCase):
                     current_x += x_dist
                 current_y += y_dist
                 current_x = 0
-            # random.shuffle(connect4)
+            # random.shuffle(gameboard)
             return connect4
 
         # OK 7x8 rectangle

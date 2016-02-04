@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-import src.camera.connect4.connect4detector as c4
-import src.nao.nao_controller as naoc
+import camera.gameboard.connect4detector as c4
+import nao.nao_controller as naoc
 
 __author__ = 'Anthony Rouneau'
 robot_ip = "192.168.2.16"
@@ -35,7 +35,7 @@ def get_webcam_image():
 
 
 def get_nao_image(camera_num=0):
-    global cap, nao_c
+    global nao_c
     if nao_c is None:
         nao_c = naoc.NAOController(robot_ip, port)
         clean()

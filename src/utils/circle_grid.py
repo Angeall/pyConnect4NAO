@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from Queue import Queue
 from scipy.spatial import KDTree
+import utils.geom as geom
 
-import src.utils.geom as geom
 __author__ = 'Anthony Rouneau'
 
 
@@ -28,6 +28,7 @@ class CircleGridDetector(object):
     """
     Class used to detect a circle grid using circles detected in a picture.
     """
+
     def __init__(self):
         self.referenceImg = None
         self.referenceMapping = None
@@ -67,7 +68,7 @@ class CircleGridDetector(object):
         self.homography = None
 
     def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
-                       ref_img=None, ref_mapping=None, grid_shape=None):
+                     ref_img=None, ref_mapping=None, grid_shape=None):
         """
         Public method.
         Runs a new detection to find a Connect 4
@@ -96,13 +97,13 @@ class CircleGridDetector(object):
         else:
             bounds = None
         self.prepareConnection(circles, bounds)
-        self.connectCircles() # Fills originalArcIndices and originalArcVectors
+        self.connectCircles()  # Fills originalArcIndices and originalArcVectors
 
         self.prepareFiltering(pixel_error_margin, min_similar_vectors)
-        self.doublePassFilter()# Fills filteredArcIndices, filteredArcVectors and noiseCircles
+        self.doublePassFilter()  # Fills filteredArcIndices, filteredArcVectors and noiseCircles
 
         self.prepareBFS()
-        self.bfsMarking() # Fills relativeCoordinates
+        self.bfsMarking()  # Fills relativeCoordinates
 
         self.prepareGrid(grid_shape)
         self.checkForGrid()
@@ -154,7 +155,7 @@ class CircleGridDetector(object):
         if bounds is None:
             tuple_max = geom.max_tuple(circles)
             tuple_min = geom.min_tuple(circles)
-            bounds = (int(tuple_min[0]), int(tuple_min[1]), int(tuple_max[0])+1, int(tuple_max[1])+1)
+            bounds = (int(tuple_min[0]), int(tuple_min[1]), int(tuple_max[0]) + 1, int(tuple_max[1]) + 1)
         self.bounds = bounds
 
     def connectCircles(self):
@@ -174,7 +175,7 @@ class CircleGridDetector(object):
         subdiv.initDelaunay(self.bounds)
         for i in range(len(keypoints)):
             keypoint = keypoints[i]
-            if not self.noiseCircles[i]: # If the circle i is not a noisy circle
+            if not self.noiseCircles[i]:  # If the circle i is not a noisy circle
                 key = (float(keypoint[0]), float(keypoint[1]))
                 circles_dict[key] = i
                 subdiv.insert(key)
@@ -246,7 +247,7 @@ class CircleGridDetector(object):
             for j, connection in enumerate(self.originalArcVectors):
                 nearest_neighbours = t.query(connection, self.minSimilarVectors)[1]
                 if (geom.point_distance(connection, self.originalArcVectors[nearest_neighbours
-                                                        [(self.minSimilarVectors-1)]])) <= self.pixelErrorMargin:
+                [(self.minSimilarVectors - 1)]])) <= self.pixelErrorMargin:
                     filtered_arc_vectors.append(connection)
                     filtered_arc_indices.append(self.originalArcIndices[j])
         self.filteredArcVectors = filtered_arc_vectors
@@ -256,7 +257,7 @@ class CircleGridDetector(object):
         """
          Goal : erase noise, then try to connect more true circle centres (by avoiding noise)
          1) Connect into a graph
-         2)filter it
+         2) Filter it
          3) Remove every centre that is not linked with another centre after 2)
          4) Re-connect couple of centres, ignoring the centers removed in 3) and re-filter
         """
@@ -265,9 +266,9 @@ class CircleGridDetector(object):
         for i in range(len(self.circles)):
             centers_to_remove.append(True)
         for (center1, center2) in self.filteredArcIndices:
-            if centers_to_remove[center1]: # If the node was assumed as noisy, we set it as non-noisy
+            if centers_to_remove[center1]:  # If the node was assumed as noisy, we set it as non-noisy
                 centers_to_remove[center1] = False
-            if centers_to_remove[center2]: # If the node was assumed as noisy, we set it as non-noisy
+            if centers_to_remove[center2]:  # If the node was assumed as noisy, we set it as non-noisy
                 centers_to_remove[center2] = False
         # Second pass into the filters with a set of circles detected as noise
         self.noiseCircles = centers_to_remove
@@ -317,7 +318,7 @@ class CircleGridDetector(object):
         with relative positions.
         Use Breadth First Search.
         """
-        frontier = Queue() # Contains nodes and position of node
+        frontier = Queue()  # Contains nodes and position of node
         start_node = 0
         while self.noiseCircles[start_node]:
             start_node += 1
@@ -356,7 +357,8 @@ class CircleGridDetector(object):
                 if not adj_right_dict.has_key(y):
                     adj_right_dict[y] = [[], []]
         if not adj_right_dict.has_key(start_node):
-            return {(0, 0): start_node}
+            self.relativeCoordinates= {(0, 0): start_node}
+            return
 
         while not frontier.empty():
             [current_node, (right_cost, up_cost)] = frontier.get()
@@ -447,7 +449,7 @@ class CircleGridDetector(object):
         elif max_x + 1 != self.gridShape[1] or max_y + 1 != self.gridShape[0]:
             # Rectangle too big, need to consider inner rectangles
             rectangles = geom.get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
-                                              self.gridShape[0], self.gridShape[1])
+                                                   self.gridShape[0], self.gridShape[1])
             max_connection = -np.infty
             max_rectangle = None
             unsure = False
@@ -461,12 +463,12 @@ class CircleGridDetector(object):
                     unsure = False
                     max_connection = nb_connection
                     max_rectangle = rectangle
-                if unsure: # If two rectangles could be a circle grid, then we decide to reject this analysis
+                if unsure:  # If two rectangles could be a circle grid, then we decide to reject this analysis
                     raise self.exception
             [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = max_rectangle
             # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
             new_mapping = {(x, y): v for (x, y), v in self.relativeCoordinates.iteritems()
-                                                   if min_x <= x <= max_x and min_y <= y <= max_y}
+                           if min_x <= x <= max_x and min_y <= y <= max_y}
             self.relativeCoordinates = new_mapping
             self.normalizeRelativeCoordinates()
 
@@ -493,7 +495,8 @@ class CircleGridDetector(object):
         """
         rows, cols, _ = self.referenceImg.shape
         self.mappingHomography()
-        self.objectPerspective =  cv2.warpPerspective(self.img, self.homography,(cols, rows),flags=cv2.WARP_INVERSE_MAP)
+        self.objectPerspective = cv2.warpPerspective(self.img, self.homography, (cols, rows),
+                                                     flags=cv2.WARP_INVERSE_MAP)
 
     def getPerspective(self):
         """
