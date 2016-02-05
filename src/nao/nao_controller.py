@@ -60,12 +60,13 @@ class NAOController:
                                                         True)
         self.tracker = Connect4Tracker(camera_position, rvec, tvec, self.camera_matrix, self.dist_coeff)
 
-    def refreshConnect4Position(self, rvec, tvec):
+    def refreshConnect4Position(self, new_rvec, new_tvec):
         """
         Refresh the connect 4 position in the World Representation of NAO
-
+        :param new_tvec:
+        :param new_rvec:
         """
-        pass
+        self.tracker.refreshPositions(new_rvec, new_tvec)
         # self.tracker.getPositio
         # new_position_nao_world = self.tracker.transformPosition(model_position)
         # self.world_repr.updatePosition(object_name, new_position_nao_world)
