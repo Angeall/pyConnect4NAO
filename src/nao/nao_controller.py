@@ -5,7 +5,9 @@ from nao.connect4tracker import Connect4Tracker
 
 __author__ = "Anthony Rouneau"
 
+# IP = "127.0.0.1"
 IP = "192.168.2.16"
+# PORT = 56487
 PORT = 9559
 
 

@@ -79,12 +79,36 @@ def normalize(vector):
     return vector[0] / norm, vector[1] / norm
 
 
+def transform_vector(vector, rmat, tvec):
+    """
+    Apply a rotation and a translation to a vector of coordinates
+    :param vector: The coordinates to transform
+    :type vector: np.array
+    :param rmat: The rotation matrix
+    :type rmat: np.matrix
+    :param tvec: The translation vector
+    :type tvec: np.array
+    :return: The transformed coordinates
+    :rtype: np.array
+    """
+    # Assure that we can make the rotation using the matrix
+    assert(rmat.shape[1] == vector.size)
+    # Assure that we can translate the coordinates using tvec
+    assert(tvec.size == vector.size)
+    # Rotate the coordinates
+    temp = (rmat*vector.reshape((3, 1))).getA1()
+    # Translate the coordinates
+    temp += tvec
+    return temp
+
+
 def cluster_vectors(vectors, nb_clusters=4):
     """
     Cluster vectors into "nb_clusters" clusters.
     :param vectors: A list containing vectors
     :type vectors: list
     :param nb_clusters: The number of clusters returned
+    :type nb_clusters: int
     :return: A list with clusters and mean of clusters
     :rtype: list
     """

@@ -1,7 +1,9 @@
 import cv2
+import numpy as np
 
 from camera.gameboard import calibration
 from camera.gameboard.connect4 import Connect4
+from utils import geom
 
 __author__ = 'Anthony Rouneau'
 
@@ -28,8 +30,11 @@ class Connect4Tracker(object):
         self.disto_coeff = dist_coeff
         self.camera_position = camera_position
         self.connect4 = Connect4()
-        self.rmat = cv2.Rodrigues(rvec)
-        self.tvec = tvec
+        self.connect4_rmat = cv2.Rodrigues(rvec)
+        self.connect4_tvec = tvec
+        # TODO : find the camera axis rotation and translation
+        self.camera_rmat = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        self.camera_tvec = np.array([0, 0, 0])
         self.upper_hole_positions = self.initialize_positions()
 
     def initialize_positions(self):
@@ -40,15 +45,14 @@ class Connect4Tracker(object):
             model_coord_1 = self.connect4.getUpperHoleFromModel(i)
             # This is the translation vector to add to the left top corner in roder to get the middle of the hole
             middle_vector = (model_coord_1-model_coord_0)/2
-            model_coord = model_coord_0 + middle_vector
-            temp = (self.rmat*model_coord.reshape((3, 1))).getA1()
-            temp += self.tvec
-            positions.append(temp)
+            model_coord = model_coord_0 + middle_vector  # The coordinates of the middle of the hole
+            new_coord = geom.transform_vector(model_coord, self.connect4_rmat, self.connect4_tvec) # Rotate and translate
+            positions.append(new_coord)
         return positions
 
     def refreshPositions(self, new_rvec, new_tvec):
-        self.rmat = cv2.Rodrigues(new_rvec)
-        self.tvec = new_tvec
+        self.connect4_rmat = cv2.Rodrigues(new_rvec)
+        self.connect4_tvec = new_tvec
         self.upper_hole_positions = self.initialize_positions()
         pass
 
@@ -60,7 +64,7 @@ class Connect4Tracker(object):
         :param new_position: the new position of the object in the camera world (solvePnP result)
         :return: the new position of the object in the NAO World
         """
-        return cv2.projectPoints(self.connect4.model[model_index], self.rvec, self.tvec, self.camera_matrix,
+        return cv2.projectPoints(self.connect4.model[model_index], self.rvec, self.connect4_tvec, self.camera_matrix,
                                  self.disto_coeff)
 
 
