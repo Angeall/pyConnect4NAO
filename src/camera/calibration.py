@@ -1,10 +1,11 @@
 import time
+
 import cv2
-import numpy as np
+
 import connect4detector as c4
 import nao.nao_controller as nao
+from connect4.connect4 import *
 from utils import latex_generator
-from connect4 import *
 
 __author__ = 'Anthony Rouneau'
 
@@ -35,20 +36,17 @@ def get_nao_image(camera_num=0):
 
 
 def get_camera_information():
-    # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((6*7,3), np.float32)
     objp[:, :2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
 
-    # Arrays to store object points and image points from all the images.
-    objpoints = []  # 3d point in real world space
-    imgpoints = []  # 2d points in image plane.
+    objpoints = []  # 3d point
+    imgpoints = []  # 2d point
 
-    ret = False
+    finished = False
 
-    while not ret:
+    while not finished:
         img = get_nao_image()
         if img is not None:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -56,7 +54,7 @@ def get_camera_information():
             # Find the chess board corners
             ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
 
-            # If found, add object points, image points (after refining them)
+            # If the chessboard is found, add object points, image points
             if ret:
                 objpoints.append(objp)
 
@@ -66,7 +64,10 @@ def get_camera_information():
                 # Draw and display the corners
                 cv2.drawChessboardCorners(img, (7, 6), corners, ret)
                 cv2.imshow('img', img)
-                cv2.waitKey(500)
+                if cv2.waitKey(2500) == 27:
+                    finished = True
+                if not finished:
+                    time.sleep(2)
 
     cv2.destroyAllWindows()
     ret, mtx, disto, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)

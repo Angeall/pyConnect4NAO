@@ -1,11 +1,13 @@
-__author__ = 'Angeall'
 import unittest
-
 from camera.gameboard.connect4detector import *
 from utils.geom import *
+import random
 
 
-class DetectionTestCase(unittest.TestCase):
+__author__ = 'Angeall'
+
+
+class Connect4DetectorTestCase(unittest.TestCase):
     def setUp(self):
         def create_connect4(x_dist=65, y_dist=55, max_x_error=10, max_y_error=8, hor=7, vert=6):
             connect4 = []
