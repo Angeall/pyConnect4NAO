@@ -64,9 +64,10 @@ def get_camera_information():
                 # Draw and display the corners
                 cv2.drawChessboardCorners(img, (7, 6), corners, ret)
                 cv2.imshow('img', img)
-                if cv2.waitKey(2500) == 27:
+                if cv2.waitKey(2500) == 27:  # ESC pressed ?
                     finished = True
                 if not finished:
+                    # We wait 2 seconds so the operator can move the chessboard
                     time.sleep(2)
 
     cv2.destroyAllWindows()
