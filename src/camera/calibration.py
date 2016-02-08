@@ -17,14 +17,13 @@ nao_c = None
 
 
 def clean():
-    global nao_c, cap
+    global nao_c
     if nao_c is not None:
-        for i in range(7):
-            nao_c.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
+        nao_c.clean()
 
 
 def get_nao_image(camera_num=0):
-    global cap, nao_c
+    global nao_c
     if nao_c is None:
         nao_c = nao.NAOController(robot_ip, port)
         clean()

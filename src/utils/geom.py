@@ -95,10 +95,10 @@ def transform_vector(vector, rmat, tvec):
     assert(rmat.shape[1] == vector.size)
     # Assure that we can translate the coordinates using tvec
     assert(tvec.size == vector.size)
-    # Rotate the coordinates
-    temp = (rmat*vector.reshape((3, 1))).getA1()
     # Translate the coordinates
-    temp += tvec
+    temp = vector + tvec
+    # Rotate the coordinates
+    temp = (rmat*temp.reshape((3, 1))).getA1()
     return temp
 
 

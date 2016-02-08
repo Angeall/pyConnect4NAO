@@ -24,20 +24,30 @@ class Connect4Tracker(object):
                    UPPER_HOLE_5_OBJECT,
                    UPPER_HOLE_6_OBJECT]
 
-    def __init__(self, camera_position, rvec, tvec, camera_matrix, dist_coeff):
+    def __init__(self, rvec, tvec, camera_matrix, dist_coeff):
+        """
+        Creates the tracker to refresh and keep the Connect 4 position in 3D
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :type rvec: np.array
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :type tvec: np.array
+        :param camera_matrix:
+        :type camera_matrix: np.matrix
+        :param dist_coeff:
+        :type dist_coeff: np.matrix
+        """
         # Transformation from camera's world axes to nao's world axes
-        around_z = np.pi/2
-        around_y = np.pi/2
-        self.nao_axes_mat = np.matrix([[np.cos(around_z),    -np.sin(around_z),        0],
-                                       [np.sin(around_z),     np.cos(around_z),        0],
-                                       [0,                          0,               1]]) \
-                          * np.matrix([[np.cos(around_y),           0,          np.sin(around_y)],
-                                       [0,                          1,                0],
-                                       [-np.sin(around_y),          0,          np.cos(around_y)]])
+        around_x = np.pi/2
+        around_y = -np.pi/2
+        self.nao_axes_mat = np.matrix([[np.cos(around_y),           0,              np.sin(around_y)],
+                                       [0,                          1,                   0],
+                                       [-np.sin(around_y),          0,              np.cos(around_y)]])\
+                          * np.matrix([[1,                          0,                   0],
+                                       [0,                    np.cos(around_x),    -np.sin(around_x)],
+                                       [0,                    np.sin(around_x),     np.cos(around_x)]])
         # Camera parameters
         self.camera_matrix = camera_matrix
         self.disto_coeff = dist_coeff
-        self.camera_position = camera_position
         self.connect4 = Connect4()
         self.connect4_rmat = cv2.Rodrigues(rvec)
         self.connect4_tvec = tvec
@@ -47,8 +57,13 @@ class Connect4Tracker(object):
         self.upper_hole_positions = self.initialize_positions()
 
     def initialize_positions(self):
+        """
+        Computes the position of each upper hole of the board.
+        :return: The list that contains the upper holes position
+        :rtype: list
+        """
         positions = []
-        for i in range(0, len(objects_tab) * 2, 2):
+        for i in range(0, len(self.objects_tab) * 2, 2):
             # We take the top left corner and the bottom right corner of the hole
             model_coord_0 = self.connect4.getUpperHoleFromModel(i)
             model_coord_1 = self.connect4.getUpperHoleFromModel(i)
@@ -67,9 +82,14 @@ class Connect4Tracker(object):
             positions.append(new_coord)
         return positions
 
-    def refreshPositions(self, new_rvec, new_tvec):
-        self.connect4_rmat = cv2.Rodrigues(new_rvec)
-        self.connect4_tvec = new_tvec
+    def refreshPositions(self, rvec, tvec):
+        """
+        Refresh the connect 4 position
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :type rvec: np.array
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :type tvec: np.array
+        """
+        self.connect4_rmat = cv2.Rodrigues(rvec)
+        self.connect4_tvec = tvec
         self.upper_hole_positions = self.initialize_positions()
-
-    # TODO : storeObjects with detected position (solvePnP result)

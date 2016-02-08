@@ -88,6 +88,7 @@ def test():
             break
     return 0
 
+
 def test3():
     c4_detector = c4.Connect4Detector()
     dist = 1.0
@@ -121,6 +122,7 @@ def test3():
             close_camera()
             break
     return 0
+
 
 def test2():
     clean()
