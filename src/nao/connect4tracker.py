@@ -60,6 +60,10 @@ class Connect4Tracker(object):
             new_coord = geom.transform_vector(model_coord, self.connect4_rmat, self.connect4_tvec)
             # Rotate to get real position with NAO's axes
             new_coord = geom.transform_vector(new_coord, self.nao_axes_mat, np.array([0, 0, 0]))
+
+            # Add 3 rotation values (0) to match the Position6D requirements of NAO
+            for _ in range(3):
+                new_coord.append(0)
             positions.append(new_coord)
         return positions
 

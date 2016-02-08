@@ -73,8 +73,9 @@ class NAOController:
                                                  camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
         self.tracker = Connect4Tracker(camera_position, rvec, tvec, self.camera_matrix, self.dist_coeff)
         for i in range(len(self.tracker.objects_tab)):
+            position = self.tracker.upper_hole_positions[i]
             self.world_repr.storeObject(self.tracker.objects_tab[i], self.tracker.CAMERA_TOP_OBJECT,
-                                        self.tracker.upper_hole_positions[i], self.tracker.WORLD_CATEGORY_NAME, [])
+                                        position, self.tracker.WORLD_CATEGORY_NAME, [])
 
     # TODO : initializeTracking : convert position into Position6D (Euler) maybe 0, 0, 0 rotation ?
     # TODO : getConnect4HolePosition : convert Position6D to move the robot ?
