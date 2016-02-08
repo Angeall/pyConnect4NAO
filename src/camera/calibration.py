@@ -129,7 +129,7 @@ def calibration_param2(dist, images, must_latex=True):
         results.append(best_value)
         print "radius : image " + str(counter) + " finished"
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" +
+            latex_generator.generate_longtable(titles, "../../latex/generated_radius_" +
                                                str(dist) + "_" + str(counter), table)
         counter += 1
     return results
@@ -225,7 +225,7 @@ def calibration_param1(dist, images, must_latex=True):
         results.append(best_value)
         print "param1 : image " + str(counter) + " finished"
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_param1_" +
+            latex_generator.generate_longtable(titles, "../../latex/generated_param1_" +
                                                str(dist) + "_" + str(counter), table)
         counter += 1
     return results
@@ -330,7 +330,7 @@ def calibration_radius_error(dist, images, must_latex=True):
         print "radius : image " + str(counter) + " finished"
         results.append(best_value)
         if must_latex:
-            latex_generator.generate_longtable(titles, "../../../latex/generated_radius_" +
+            latex_generator.generate_longtable(titles, "../../latex/generated_radius_" +
                                                str(dist) + "_" + str(counter), table)
         counter += 1
     return results
@@ -365,20 +365,20 @@ def evaluate(best_values, param, dist):
     for value in scores:
         line = [value, scores[value]]
         table.append(line)
-    latex_generator.generate_longtable(titles, "../../../latex/value/" + str(param) + "_" + str(dist), table)
+    latex_generator.generate_longtable(titles, "../../latex/value/" + str(param) + "_" + str(dist), table)
     return best_values
 
 
 def load_images(dist):
     images = []
     for i in range(40):
-        filename = "../../../latex/img/" + str(dist) + "m/img_" + str(i) + ".png"
+        filename = "../../latex/img/" + str(dist) + "m/img_" + str(i) + ".png"
         images.append(cv2.imread(filename))
     return images
 
 
 def prepare_plot(scores, param_name):
-    data_file = open("../../../plot/" + param_name + ".dat", 'w')
+    data_file = open("../../plot/" + param_name + ".dat", 'w')
     big_dict = {}
     for dico in scores:
         for key in dico:
@@ -396,17 +396,22 @@ def prepare_plot(scores, param_name):
 
 
 if __name__ == "__main__":
-    dists = [0.4, 0.5, 1, 1.5, 2, 2.5, 3]
+    # dists = [0.4, 0.5, 1, 1.5, 2, 2.5, 3]
     # images = get_images(dist)
-    scores2 = []
-    scores1 = []
-    for dist in dists:
-        print "-" * 20 + str(dist) + "-" * 20
-        images = load_images(dist)
+    # scores2 = []
+    # scores1 = []
+    # for dist in dists:
+        # print "-" * 20 + str(dist) + "-" * 20
+        # images = load_images(dist)
         # print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
         # print evaluate(calibration_param1(dist, images), "param1", dist)
         # print evaluate(calibration_param2(dist, images), "param2", dist)
-        scores1.append(plotting_param1(dist, images))
+        # scores1.append(plotting_param1(dist, images))
         # scores2.append(plotting_param2(dist, images))
-    prepare_plot(scores1, "param1")
+    # prepare_plot(scores1, "param1")
     # prepare_plot(scores2, "param2")
+    camera_file = open("../../values/" + "camera_information" + ".dat", 'w')
+    cam_mat, cam_disto = get_camera_information()
+    camera_file.write(str(cam_mat) + "\n\n" + str(cam_disto))
+
+

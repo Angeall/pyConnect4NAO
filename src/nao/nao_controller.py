@@ -9,19 +9,28 @@ __author__ = "Anthony Rouneau"
 IP = "192.168.2.16"
 # PORT = 56487
 PORT = 9559
+FRAME_TORSO = 0
+FRAME_WORLD = 1
+FRAME_ROBOT = 2
 
 
 class NAOController:
     def __init__(self, robot_ip, port):
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
+        # The World Representation of the robot, used to track the Connect4
         self.world_repr = ALProxy("ALWorldRepresentation", robot_ip, port)
+        self.world_repr.createObjectCategory(self.tracker.WORLD_CATEGORY_NAME, True)
+        self.tracker = None  # Initialized when needed
+        # Camera parameters
         self.subscriber_id = "Connect4NAO"
-        self.camera_matrix = np.eye(3)
-        self.dist_coeff = np.array([0, 0, 0])
+        self.camera_matrix = np.matrix([[133.1424,     0.,   167.5946],
+                                        [0.,       126.5172, 113.2453],
+                                        [0.,           0.,       1.]])
+        self.dist_coeff = np.matrix([[-1.28412605e+00,  3.23529724e+00, -4.54783485e-04,
+                                      -1.10163065e-02, -2.50940379e+00]])
         # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
-        self.tracker = None
 
     def connectToCamera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
         try:
@@ -58,9 +67,20 @@ class NAOController:
 
     def initializeTracking(self, rvec, tvec):
         camera_position = self.motion_proxy.getPosition("CameraTop",
-                                                        self.motion_proxy.FRAME_WORLD,
+                                                        FRAME_TORSO,
                                                         True)
+        self.world_repr.storeObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
+                                                 camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
         self.tracker = Connect4Tracker(camera_position, rvec, tvec, self.camera_matrix, self.dist_coeff)
+        for i in range(len(self.tracker.objects_tab)):
+            self.world_repr.storeObject(self.tracker.objects_tab[i], self.tracker.CAMERA_TOP_OBJECT,
+                                        self.tracker.upper_hole_positions[i], self.tracker.WORLD_CATEGORY_NAME, [])
+
+    # TODO : initializeTracking : convert position into Position6D (Euler) maybe 0, 0, 0 rotation ?
+    # TODO : getConnect4HolePosition : convert Position6D to move the robot ?
+
+    def getConnect4HolePosition(self, hole_no):
+        return self.world_repr.getPosition6D("World", self.tracker.objects_tab[hole_no])
 
     def refreshConnect4Position(self, new_rvec, new_tvec):
         """
@@ -69,6 +89,6 @@ class NAOController:
         :param new_rvec:
         """
         self.tracker.refreshPositions(new_rvec, new_tvec)
-        # self.tracker.getPositio
-        # new_position_nao_world = self.tracker.transformPosition(model_position)
-        # self.world_repr.updatePosition(object_name, new_position_nao_world)
+        for i in range(len(self.tracker.objects_tab)):
+            self.world_repr.updatePosition(self.tracker.objects_tab[i], self.tracker.upper_hole_positions[i], False)
+
