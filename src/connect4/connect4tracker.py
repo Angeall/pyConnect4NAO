@@ -24,7 +24,7 @@ class Connect4Tracker(object):
                    UPPER_HOLE_5_OBJECT,
                    UPPER_HOLE_6_OBJECT]
 
-    def __init__(self, rvec, tvec, camera_matrix, dist_coeff):
+    def __init__(self, rvec, tvec):
         """
         Creates the tracker to refresh and keep the Connect 4 position in 3D
         :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
@@ -45,15 +45,10 @@ class Connect4Tracker(object):
                           * np.matrix([[1,                          0,                   0],
                                        [0,                    np.cos(around_x),    -np.sin(around_x)],
                                        [0,                    np.sin(around_x),     np.cos(around_x)]])
-        # Camera parameters
-        self.camera_matrix = camera_matrix
-        self.disto_coeff = dist_coeff
+        # Connect 4 Model and location information
         self.connect4 = Connect4()
         self.connect4_rmat = cv2.Rodrigues(rvec)
         self.connect4_tvec = tvec
-        # TODO : find the camera axis rotation and translation
-        self.camera_rmat = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        self.camera_tvec = np.array([0, 0, 0])
         self.upper_hole_positions = self.initialize_positions()
 
     def initialize_positions(self):

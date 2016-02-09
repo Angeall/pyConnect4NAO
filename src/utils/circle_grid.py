@@ -3,6 +3,8 @@ import numpy as np
 from Queue import Queue
 from scipy.spatial import KDTree
 import utils.geom as geom
+import connect4
+from connect4.connect4 import Connect4
 
 __author__ = 'Anthony Rouneau'
 
@@ -114,8 +116,10 @@ class CircleGridDetector(object):
 
         if ref_mapping is not None:
             self.circleGridMapping = geom.index_mapping_into_pixel_mapping(self.relativeCoordinates, self.circles)
-            if ref_img is not None and img is not None:
-                self.findPerspective()
+            if img is not None:
+                # TODO : 3D Model
+                if ref_img is not None:
+                    self.findPerspective()
 
     def getCircleGrid(self):
         """
@@ -386,6 +390,8 @@ class CircleGridDetector(object):
         Shift a mapping so that all values of the mapping are shifted by x_shift and y_shift.
         If x_shift is None, The lowest x value will be 0 and other x values are adapted in consequence.
         If y_shift is None, The lowest y value will be 0 and other y values are adapted in consequence.
+        :param x_shift: The shift to apply to the X axis
+        :param y_shift: The shift to apply to the Y axis
         """
         if x_shift is None and y_shift is None:
             (x_shift, y_shift) = geom.min_tuple(self.relativeCoordinates.keys())
@@ -485,6 +491,16 @@ class CircleGridDetector(object):
         obj = np.array(obj)
         scene = np.array(scene)
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
+
+    # TODO : afficher la matrice homography pour savoir si c'est une matrice de rotation ou de translation (ou les deux)
+    # def match3DModel(self):
+    #     c4 = Connect4()
+    #     object_points = c4.model[1]
+    #     image_points = []
+    #     for i in range(42):
+    #         image_points.append(0)
+    #     for key in self.referenceMapping.keys():
+    #         image_points[connect4.FRONT_HOLE_MAPPING[key]] = self.referenceMapping[key]*self.homography
 
     def findPerspective(self):
         """

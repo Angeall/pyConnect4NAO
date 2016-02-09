@@ -1,7 +1,7 @@
-import unittest
-from camera.connect4detector import *
 import random
+import unittest
 
+from connect4.connect4detector import *
 
 __author__ = 'Angeall'
 

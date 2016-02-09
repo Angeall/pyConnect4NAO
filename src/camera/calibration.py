@@ -2,8 +2,8 @@ import time
 
 import cv2
 
-import connect4detector as c4
 import nao.nao_controller as nao
+from connect4 import connect4detector as c4
 from connect4.connect4 import *
 from utils import latex_generator
 
@@ -89,8 +89,8 @@ def calibration_param2(dist, images, must_latex=True):
               "Total", "Score"]
     results = []
     counter = 0
-    max_radius = connect4.estimate_maxradius(dist)
-    min_radius = connect4.estimate_minradius(dist)
+    max_radius = connect4.estimateMaxRadius(dist)
+    min_radius = connect4.estimateMinRadius(dist)
     max_error = connect4.computeMaxPixelError(min_radius)
     min_dist = int(min_radius * 1.195)
     param1 = 60
@@ -138,8 +138,8 @@ def plotting_param2(dist, images):
     global detector, connect4
     results = {}
     counter = 0
-    max_radius = connect4.estimate_maxradius(dist)
-    min_radius = connect4.estimate_minradius(dist)
+    max_radius = connect4.estimateMaxRadius(dist)
+    min_radius = connect4.estimateMinRadius(dist)
     max_error = connect4.computeMaxPixelError(min_radius)
     min_dist = int(min_radius * 1.195)
     param1 = 60
@@ -184,8 +184,8 @@ def calibration_param1(dist, images, must_latex=True):
               "Total", "Score"]
     results = []
     counter = 0
-    min_radius = connect4.estimate_minradius(dist)
-    max_radius = connect4.estimate_maxradius(dist)
+    min_radius = connect4.estimateMinRadius(dist)
+    max_radius = connect4.estimateMaxRadius(dist)
     max_error = connect4.computeMaxPixelError(min_radius)
     min_dist = int(min_radius * 1.195)
     param2 = 10.5
@@ -234,8 +234,8 @@ def plotting_param1(dist, images):
     global detector, connect4
     results = {}
     counter = 0
-    min_radius = connect4.estimate_minradius(dist)
-    max_radius = connect4.estimate_maxradius(dist)
+    min_radius = connect4.estimateMinRadius(dist)
+    max_radius = connect4.estimateMaxRadius(dist)
     max_error = connect4.computeMaxPixelError(min_radius)
     min_dist = int(min_radius * 1.195)
     param2 = 10.5

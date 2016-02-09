@@ -204,43 +204,6 @@ def get_inner_rectangles(rectangle, y_max_length, x_max_length):
     return rectangles
 
 
-def map_virtual_circle_grid(x_start=56, y_start=31, x_dist=68, y_dist=55, hor=7, ver=6):
-    """
-    Create a virtual mapping using a pattern defined with the parameters
-    :param x_start: The starting x coordinate
-    :type x_start: int
-    :param y_start: The starting y coordinate
-    :type y_start: int
-    :param x_dist: The x distance between two keypoints
-    :type x_dist: int
-    :param y_dist: The y distance between two keypoints
-    :type y_dist: int
-    :param hor: The number of keypoints horizontally
-    :type hor: int
-    :param ver: The number of keypoints vertically
-    :type ver: int
-    :return: A mapping that defines a circle grid.
-             The keys are relative coordinates : (0, 0), (0, 1), ...
-             The values are pixel coordinates
-    :rtype: dict
-    """
-    grid = {}
-    current_x = x_start
-    current_y = y_start
-    y_pos = 0
-    x_pos = 0
-    for i in range(ver):
-        for j in range(hor):
-            grid[(x_pos, y_pos)] = np.array([current_x, current_y])
-            current_x += x_dist
-            x_pos += 1
-        x_pos = 0
-        current_x = x_start
-        current_y += y_dist
-        y_pos += 1
-    return grid
-
-
 def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
     """
     Transform an index mapping (indices referring to keypoints_list)  into a pixel mapping

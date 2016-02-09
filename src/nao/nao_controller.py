@@ -1,7 +1,7 @@
 import numpy as np
 from naoqi import ALProxy
 
-from camera.connect4tracker import Connect4Tracker
+from connect4.connect4tracker import Connect4Tracker
 
 __author__ = "Anthony Rouneau"
 
@@ -128,7 +128,7 @@ class NAOController:
                                                         True)
         self.world_repr.storeObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
                                                  camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
-        self.tracker = Connect4Tracker(rvec, tvec, self.camera_matrix, self.dist_coeff)
+        self.tracker = Connect4Tracker(rvec, tvec)
         for i in range(len(self.tracker.objects_tab)):
             position = self.tracker.upper_hole_positions[i]
             self.world_repr.storeObject(self.tracker.objects_tab[i], self.tracker.CAMERA_TOP_OBJECT,

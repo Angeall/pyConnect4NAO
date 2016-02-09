@@ -1,4 +1,6 @@
 import cv2
+
+from connect4.connect4 import Connect4
 from utils import geom
 from utils.circle_grid import CircleGridDetector, CircleGridNotFoundException
 
@@ -30,7 +32,7 @@ class Connect4Detector(CircleGridDetector):
     def __init__(self):
         connect4_img_name = "Connect4.png"
         self.connect4_img = cv2.imread(connect4_img_name)
-        self.connect4_mapping = geom.map_virtual_circle_grid()
+        self.connect4_mapping = Connect4().reference_mapping
         super(Connect4Detector, self).__init__()
         self.exception = Connect4GridNotFoundException
 
