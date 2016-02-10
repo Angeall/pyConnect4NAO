@@ -15,7 +15,7 @@ FRAME_ROBOT = 2
 
 
 class NAOController:
-    def __init__(self, robot_ip, port):
+    def __init__(self, robot_ip=IP, port=PORT):
         """
         Creates a new Virtual Controller for NAO
         :param robot_ip: The IP address of the robot
@@ -26,12 +26,11 @@ class NAOController:
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
-        self.motion_proxy.wakeUp()
-        ALProxy("AutonomousLife", robot_ip, port).setState("disabled")
+        # self.motion_proxy.wakeUp()
+        # ALProxy("AutonomousLife", robot_ip, port).setState("disabled")
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
         # The World Representation of the robot, used to track the Connect4
         self.world_repr = ALProxy("ALWorldRepresentation", robot_ip, port)
-        self.world_repr.createObjectCategory(self.tracker.WORLD_CATEGORY_NAME, True)
         self.tracker = None  # Initialized when needed
         self.tracking_initiated = False
         # Camera parameters
@@ -126,9 +125,10 @@ class NAOController:
         camera_position = self.motion_proxy.getPosition("CameraTop",
                                                         FRAME_TORSO,
                                                         True)
+        self.tracker = Connect4Tracker(rvec, tvec)
+        self.world_repr.createObjectCategory(self.tracker.WORLD_CATEGORY_NAME, True)
         self.world_repr.storeObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
                                                  camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
-        self.tracker = Connect4Tracker(rvec, tvec)
         for i in range(len(self.tracker.objects_tab)):
             position = self.tracker.upper_hole_positions[i]
             self.world_repr.storeObject(self.tracker.objects_tab[i], self.tracker.CAMERA_TOP_OBJECT,

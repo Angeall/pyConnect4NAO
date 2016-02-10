@@ -109,7 +109,7 @@ class Connect4(object):
     def estimateMinRadius(self, dist):
         """
         Estimate the minimum radius to detect in an image for a front hole
-        :param dist: The distance from the board
+        :param dist: The distance from the board in meters
         :return: The estimated minimum radius to detect
         """
         return int(round(4.4143*(dist**(-1.1446))/(self.circle/4.6)))
@@ -117,7 +117,7 @@ class Connect4(object):
     def estimateMaxRadius(self, dist):
         """
         Estimate the maximum radius to detect in an image for a front hole
-        :param dist: The  distance from the board
+        :param dist: The distance from the board in meters
         :return: The estimated maximum radius to detect
         """
         return int(round(8.5468*(dist**(-0.7126))/(self.circle/4.6)))
@@ -149,7 +149,7 @@ class Connect4(object):
     def computeMinMaxRadius(self, distance, sloped=False):
         """
         Get the minimum and the maximum radius to detect during the detection
-        :param distance: The distance between the robot and the farthest circle in the Connect 4 grid in cm
+        :param distance: The distance between the robot and the farthest circle in the Connect 4 grid in meters
         :type distance: float
         :param sloped: True if the connect 4 can be considered as sloped for the robot vision
         :type sloped: bool
@@ -159,9 +159,9 @@ class Connect4(object):
         min_radius = self.estimateMinRadius(distance)
         max_radius = self.estimateMaxRadius(distance)
         if sloped:
-            radius_ratio = self.computeMaxRadiusRatio(distance)
+            radius_ratio = self.computeMaxRadiusRatio(distance*100)
             max_radius *= radius_ratio
-        return min_radius, max_radius
+        return min_radius, int(max_radius)
 
     def computeMaxPixelError(self, min_radius):
         """
@@ -275,10 +275,7 @@ class Connect4(object):
                 current_z += self.hole_width
                 current_x += self.hole_h_space
 
-        model = []
-        model.append(corners)
-        model.append(front_holes)
-        model.append(upper_holes)
+        model = [corners, front_holes, upper_holes]
         return model
 
     def getUpperHoleFromModel(self, index):

@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from connect4.connect4 import Connect4
+from connect4 import Connect4
 from utils import geom
 
 __author__ = 'Anthony Rouneau'
@@ -31,10 +31,6 @@ class Connect4Tracker(object):
         :type rvec: np.array
         :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
         :type tvec: np.array
-        :param camera_matrix:
-        :type camera_matrix: np.matrix
-        :param dist_coeff:
-        :type dist_coeff: np.matrix
         """
         # Transformation from camera's world axes to nao's world axes
         around_x = np.pi/2

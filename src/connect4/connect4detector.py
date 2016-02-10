@@ -1,7 +1,8 @@
 import cv2
+import numpy as np
 
-from connect4.connect4 import Connect4
-from utils import geom
+import connect4
+from connect4 import Connect4
 from utils.circle_grid import CircleGridDetector, CircleGridNotFoundException
 
 __author__ = 'Angeall'
@@ -31,8 +32,9 @@ class Connect4Detector(CircleGridDetector):
 
     def __init__(self):
         connect4_img_name = "Connect4.png"
+        self.c4 = Connect4()
         self.connect4_img = cv2.imread(connect4_img_name)
-        self.connect4_mapping = Connect4().reference_mapping
+        self.connect4_mapping = self.c4.reference_mapping
         super(Connect4Detector, self).__init__()
         self.exception = Connect4GridNotFoundException
 
@@ -41,3 +43,19 @@ class Connect4Detector(CircleGridDetector):
         grid_shape = (6, 7)
         super(Connect4Detector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
                                                    self.connect4_img, self.connect4_mapping, grid_shape)
+
+    def match3DModel(self, camera_matrix, camera_dist):
+        c4 = Connect4()
+        object_points = np.array(c4.model[1])
+        image_points = np.array()
+        for i in range(42):
+            np.append(image_points, 0)
+        for key in self.referenceMapping.keys():
+            np.put(image_points, connect4.FRONT_HOLE_MAPPING[key], self.referenceMapping[key])
+        image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),
+                                                self.homography).reshape(-1, 2)
+        retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
+        if not retval:
+            print "ERR: SolvePnP failed"
+        return rvec, tvec
+

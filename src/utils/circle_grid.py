@@ -3,7 +3,6 @@ import numpy as np
 from Queue import Queue
 from scipy.spatial import KDTree
 import utils.geom as geom
-import connect4
 from connect4.connect4 import Connect4
 
 __author__ = 'Anthony Rouneau'
@@ -95,7 +94,8 @@ class CircleGridDetector(object):
         if grid_shape is None:
             raise CircleGridException("No grid_shape set, don't know what type of grid is searched")
         if img is not None:
-            bounds = (0, 0, img.shape[0] + 1, img.shape[1] + 1)
+            bounds = (0, 0, img.shape[1] + 1, img.shape[0] + 1)
+            # bounds = (0, 0, img.shape[0] + 1, img.shape[1] + 1)
         else:
             bounds = None
         self.prepareConnection(circles, bounds)
@@ -159,6 +159,7 @@ class CircleGridDetector(object):
         if bounds is None:
             tuple_max = geom.max_tuple(circles)
             tuple_min = geom.min_tuple(circles)
+            # bounds = (int(tuple_min[1]), int(tuple_min[0]), int(tuple_max[1]) + 1, int(tuple_max[0]) + 1)
             bounds = (int(tuple_min[0]), int(tuple_min[1]), int(tuple_max[0]) + 1, int(tuple_max[1]) + 1)
         self.bounds = bounds
 
@@ -493,14 +494,9 @@ class CircleGridDetector(object):
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
 
     # TODO : afficher la matrice homography pour savoir si c'est une matrice de rotation ou de translation (ou les deux)
-    # def match3DModel(self):
-    #     c4 = Connect4()
-    #     object_points = c4.model[1]
-    #     image_points = []
-    #     for i in range(42):
-    #         image_points.append(0)
-    #     for key in self.referenceMapping.keys():
-    #         image_points[connect4.FRONT_HOLE_MAPPING[key]] = self.referenceMapping[key]*self.homography
+    def match3DModel(self, camera_matrix, camera_dist):
+        # Need to define 3D model in subclass
+        return None
 
     def findPerspective(self):
         """
