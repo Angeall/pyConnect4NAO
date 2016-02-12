@@ -1,5 +1,10 @@
+import cv2
+
 import utils.geom as geom
 import numpy as np
+
+from connect4.frontholedetector import FrontHoleDetector
+from connect4.upperholedetector import UpperHoleDetector
 
 __author__ = 'Anthony Rouneau'
 
@@ -105,6 +110,8 @@ class Connect4(object):
         self.circles_v_margin = circle_v_margin
         self.reference_mapping = self.generate2DReference()
         self.model = self.generate3DModel()
+        self.front_hole_detector = FrontHoleDetector()
+        self.upper_hole_detector = UpperHoleDetector()
 
     def estimateMinRadius(self, dist):
         """
@@ -177,9 +184,11 @@ class Connect4(object):
         hyp = np.sqrt(hor**2 + ver**2)
         return 0.9*hyp
 
-    def generate2DReference(self, x_start=56, y_start=31, x_dist=68, y_dist=55, hor=7, ver=6):
+    @staticmethod
+    def generate2DReference(x_start=56, y_start=31, x_dist=68, y_dist=55, hor=7, ver=6):
         """
-        Create a virtual mapping using a pattern defined with the parameters
+        Create a virtual mapping using a pattern defined with the parameters that refers to the image of reference
+        for the homography
         :param x_start: The starting x coordinate
         :type x_start: int
         :param y_start: The starting y coordinate
@@ -277,6 +286,21 @@ class Connect4(object):
 
         model = [corners, front_holes, upper_holes]
         return model
+
+    def detectFrontHoles(self, img, distance, sloped=False, res=320):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        min_radius, max_radius = self.computeMinMaxRadius(distance, sloped)
+        pixel_error_margin = self.computeMaxPixelError(min_radius)
+        min_dist = int(min_radius * 1.195 * (res/320))
+        param2 = 10.5
+        param1 = 77
+        if sloped:
+            param2 = 8
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, min_dist,
+                                   param1=param1, param2=param2, minRadius=min_radius, maxRadius=max_radius)
+        self.front_hole_detector.runDetection(circles[0], pixel_error_margin=pixel_error_margin,
+                                              img=img)
 
     def getUpperHoleFromModel(self, index):
         """

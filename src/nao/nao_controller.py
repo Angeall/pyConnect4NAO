@@ -2,6 +2,7 @@ import numpy as np
 from naoqi import ALProxy
 
 from connect4.connect4tracker import Connect4Tracker
+from utils import geom
 
 __author__ = "Anthony Rouneau"
 
@@ -122,13 +123,9 @@ class NAOController:
         :type tvec: np.array
         """
         self.tracking_initiated = True
-        camera_position = self.motion_proxy.getPosition("CameraTop",
-                                                        FRAME_TORSO,
-                                                        True)
         self.tracker = Connect4Tracker(rvec, tvec)
         self.world_repr.createObjectCategory(self.tracker.WORLD_CATEGORY_NAME, True)
-        self.world_repr.storeObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
-                                                 camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
+        self.refreshCameraPosition()
         for i in range(len(self.tracker.objects_tab)):
             position = self.tracker.upper_hole_positions[i]
             self.world_repr.storeObject(self.tracker.objects_tab[i], self.tracker.CAMERA_TOP_OBJECT,
@@ -159,4 +156,42 @@ class NAOController:
         self.tracker.refreshPositions(rvec, tvec)
         for i in range(len(self.tracker.objects_tab)):
             self.world_repr.updatePosition(self.tracker.objects_tab[i], self.tracker.upper_hole_positions[i], False)
+
+    def refreshCameraPosition(self):
+        camera_position = self.getCameraPositionFromTorso()
+        if self.tracking_initiated:
+            self.world_repr.updateObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
+                                                      camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
+        else:
+            self.world_repr.storeObjectWithReference(self.tracker.CAMERA_TOP_OBJECT, "Robot_Torso", "HeadPitch",
+                                                     camera_position, self.tracker.WORLD_CATEGORY_NAME, [])
+
+    def lookAtCoordinates(self, coordinates):
+        """
+        Make the robot look at a certain coordinate
+        :param coordinates: The coordinates of the object to look at (relative to the robot torso)
+        """
+        camera_position = self.getCameraPositionFromTorso()
+        translated_camera = [camera_position[0]+1, camera_position[1], camera_position[2]]
+        camera_vector = geom.vectorize(camera_position, translated_camera)
+        # Head Yaw
+        yaw_coordinates = [coordinates[0], coordinates[1], camera_position[2]]
+        yaw_vector = geom.vectorize(camera_position, yaw_coordinates)
+        yaw = np.arccos(np.dot(camera_vector, yaw_vector))
+        # Head Pitch
+        pitch_coordinates = [coordinates[0], camera_position[1], coordinates[2]]
+        pitch_vector = geom.vectorize(camera_position, pitch_coordinates)
+        pitch = np.arccos(np.dot(camera_vector, pitch_vector))
+        # Moving the robot's head
+        names = ["HeadYaw", "HeadPitch"]
+        angles = [yaw, pitch]
+        fraction_max_speed = 0.4
+        self.motion_proxy.setAngles(names, angles, fraction_max_speed)
+
+    def getCameraPositionFromTorso(self):
+        return self.motion_proxy.getPosition("CameraTop",
+                                             FRAME_TORSO,
+                                             True)
+
+
 

@@ -8,24 +8,24 @@ from utils.circle_grid import CircleGridDetector, CircleGridNotFoundException
 __author__ = 'Angeall'
 
 
-class Connect4DetectionException(Exception):
+class FrontHoleDetectionException(Exception):
     """
     Exception raised when there was an error during the detection
     """
     pass
 
 
-class Connect4GridNotFoundException(CircleGridNotFoundException):
+class FrontHoleGridNotFoundException(CircleGridNotFoundException):
     """
     Exception that will be raised when a Grid could not be found in the picture
     """
     NO_GRID = "Could not find a Connect 4 with the given parameters"
 
     def __init__(self, message=NO_GRID):
-        super(Connect4GridNotFoundException, self).__init__(message)
+        super(FrontHoleGridNotFoundException, self).__init__(message)
 
 
-class Connect4Detector(CircleGridDetector):
+class FrontHoleDetector(CircleGridDetector):
     """
     Class used to detect a Connect 4 (a 6x7 circle grid)
     """
@@ -35,16 +35,33 @@ class Connect4Detector(CircleGridDetector):
         self.c4 = Connect4()
         self.connect4_img = cv2.imread(connect4_img_name)
         self.connect4_mapping = self.c4.reference_mapping
-        super(Connect4Detector, self).__init__()
-        self.exception = Connect4GridNotFoundException
+        super(FrontHoleDetector, self).__init__()
+        self.exception = FrontHoleGridNotFoundException
 
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
                      ref_img=None, ref_mapping=None, grid_shape=(6, 7)):
+        """
+        Runs the detection on circles
+        :param circles: The circles detected in an image that could be the connect 4 front holes
+        :param pixel_error_margin: The maximum error to allow to consider two circles as neighbours
+        :param min_similar_vectors: The minimum number of similar vectors to consider a connection
+                                    between two circles as not a noise
+        :param img: The image in which the detection has been
+        :param ref_img: The image of reference
+        :param ref_mapping: The mapping from front holes position ((0, 0), (0, 1) , ...) to pixels in image of reference
+        :param grid_shape: The shape of the grid (used in superclass, but constant in Connect 4 : (6, 7))
+        """
         grid_shape = (6, 7)
-        super(Connect4Detector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
-                                                   self.connect4_img, self.connect4_mapping, grid_shape)
+        super(FrontHoleDetector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
+                                                    self.connect4_img, self.connect4_mapping, grid_shape)
 
     def match3DModel(self, camera_matrix, camera_dist):
+        """
+        Find the 3D coordinates of the Connect4
+        :param camera_matrix: The intrinsic camera matrix that can be get via camera calibration
+        :param camera_dist: The intrinsic camera distortion coefficients that can be get via camera calibration
+        :return: (rvec, tvec) : rvec = rotation vector, tvec translation vector
+        """
         c4 = Connect4()
         object_points = np.array(c4.model[1])
         image_points = np.array()

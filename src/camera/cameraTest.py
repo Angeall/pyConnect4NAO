@@ -3,7 +3,7 @@ from time import sleep
 import cv2
 import numpy as np
 
-import connect4.connect4detector as c4
+import connect4.frontholedetector as c4
 import nao.nao_controller as naoc
 from connect4.connect4 import Connect4
 
@@ -60,7 +60,7 @@ def close_camera():
 
 
 def test():
-    c4_detector = c4.Connect4Detector()
+    c4_detector = c4.FrontHoleDetector()
     while True:
         i = 0
         # img = get_webcam_image()
@@ -94,7 +94,7 @@ def test():
 
 
 def test3():
-    c4_detector = c4.Connect4Detector()
+    c4_detector = c4.FrontHoleDetector()
     dist = 1.
     sloped = False
     min_radius, max_radius = Connect4().computeMinMaxRadius(dist, sloped)
@@ -147,7 +147,7 @@ def test3():
 
 
 def tracker_test():
-    c4_detector = c4.Connect4Detector()
+    c4_detector = c4.FrontHoleDetector()
     dist = 1.
     sloped = False
     min_radius, max_radius = Connect4().computeMinMaxRadius(dist, sloped)

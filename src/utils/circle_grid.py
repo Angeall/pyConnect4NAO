@@ -3,7 +3,6 @@ import numpy as np
 from Queue import Queue
 from scipy.spatial import KDTree
 import utils.geom as geom
-from connect4.connect4 import Connect4
 
 __author__ = 'Anthony Rouneau'
 

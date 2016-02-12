@@ -3,7 +3,7 @@ import time
 import cv2
 
 import nao.nao_controller as nao
-from connect4 import connect4detector as c4
+from connect4 import frontholedetector as c4
 from connect4.connect4 import *
 from utils import latex_generator
 
@@ -11,7 +11,7 @@ __author__ = 'Anthony Rouneau'
 
 robot_ip = "192.168.2.16"
 port = 9559
-detector = c4.Connect4Detector()
+detector = c4.FrontHoleDetector()
 connect4 = Connect4()
 nao_c = None
 
