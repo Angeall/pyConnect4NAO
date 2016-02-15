@@ -54,10 +54,9 @@ class Connect4Tracker(object):
         :rtype: list
         """
         positions = []
-        for i in range(0, len(self.objects_tab) * 2, 2):
+        for i in range(len(self.objects_tab)):
             # We take the top left corner and the bottom right corner of the hole
-            model_coord_0 = self.connect4.getUpperHoleFromModel(i)
-            model_coord_1 = self.connect4.getUpperHoleFromModel(i)
+            model_coord_0, _, _, model_coord_1 = self.connect4.getUpperHoleFromModel(i)
             # This is the translation vector to add to the left top corner in roder to get the middle of the hole
             middle_vector = (model_coord_1 - model_coord_0) / 2
             model_coord = model_coord_0 + middle_vector  # The coordinates of the middle of the hole

@@ -8,24 +8,24 @@ from utils.circle_grid import CircleGridDetector, CircleGridNotFoundException
 __author__ = 'Angeall'
 
 
-class FrontHoleDetectionException(Exception):
+class FrontHolesDetectionException(Exception):
     """
     Exception raised when there was an error during the detection
     """
     pass
 
 
-class FrontHoleGridNotFoundException(CircleGridNotFoundException):
+class FrontHolesGridNotFoundException(CircleGridNotFoundException):
     """
     Exception that will be raised when a Grid could not be found in the picture
     """
     NO_GRID = "Could not find a Connect 4 with the given parameters"
 
     def __init__(self, message=NO_GRID):
-        super(FrontHoleGridNotFoundException, self).__init__(message)
+        super(FrontHolesGridNotFoundException, self).__init__(message)
 
 
-class FrontHoleDetector(CircleGridDetector):
+class FrontHolesDetector(CircleGridDetector):
     """
     Class used to detect a Connect 4 (a 6x7 circle grid)
     """
@@ -35,8 +35,8 @@ class FrontHoleDetector(CircleGridDetector):
         self.c4 = Connect4()
         self.connect4_img = cv2.imread(connect4_img_name)
         self.connect4_mapping = self.c4.reference_mapping
-        super(FrontHoleDetector, self).__init__()
-        self.exception = FrontHoleGridNotFoundException
+        super(FrontHolesDetector, self).__init__()
+        self.exception = FrontHolesGridNotFoundException
 
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
                      ref_img=None, ref_mapping=None, grid_shape=(6, 7)):
@@ -52,8 +52,8 @@ class FrontHoleDetector(CircleGridDetector):
         :param grid_shape: The shape of the grid (used in superclass, but constant in Connect 4 : (6, 7))
         """
         grid_shape = (6, 7)
-        super(FrontHoleDetector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
-                                                    self.connect4_img, self.connect4_mapping, grid_shape)
+        super(FrontHolesDetector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
+                                                     self.connect4_img, self.connect4_mapping, grid_shape)
 
     def match3DModel(self, camera_matrix, camera_dist):
         """

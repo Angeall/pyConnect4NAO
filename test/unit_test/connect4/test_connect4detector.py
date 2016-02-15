@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from connect4.frontholedetector import *
+from connect4.frontholesdetector import *
 
 __author__ = 'Angeall'
 
@@ -101,7 +101,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
             y0 = y - tuple_min[1]
             temp.append((x0, y0))
         self.connect4_1 = temp
-        self.c4Detector = FrontHoleDetector()
+        self.c4Detector = FrontHolesDetector()
         self.circleGridDetector = CircleGridDetector()
 
     def test_connect_keypoints_perfect(self):
