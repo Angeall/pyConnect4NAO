@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+
 __author__ = 'Anthony Rouneau'
 
 
@@ -27,25 +28,25 @@ def al_kashi(a=None, b=None, c=None, angle=None):
     for i in args:
         if i is None:
             nones.append(i)
-    if len(nones)>1:
+    if len(nones) > 1:
         raise ImpossibleEquationException("Too many unknown in equation")
     elif len(nones) == 1:
         if a is None:
-            return np.sqrt(np.power(b, 2) + np.power(c, 2) - (2*b*c*np.cos(angle)))
+            return np.sqrt(np.power(b, 2) + np.power(c, 2) - (2 * b * c * np.cos(angle)))
         elif b is None:
-            return max(np.roots([1, 2*c*np.cos(angle), - np.power(a, 2) + np.power(c, 2)]))
+            return max(np.roots([1, 2 * c * np.cos(angle), - np.power(a, 2) + np.power(c, 2)]))
         elif c is None:
-            return max(np.roots([1, 2*b*np.cos(angle), - np.power(a, 2) + np.power(b, 2)]))
+            return max(np.roots([1, 2 * b * np.cos(angle), - np.power(a, 2) + np.power(b, 2)]))
         elif angle is None:
             a = float(a)
             b = float(b)
             c = float(c)
-            return np.arccos(np.divide(np.power(c, 2) - np.power(a, 2) + np.power(b, 2), 2*b*c))
+            return np.arccos(np.divide(np.power(c, 2) - np.power(a, 2) + np.power(b, 2), 2 * b * c))
     else:
         raise ImpossibleEquationException("There is no unknown")
 
 
-def vectorize((x0, x1), (y0, y1)):
+def vectorize(p1, p2):
     """
     Computes the vector made by the two input points
     :param p1: point 1
@@ -55,6 +56,8 @@ def vectorize((x0, x1), (y0, y1)):
     :return: The vector made by p1 and p2
     :rtype: tuple
     """
+    (x0, x1) = p1
+    (y0, y1) = p2
     return np.array([float(y0) - float(x0), float(y1) - float(x1)])
 
 
@@ -92,13 +95,13 @@ def transform_vector(vector, rmat, tvec):
     :rtype: np.array
     """
     # Assure that we can make the rotation using the matrix
-    assert(rmat.shape[1] == vector.size)
+    assert (rmat.shape[1] == len(vector))
     # Assure that we can translate the coordinates using tvec
-    assert(tvec.size == vector.size)
+    assert (tvec.size == len(vector))
     # Translate the coordinates
-    temp = vector + tvec
     # Rotate the coordinates
-    temp = (rmat*temp.reshape((3, 1))).getA1()
+    temp = np.dot(rmat, vector.reshape((3, 1))).reshape(1, 3)[0]
+    temp = temp + tvec.reshape(1, 3)[0]
     return temp
 
 
@@ -219,3 +222,33 @@ def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
         keypoint = keypoints_list[index_mapping[key]]
         mapping_pixels[key] = np.array([keypoint[0], keypoint[1]])
     return mapping_pixels
+
+
+def convert_euler_to_matrix(rvec):
+    """
+    Convert euler angles ZYX into a 3D rotation matrix
+    :param rvec: The vector of roation in Euler angle in the form : [roll, pitch, yaw]
+    :type rvec: tuple
+    :return: The rotation matrix that corresponds to the input rotation vector
+    :rtype: np.matrix
+    """
+    [roll, pitch, yaw] = rvec
+    c1 = np.cos(yaw)
+    s1 = np.sin(yaw)
+    c2 = np.cos(pitch)
+    s2 = np.sin(pitch)
+    c3 = np.cos(roll)
+    s3 = np.sin(roll)
+
+    m00 = c1 * c2
+    m01 = c1 * s2 * s3 - c3 * s1
+    m02 = s1 * s3 + c1 * c3 * s2
+    m10 = c2 * s1
+    m11 = c1 * c3 + s1 * s2 * s3
+    m12 = c3 * s1 * s2 - c1 * s3
+    m20 = -s2
+    m21 = c2 * s3
+    m22 = c2 * c3
+    return np.matrix([[m00, m01, m02],
+                      [m10, m11, m12],
+                      [m20, m21, m22]])

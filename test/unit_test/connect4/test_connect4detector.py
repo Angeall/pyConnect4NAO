@@ -1,7 +1,9 @@
 import random
+import utils.geom as geom
 import unittest
 
-from connect4.frontholesdetector import *
+from connect4.detector.front_holes import *
+from connect4.model.default_model import DefaultConnect4Model
 
 __author__ = 'Angeall'
 
@@ -101,7 +103,8 @@ class Connect4DetectorTestCase(unittest.TestCase):
             y0 = y - tuple_min[1]
             temp.append((x0, y0))
         self.connect4_1 = temp
-        self.c4Detector = FrontHolesDetector()
+        self.connect4_model = DefaultConnect4Model()
+        self.c4Detector = FrontHolesDetector(self.connect4_model)
         self.circleGridDetector = CircleGridDetector()
 
     def test_connect_keypoints_perfect(self):

@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
 
-import connect4
-from connect4 import Connect4
-from utils.circle_grid import CircleGridDetector, CircleGridNotFoundException
+from connect4.image.default_image import DefaultConnect4Image
+from utils.circle_grid_detector import CircleGridDetector, CircleGridNotFoundException
 
 __author__ = 'Angeall'
 
@@ -30,16 +29,18 @@ class FrontHolesDetector(CircleGridDetector):
     Class used to detect a Connect 4 (a 6x7 circle grid)
     """
 
-    def __init__(self):
-        connect4_img_name = "Connect4.png"
-        self.c4 = Connect4()
-        self.connect4_img = cv2.imread(connect4_img_name)
-        self.connect4_mapping = self.c4.reference_mapping
+    def __init__(self, connect4_model):
         super(FrontHolesDetector, self).__init__()
+        # Image of reference
+        self.model = connect4_model
+        self.image_of_reference = connect4_model.image_of_reference
+        connect4_img_name = self.image_of_reference.IMAGE_NAME
+        self.connect4_img = cv2.imread(connect4_img_name)
+        self.referenceMapping = self.image_of_reference.pixel_mapping
         self.exception = FrontHolesGridNotFoundException
 
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
-                     ref_img=None, ref_mapping=None, grid_shape=(6, 7)):
+                     ref_img=None, grid_shape=(6, 7)):
         """
         Runs the detection on circles
         :param circles: The circles detected in an image that could be the connect 4 front holes
@@ -48,12 +49,11 @@ class FrontHolesDetector(CircleGridDetector):
                                     between two circles as not a noise
         :param img: The image in which the detection has been
         :param ref_img: The image of reference
-        :param ref_mapping: The mapping from front holes position ((0, 0), (0, 1) , ...) to pixels in image of reference
         :param grid_shape: The shape of the grid (used in superclass, but constant in Connect 4 : (6, 7))
         """
         grid_shape = (6, 7)
         super(FrontHolesDetector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
-                                                     self.connect4_img, self.connect4_mapping, grid_shape)
+                                                     self.connect4_img, grid_shape)
 
     def match3DModel(self, camera_matrix, camera_dist):
         """
@@ -62,15 +62,22 @@ class FrontHolesDetector(CircleGridDetector):
         :param camera_dist: The intrinsic camera distortion coefficients that can be get via camera calibration
         :return: (rvec, tvec) : rvec = rotation vector, tvec translation vector
         """
-        c4 = Connect4()
-        object_points = np.array(c4.model[1])
-        image_points = np.array()
+        object_points = np.array(self.model.three_d[1])
+        image_points = []
         for i in range(42):
-            np.append(image_points, 0)
+            image_points.append(0)
+        print "Reference Mapping", self.referenceMapping, "\n\n"
+        print "Reference Mapping Keys", self.referenceMapping.keys()
         for key in self.referenceMapping.keys():
-            np.put(image_points, connect4.FRONT_HOLE_MAPPING[key], self.referenceMapping[key])
+            model_key = self.model.FRONT_HOLE_MAPPING[key]
+            print "MODEL KEY", model_key, "Reference Value", self.referenceMapping[key]
+            image_points[model_key] = self.referenceMapping[key]
+        print "IMG POINTS INIT", image_points
+        print "OBJ POINTS", object_points
         image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),
                                                 self.homography).reshape(-1, 2)
+        print "IMG POINTS", image_points
+        # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, np.eye(3), None)
         retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
         if not retval:
             print "ERR: SolvePnP failed"

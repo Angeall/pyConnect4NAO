@@ -1,53 +1,58 @@
 import time
 
-import cv2
-
-import nao.nao_controller as nao
-from connect4 import frontholesdetector as c4
+from nao.controller.motion import MotionController
 from connect4.connect4 import *
+from connect4.detector import front_holes as c4
+from nao.controller.video import VideoController
 from utils import latex_generator
 
 __author__ = 'Anthony Rouneau'
 
-robot_ip = "192.168.2.16"
-port = 9559
-detector = c4.FrontHolesDetector()
 connect4 = Connect4()
-nao_c = None
+connect4_model = connect4.model
+detector = c4.FrontHolesDetector(connect4_model)
+nao_video = None
+nao_motion = None
 
 
 def clean():
-    global nao_c
-    if nao_c is not None:
-        nao_c.clean()
+    global nao_video
+    if nao_video is not None:
+        nao_video.clean()
 
 
 def get_nao_image(camera_num=0):
-    global nao_c
-    if nao_c is None:
-        nao_c = nao.NAOController(robot_ip, port)
+    global nao_video, nao_motion
+    if nao_video is None:
+        nao_video = VideoController()
+        nao_motion = MotionController()
         clean()
-        ret = nao_c.connectToCamera(res=1, fps=30, camera_num=camera_num)
+        ret = nao_video.connectToCamera(res=1, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
-    return nao_c.getImageFromCamera()
+    return nao_video.getImageFromCamera()
 
 
 def get_camera_information():
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    objp = np.zeros((6*7,3), np.float32)
-    objp[:, :2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
+    # noinspection PyPep8
+    objp = np.ones((6 * 7, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp *= 0.025875
 
     objpoints = []  # 3d point
     imgpoints = []  # 2d point
 
     finished = False
-
+    gray = None
+    ctr = -1
     while not finished:
         img = get_nao_image()
         if img is not None:
+            ctr += 1
+            cv2.imwrite("../../values/calibration" + "_" + str(ctr) + ".png", img)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             # Find the chess board corners
@@ -70,7 +75,12 @@ def get_camera_information():
                     time.sleep(2)
 
     cv2.destroyAllWindows()
-    ret, mtx, disto, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
+    init_intrinsic = np.matrix([[249.89693416,    0.,          178.02883199],
+                                [0.,            244.00611377,   96.64409278],
+                                [0.,              0.,            1.]])
+    dist = np.matrix([[0.1363378,  -1.97377046,  0.01807662,  0.00988139,  4.50583262]])
+    ret, mtx, disto, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], init_intrinsic, dist,
+                                                        flags=cv2.CALIB_USE_INTRINSIC_GUESS)
     return mtx, disto
 
 
@@ -169,7 +179,7 @@ def plotting_param2(dist, images):
 
             param2 += 0.25
             key = str(round(param2, 2))
-            if results.has_key(key):
+            if key in results:
                 results[key].append(score)
             else:
                 results[key] = [score]
@@ -265,7 +275,7 @@ def plotting_param1(dist, images):
                     score = round(get_f_score(nb_of_grid_circles, len(circles[0]) - nb_of_grid_circles), 4)
 
             param1 += 1
-            if results.has_key(param1):
+            if param1 in results:
                 results[param1].append(score)
             else:
                 results[param1] = [score]
@@ -336,15 +346,16 @@ def calibration_radius_error(dist, images, must_latex=True):
 
 
 def get_images(dist):
-    nao_c = nao.NAOController(nao.IP, nao.PORT)
-    nao_c.unsubscribeAllCameras()
-    nao_c.connectToCamera(res=1, fps=5, camera_num=0)
+    global nao_video
+    nao_video = VideoController()
+    nao_video.unsubscribeAllCameras()
+    nao_video.connectToCamera(res=1, fps=5, camera_num=0)
     images = []
     max_time = 15
     start = time.time()
     current = time.time()
     while current - start < max_time:
-        images.append(nao_c.getImageFromCamera())
+        images.append(nao_video.getImageFromCamera())
         current = time.time()
     for i, img in enumerate(images):
         cv2.imwrite("../../../latex/img/" + str(dist) + "m/img_" + str(i) + ".png", img)
@@ -357,7 +368,7 @@ def evaluate(best_values, param, dist):
     table = []
     for iteration in best_values:
         for value in iteration:
-            if scores.has_key(value):
+            if value in scores:
                 scores[value] += 1
             else:
                 scores[value] = 1
@@ -381,7 +392,7 @@ def prepare_plot(scores, param_name):
     big_dict = {}
     for dico in scores:
         for key in dico:
-            if big_dict.has_key(key):
+            if key in big_dict:
                 big_dict[key].extend(dico[key])
             else:
                 big_dict[key] = dico[key]
@@ -396,21 +407,20 @@ def prepare_plot(scores, param_name):
 
 if __name__ == "__main__":
     # dists = [0.4, 0.5, 1, 1.5, 2, 2.5, 3]
-    # images = get_images(dist)
+    # image = get_images(dist)
     # scores2 = []
     # scores1 = []
     # for dist in dists:
-        # print "-" * 20 + str(dist) + "-" * 20
-        # images = load_images(dist)
-        # print evaluate(calibration_radius_error(dist, images), "(minRadius, maxRadius)", dist)
-        # print evaluate(calibration_param1(dist, images), "param1", dist)
-        # print evaluate(calibration_param2(dist, images), "param2", dist)
-        # scores1.append(plotting_param1(dist, images))
-        # scores2.append(plotting_param2(dist, images))
+    # print "-" * 20 + str(dist) + "-" * 20
+    # image = load_images(dist)
+    # print evaluate(calibration_radius_error(dist, image), "(minRadius, maxRadius)", dist)
+    # print evaluate(calibration_param1(dist, image), "param1", dist)
+    # print evaluate(calibration_param2(dist, image), "param2", dist)
+    # scores1.append(plotting_param1(dist, image))
+    # scores2.append(plotting_param2(dist, image))
     # prepare_plot(scores1, "param1")
     # prepare_plot(scores2, "param2")
     camera_file = open("../../values/" + "camera_information" + ".dat", 'w')
     cam_mat, cam_disto = get_camera_information()
     camera_file.write(str(cam_mat) + "\n\n" + str(cam_disto))
-
-
+    camera_file.close()

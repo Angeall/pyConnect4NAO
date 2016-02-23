@@ -1,18 +1,23 @@
 from time import sleep
+import time
 
 import cv2
 import numpy as np
 
-import connect4.frontholesdetector as c4
-import nao.nao_controller as naoc
+import connect4.detector.front_holes as c4
 from connect4.connect4 import Connect4
+from connect4.image.default_image import DefaultConnect4Image
+from connect4.model.default_model import DefaultConnect4Model
+from nao.controller.motion import MotionController
+from nao.controller.tracking import TrackingController
+from nao.controller.video import VideoController
 
 __author__ = 'Anthony Rouneau'
-robot_ip = "192.168.2.16"
-port = 9559
 
 cap = None
-nao_c = None
+nao_video = None
+nao_motion = None
+nao_tracking = None
 
 
 def nothing(x):
@@ -20,16 +25,16 @@ def nothing(x):
 
 
 def clean():
-    global nao_c, cap
-    if nao_c is not None:
+    global nao_video, cap
+    if nao_video is not None:
         for i in range(7):
-            nao_c.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
+            nao_video.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
 
 
 def get_webcam_image():
     global cap
     if cap is None:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture()
     has_read, img = cap.read()
     if not has_read:
         print "Image not readable"
@@ -38,21 +43,23 @@ def get_webcam_image():
 
 
 def get_nao_image(camera_num=0):
-    global nao_c
-    if nao_c is None:
-        nao_c = naoc.NAOController(robot_ip, port)
+    global nao_video, nao_motion, nao_tracking
+    if nao_video is None:
+        nao_video = VideoController()
+        nao_motion = MotionController()
+        nao_tracking = TrackingController()
         clean()
-        ret = nao_c.connectToCamera(res=1, fps=30, camera_num=camera_num)
+        ret = nao_video.connectToCamera(res=1, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
-    return nao_c.getImageFromCamera()
+    return nao_video.getImageFromCamera()
 
 
 def close_camera():
-    global nao_c, cap
-    if nao_c is not None:
-        nao_c.disconnectFromCamera()
+    global nao_video, cap
+    if nao_video is not None:
+        nao_video.disconnectFromCamera()
         return
     else:
         cap.release()
@@ -60,7 +67,8 @@ def close_camera():
 
 
 def test():
-    c4_detector = c4.FrontHolesDetector()
+    connect4_model = DefaultConnect4Model()
+    c4_detector = c4.FrontHolesDetector(connect4_model)
     while True:
         i = 0
         # img = get_webcam_image()
@@ -94,27 +102,32 @@ def test():
 
 
 def test3():
-    c4_detector = c4.FrontHolesDetector()
+    c4_detector = c4.FrontHolesDetector(DefaultConnect4Model())
     dist = 1.
     sloped = False
     min_radius, max_radius = Connect4().computeMinMaxRadius(dist, sloped)
     pixel_error_margin = Connect4().computeMaxPixelError(min_radius)
     while True:
+        timer = time.time()
         i = 0
         # img = get_webcam_image()
         img = get_nao_image(0)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        print "IMG PROC : ", time.time()-timer
         # gray = cv2.medianBlur(gray, 3)
         # max_radius = int(round(8/dist))
         # min_radius = int(round(5/dist))
         param2 = 10.5
         if sloped:
             param2 = 8
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11/dist,
+        timer = time.time()
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11 / dist,
                                    param1=60, param2=param2, minRadius=min_radius, maxRadius=max_radius)
+        print "HOUGH : ", time.time()-timer
         if circles is not None:
             # circles = np.uint16(np.around(circles))
+            timer = time.time()
             img2 = img.copy()
             for i in circles[0, :]:
                 # draw the outer circle
@@ -122,15 +135,20 @@ def test3():
                 # draw the center of the circle
                 cv2.circle(img2, (i[0], i[1]), 2, (0, 0, 255), 2)
             cv2.imshow("Circles detected", img2)
+            print "DRAW CIRCLES : ", time.time() - timer
             try:
+                timer = time.time()
                 c4_detector.runDetection(circles[0], pixel_error_margin=pixel_error_margin,
                                          img=img)
                 connect4 = c4_detector.getPerspective()
+                print "C4 DETECTION : ", time.time() - timer
+                # print connect4
                 # print repr(np.float32(np.array(Connect4().reference_mapping[(0, 0)])))
                 # print repr(c4_detector.homography)
-                print cv2.perspectiveTransform(np.float32(Connect4().reference_mapping[(0, 0)]).reshape(1, -1, 2),
-                                               c4_detector.homography).reshape(-1, 2)
-                rows, cols, _ = img.shape
+                # print cv2.perspectiveTransform(np.float32(DefaultConnect4Image().pixel_mapping[(0, 0)])\
+                #                                                                               .reshape(1, -1, 2),
+                #                                c4_detector.homography).reshape(-1, 2)
+                # rows, cols, _ = img.shape
                 # print c4_detector.homography
                 # print cv2.warpPerspective(np.uint8(np.array([[Connect4().reference_mapping[(3, 3)]]])),
                 #                           c4_detector.homography, (1, 1), flags=cv2.WARP_INVERSE_MAP)
@@ -138,7 +156,7 @@ def test3():
             except c4.CircleGridNotFoundException:
                 pass
         cv2.imshow("Original picture", img)
-        if cv2.waitKey(1000) == 27:
+        if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()
             break
@@ -147,7 +165,7 @@ def test3():
 
 
 def tracker_test():
-    c4_detector = c4.FrontHolesDetector()
+    c4_detector = c4.FrontHolesDetector(Connect4())
     dist = 1.
     sloped = False
     min_radius, max_radius = Connect4().computeMinMaxRadius(dist, sloped)
@@ -164,7 +182,7 @@ def tracker_test():
         param2 = 10.5
         if sloped:
             param2 = 8
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11/dist,
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 11 / dist,
                                    param1=60, param2=param2, minRadius=min_radius, maxRadius=max_radius)
         if circles is not None:
             # circles = np.uint16(np.around(circles))
@@ -211,17 +229,17 @@ def test2():
         edges2 = cv2.Canny(gray, 90, 150, apertureSize=3)
         _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in cnts:
-            approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True)*0.01, True)
+            approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
             # if cv2.contourArea(approx, False) > 40:
             if len(approx) >= 3:
                 print len(approx)
-                for i in range(len(approx)-1):
+                for i in range(len(approx) - 1):
                     tuple0 = (approx[i][0][0], approx[i][0][1])
-                    tuple1 = (approx[i+1][0][0], approx[i+1][0][1])
-                    cv2.line(img, tuple0, tuple1, (0,0,255),2)
+                    tuple1 = (approx[i + 1][0][0], approx[i + 1][0][1])
+                    cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
                 tuple0 = (approx[-1][0][0], approx[-1][0][1])
                 tuple1 = (approx[0][0][0], approx[0][0][1])
-                cv2.line(img, tuple0, tuple1, (0,0,255),2)
+                cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
         # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 175)
         # if lines is not None:
         #     print len(lines)
@@ -284,7 +302,47 @@ def test2():
 #             break
 #     return 0
 
+def test4():
+    global nao_video, nao_tracking, nao_motion
+    myc4 = Connect4()
+    dist = 1.
+    sloped = False
+    img = get_nao_image(0)
+    # img = cv2.imread("test.png")
+    try:
+        myc4.detectFrontHoles(img, dist, sloped)
+        rvec, tvec = myc4.front_hole_detector.match3DModel(nao_video.cam_matrix, nao_video.cam_distorsion)
+        camera_position = nao_motion.getCameraPositionFromWorld()
+        nao_tracking.initializeTracking(rvec, tvec, camera_position)
+        temp = nao_tracking.getConnect4HolePosition(0)
+        print temp
+        # nao_motion.putHandAt([temp[0], temp[1], temp[2] + 0.30, 0, 0, 0], 7)
+        nao_motion.motion_proxy.move(temp[0]-0.33, temp[1], 0.)
+        # position = [temp[1], temp[2], temp[0]]
+        # print position
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(1)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(2)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(3)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(4)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(5)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # temp = nao_tracking.getConnect4HolePosition(6)
+        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
+        # nao_motion.track_proxy.pointAt("LArm", temp[0:3], 1, 0.1)
+        connect4 = myc4.front_hole_detector.getPerspective()
+        cv2.imshow("c4", connect4)
+        cv2.waitKey(100000)
+        # cv2.imwrite("test.png", img)
+    except c4.CircleGridNotFoundException:
+        pass
+
 
 if __name__ == '__main__':
-    test3()
+    # test3()
     # test2()
+    test4()

@@ -68,7 +68,7 @@ class CircleGridDetector(object):
         self.homography = None
 
     def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
-                     ref_img=None, ref_mapping=None, grid_shape=None):
+                     ref_img=None, grid_shape=None):
         """
         Public method.
         Runs a new detection to find a Connect 4
@@ -83,15 +83,12 @@ class CircleGridDetector(object):
         :type img: numpy.ndarray
         :param ref_img: The image of reference that represents the circle grid searched, can be None
         :type ref_img: numpy.ndarray
-        :param ref_mapping: The reference mapping that is a dict with relative positions as key and pixel coordinates
-                            (pointing to the ref_img) as values
-        :type ref_mapping: dict
         :param grid_shape: The shape of the grid to detect (e.g. (6, 7) for a 6x7 connect 4 board)
         :type grid_shape: tuple
         """
         self.clear()
         if grid_shape is None:
-            raise CircleGridException("No grid_shape set, don't know what type of grid is searched")
+            raise CircleGridException("No grid_shape set, don't know what type of grid to detect")
         if img is not None:
             bounds = (0, 0, img.shape[1] + 1, img.shape[0] + 1)
             # bounds = (0, 0, img.shape[0] + 1, img.shape[1] + 1)
@@ -109,11 +106,10 @@ class CircleGridDetector(object):
         self.prepareGrid(grid_shape)
         self.checkForGrid()
 
-        self.referenceMapping = ref_mapping
         self.referenceImg = ref_img
         self.img = img
 
-        if ref_mapping is not None:
+        if self.referenceMapping is not None:
             self.circleGridMapping = geom.index_mapping_into_pixel_mapping(self.relativeCoordinates, self.circles)
             if img is not None:
                 # TODO : 3D Model
@@ -204,15 +200,15 @@ class CircleGridDetector(object):
                 dist3 = geom.point_distance(pt3, pt1)
                 max_dist = max(dist1, dist2, dist3)
                 if max_dist == dist1:
-                    if vectors_dict.has_key((pt1, pt2)) and vectors_dict.has_key((pt2, pt1)):
+                    if (pt1, pt2) in vectors_dict and (pt2, pt1) in vectors_dict:
                         vectors_dict.pop((pt1, pt2))
                         vectors_dict.pop((pt2, pt1))
                 elif max_dist == dist2:
-                    if vectors_dict.has_key((pt2, pt3)) and vectors_dict.has_key((pt3, pt2)):
+                    if (pt2, pt3) in vectors_dict and (pt3, pt2) in vectors_dict:
                         vectors_dict.pop((pt2, pt3))
                         vectors_dict.pop((pt3, pt2))
                 else:
-                    if vectors_dict.has_key((pt1, pt3)) and vectors_dict.has_key((pt3, pt1)):
+                    if (pt1, pt3) in vectors_dict and (pt3, pt1) in vectors_dict:
                         vectors_dict.pop((pt3, pt1))
                         vectors_dict.pop((pt1, pt3))
         vectors = []
@@ -239,8 +235,8 @@ class CircleGridDetector(object):
 
     def filterConnections(self):
         """
-        For every existing connection, check that there's minimum "min_similar_vectors" other vectors with the same values
-        (Same value following the threshold). If it's True, keep the connection, otherwise discard it
+        For every existing connection, check that there's minimum "min_similar_vectors" other vectors with the same
+        values (Same value following the threshold). If it's True, keep the connection, otherwise discard it
         """
         filtered_arc_vectors = []
         filtered_arc_indices = []
@@ -290,15 +286,15 @@ class CircleGridDetector(object):
         clustering = geom.cluster_vectors(self.filteredArcVectors)
         clusters_centroids = clustering[2]
         max_x = (-np.infty, None)
-        max_y = (-np.infty, None)
+        min_y = (np.infty, None)
         for i in range(len(clusters_centroids)):
             centroid = clusters_centroids[i]
             if centroid[0] > max_x[0]:
                 max_x = (centroid[0], i)
-            if centroid[1] > max_y[0]:
-                max_y = (centroid[1], i)
+            if centroid[1] < min_y[0]:
+                min_y = (centroid[1], i)
         x = max_x[1]
-        y = max_y[1]
+        y = min_y[1]
         belongs_to_cluster = clustering[1]
         right_vectors = []
         up_vectors = []
@@ -336,32 +332,32 @@ class CircleGridDetector(object):
             explored.append(False)
 
         for (x, y) in self.rightVectors:
-            if adj_right_dict.has_key(x):
+            if x in adj_right_dict:
                 adj_right_dict[x][0].append((x, y))
             else:
                 adj_right_dict[x] = [[(x, y)], []]
                 adj_up_dict[x] = [[], []]
-            if adj_right_dict.has_key(y):
+            if y in adj_right_dict:
                 adj_right_dict[y][1].append((x, y))
             else:
                 adj_right_dict[y] = [[], [(x, y)]]
                 adj_up_dict[y] = [[], []]
 
         for (x, y) in self.upVectors:
-            if adj_up_dict.has_key(x):
+            if x in adj_up_dict:
                 adj_up_dict[x][0].append((x, y))
             else:
                 adj_up_dict[x] = [[(x, y)], []]
-                if not adj_right_dict.has_key(x):
+                if x not in adj_right_dict:
                     adj_right_dict[x] = [[], []]
-            if adj_up_dict.has_key(y):
+            if y in adj_up_dict:
                 adj_up_dict[y][1].append((x, y))
             else:
                 adj_up_dict[y] = [[], [(x, y)]]
-                if not adj_right_dict.has_key(y):
+                if y not in adj_right_dict:
                     adj_right_dict[y] = [[], []]
-        if not adj_right_dict.has_key(start_node):
-            self.relativeCoordinates= {(0, 0): start_node}
+        if start_node not in adj_right_dict:
+            self.relativeCoordinates = {(0, 0): start_node}
             return
 
         while not frontier.empty():
@@ -432,8 +428,8 @@ class CircleGridDetector(object):
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 circles.append(self.relativeCoordinates[(x, y)])
 
-        nb_connection = filter(lambda (x, y): x in circles and y in circles, self.rightVectors)
-        nb_connection += filter(lambda (x, y): x in circles and y in circles, self.upVectors)
+        nb_connection = filter(lambda (x0, y0): x0 in circles and y0 in circles, self.rightVectors)
+        nb_connection += filter(lambda (x1, y1): x1 in circles and y1 in circles, self.upVectors)
         return len(nb_connection)
 
     def prepareGrid(self, grid_shape):
@@ -492,7 +488,6 @@ class CircleGridDetector(object):
         scene = np.array(scene)
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
 
-    # TODO : afficher la matrice homography pour savoir si c'est une matrice de rotation ou de translation (ou les deux)
     def match3DModel(self, camera_matrix, camera_dist):
         # Need to define 3D model in subclass
         return None
