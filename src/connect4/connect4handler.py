@@ -20,16 +20,19 @@ class Connect4ModelNotFound(Exception):
         super(Connect4ModelNotFound, self).__init__(msg)
 
 
-class Connect4(object):
-    def __init__(self, model_type=DEFAULT_MODEL):
+class Connect4Handler(object):
+    def __init__(self, next_img_func, model_type=DEFAULT_MODEL):
         if model_type == DEFAULT_MODEL:
             self.model = DefaultConnect4Model()
         else:
             raise Connect4ModelNotFound(model_type)
+        self.img = None
+        self.next_img_func = next_img_func
         self.front_hole_detector = FrontHolesDetector(self.model)
         self.upper_hole_detector = UpperHoleDetector()
         # Used for the detection
         self.front_holes_detection_prepared = False
+        self.circles = []
         self.param1 = None
         self.param2 = None
         self.min_radius = None
@@ -125,45 +128,48 @@ class Connect4(object):
         self.res = res
         self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped)
         self.pixel_error_margin = self.computeMaxPixelError(self.min_radius)
-        self.min_dist = int(self.min_radius * 1.195 * (self.res / 320))
+        self.min_dist = int(self.min_radius * 2.391 * (self.res / 320))
         self.param1 = 77
-        self.param2 = 10.5
+        self.param2 = 9.75
         if self.sloped:
             self.param2 = 8
 
-    def detectFrontHoles(self, img, distance, sloped=False, res=DEFAULT_RESOLUTION):
+    def detectFrontHoles(self, distance, sloped=False, res=DEFAULT_RESOLUTION, tries=1):
         """
-
-        :param img:
-        :param distance:
-        :param sloped:
-        :param res:
-        :return:
+        :param distance: The distance between the robot and the connect4
+        :param sloped: true if the connect4 is sloped
+        :param res: the resolution of the image
+        :param tries: the number of success the algorithm must perform to mark the Connect 4 as detected
         """
-        if not self.front_holes_detection_prepared:
-            self.prepareFrontHolesDetection(distance, sloped, res)
-        elif self.distance != distance or self.sloped != sloped:
-            self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        for i in range(tries):
+            self.img = self.next_img_func()
+            self.circles = []
+            if not self.front_holes_detection_prepared:
+                self.prepareFrontHolesDetection(distance, sloped, res)
+            elif self.distance != distance or self.sloped != sloped:
+                self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped)
+            gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (3, 3), 0)
+            gray = cv2.medianBlur(gray, 3)
 
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, self.min_dist,
-                                   param1=self.param1, param2=self.param2, minRadius=self.min_radius,
-                                   maxRadius=self.max_radius)
-        if circles is not None:
-            self.front_hole_detector.runDetection(circles[0], pixel_error_margin=self.pixel_error_margin,
-                                                  img=img)
-        else:
-            raise FrontHolesGridNotFoundException()
+            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, self.min_dist,
+                                       param1=self.param1, param2=self.param2, minRadius=self.min_radius,
+                                       maxRadius=self.max_radius)
+            if circles is not None:
+                self.circles = circles[0]
+                self.front_hole_detector.runDetection(self.circles, pixel_error_margin=self.pixel_error_margin,
+                                                      img=self.img)
+            else:
+                raise FrontHolesGridNotFoundException()
 
     def getUpperHoleRefinedCoordinates(self, img, approx_coordinates):
         """
-        Detect a hole inside the approx_coordinates in the image
+        Detect a hole inside the approx_coordinates in the image.
         :param img: the image in which the hole will be detected
         :param approx_coordinates: rectangle of coordinates indicating, using the solvePnP results, where the
                                    hole is approximately.
                                    /!\ must be ordered by top-left, top-right, bottom-right, and bottom-left
-        :return: np.array
+        :rtype: np.array
         """
         (tl, tr, br, bl) = approx_coordinates
         # Enlarge the rectangle to consider in order to detect the whole hole

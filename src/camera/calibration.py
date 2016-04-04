@@ -1,14 +1,14 @@
 import time
 
 from nao.controller.motion import MotionController
-from connect4.connect4 import *
+from connect4.connect4handler import *
 from connect4.detector import front_holes as c4
 from nao.controller.video import VideoController
 from utils import latex_generator
 
 __author__ = 'Anthony Rouneau'
 
-connect4 = Connect4()
+connect4 = Connect4Handler()
 connect4_model = connect4.model
 detector = c4.FrontHolesDetector(connect4_model)
 nao_video = None

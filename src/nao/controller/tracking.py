@@ -7,7 +7,7 @@ __author__ = 'Anthony Rouneau'
 
 class TrackingController(object):
     def __init__(self, robot_ip=nao.IP, port=nao.PORT):
-        # The World Representation of the robot, used to track the Connect4
+        # The World Representation of the robot, used to track the Connect4Handler
         self.world_repr = ALProxy("ALWorldRepresentation", robot_ip, port)
         self.tracker = None  # Initialized when needed
         self.tracking_initiated = False
@@ -16,9 +16,9 @@ class TrackingController(object):
         """
         Begin to track the Connect 4 that was already detected inside the room
         :param camera_position: The camera position refering to NAO'w World
-        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type rvec: np.array
-        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type tvec: np.array
         """
         print camera_position
@@ -40,7 +40,7 @@ class TrackingController(object):
         :rtype: np.matrix
         """
         if hole_no > 6:
-            print "ERR: The Connect4 have only 7 holes. Please ask for a hole between 0 and 6"
+            print "ERR: The Connect4Handler have only 7 holes. Please ask for a hole between 0 and 6"
             return None
         else:
             return self.world_repr.getPosition6D(world, self.tracker.objects_tab[hole_no])
@@ -49,9 +49,9 @@ class TrackingController(object):
         """
         Refresh the connect 4 position in the World Representation of NAO
         :param camera_position:
-        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type rvec: np.array
-        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type tvec: np.array
         """
         self.tracker.refreshPositions(rvec, tvec, camera_position)

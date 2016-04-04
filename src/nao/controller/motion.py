@@ -22,6 +22,7 @@ class MotionController:
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
         self.track_proxy = ALProxy("ALTracker", robot_ip, port)
+        self.localization_proxy = ALProxy("ALLocalization", robot_ip, port)
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
     def getCameraPositionFromWorld(self):

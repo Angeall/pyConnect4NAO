@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from connect4 import Connect4
+from connect4handler import Connect4Handler
 from utils import geom
 
 __author__ = 'Anthony Rouneau'
@@ -27,9 +27,9 @@ class Connect4Tracker(object):
     def __init__(self, rvec, tvec, camera_rvec, camera_tvec):
         """
         Creates the tracker to refresh and keep the Connect 4 position in 3D
-        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type rvec: np.array
-        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type tvec: np.array
         """
         # Transformation from camera's world axes to nao's world axes
@@ -37,7 +37,7 @@ class Connect4Tracker(object):
                                        [-1, 0, 0],
                                        [0, -1, 0]])
         # Connect 4 Model and location information
-        self.connect4 = Connect4()
+        self.connect4 = Connect4Handler()
         self.camera_rmat = geom.convert_euler_to_matrix(camera_rvec)
         self.camera_tvec = np.array(camera_tvec)
         self.connect4_rmat, _ = cv2.Rodrigues(rvec)
@@ -76,9 +76,9 @@ class Connect4Tracker(object):
         """
         Refresh the connect 4 position
         :param camera_position: The camera position referring to NAO's World
-        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type rvec: np.array
-        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4 3D coordinates
+        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
         :type tvec: np.array
         """
         [x, y, z, Wx, Wy, Wz] = camera_position

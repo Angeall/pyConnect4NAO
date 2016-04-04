@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 __author__ = 'Anthony Rouneau'
@@ -31,6 +32,7 @@ class DefaultConnect4Image(object):
         self.y_dist = y_dist
         self.hor = hor
         self.ver = ver
+        self.img = cv2.imread(self.IMAGE_NAME)
         self.pixel_mapping = self.generate2DReference()
 
     def generate2DReference(self, ):

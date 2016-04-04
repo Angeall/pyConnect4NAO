@@ -5,7 +5,7 @@ __author__ = 'Anthony Rouneau'
 # IP = "127.0.0.1"
 IP = "192.168.208.42"
 # IP = "192.168.2.16"
-# PORT = 9532
+# PORT = 17402
 PORT = 9559
 
 # CAM_MATRIX = np.matrix([[208.97218124,    0.,          171.55711864],

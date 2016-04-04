@@ -30,6 +30,7 @@ class CircleGridDetector(object):
     """
 
     def __init__(self):
+        self.MIN_CIRCLES_PER_LINE = 2
         self.referenceImg = None
         self.referenceMapping = None
         self.circles = None
@@ -422,11 +423,16 @@ class CircleGridDetector(object):
                           A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
         :type rectangle: list
         """
+        lines_counter = {}  # Will assure that the top and the bottom lines have at least MIN_CIRCLES_PER_LINE circles
         [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
         circles = []
         for (x, y) in self.relativeCoordinates.keys():
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 circles.append(self.relativeCoordinates[(x, y)])
+                lines_counter[y] = lines_counter.get(x, 0) + 1
+        if lines_counter[max(lines_counter.keys())] < self.MIN_CIRCLES_PER_LINE \
+                or lines_counter[min(lines_counter.keys())] < self.MIN_CIRCLES_PER_LINE:
+            return -1
 
         nb_connection = filter(lambda (x0, y0): x0 in circles and y0 in circles, self.rightVectors)
         nb_connection += filter(lambda (x1, y1): x1 in circles and y1 in circles, self.upVectors)
@@ -456,17 +462,19 @@ class CircleGridDetector(object):
             max_rectangle = None
             unsure = False
             for rectangle in rectangles:
-                [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
+                [[(_, _), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
                 # Count the number of connection inside the rectangle
                 nb_connection = self.countRectangleConnections(rectangle)
                 if nb_connection == max_connection:
                     unsure = True
-                if nb_connection > max_connection:
+                elif nb_connection > max_connection and nb_connection != -1:
                     unsure = False
                     max_connection = nb_connection
                     max_rectangle = rectangle
-                if unsure:  # If two rectangles could be a circle grid, then we decide to reject this analysis
-                    raise self.exception
+            # If two rectangles could be a circle grid or no correct rectangle was found,
+            #   then we decide to reject this analysis
+            if unsure or max_rectangle is None:
+                raise self.exception
             [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = max_rectangle
             # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
             new_mapping = {(x, y): v for (x, y), v in self.relativeCoordinates.iteritems()
@@ -503,6 +511,8 @@ class CircleGridDetector(object):
         self.mappingHomography()
         self.objectPerspective = cv2.warpPerspective(self.img, self.homography, (cols, rows),
                                                      flags=cv2.WARP_INVERSE_MAP)
+        for i in self.referenceMapping.values():
+            cv2.circle(self.objectPerspective, (i[0], i[1]), 2, (0, 0, 255), 2)
 
     def getPerspective(self):
         """

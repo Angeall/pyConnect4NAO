@@ -5,7 +5,6 @@ __author__ = 'Anthony Rouneau'
 
 
 class DefaultConnect4Model(object):
-
     # MODEL INDICES : CORNERS
     UPPER_LEFT_BACK_CORNER = 1
     UPPER_LEFT_FRONT_CORNER = 0

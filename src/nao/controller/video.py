@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from naoqi import ALProxy
 
 import nao.data as nao

@@ -34,8 +34,7 @@ class FrontHolesDetector(CircleGridDetector):
         # Image of reference
         self.model = connect4_model
         self.image_of_reference = connect4_model.image_of_reference
-        connect4_img_name = self.image_of_reference.IMAGE_NAME
-        self.connect4_img = cv2.imread(connect4_img_name)
+        self.connect4_img = self.model.image_of_reference.img
         self.referenceMapping = self.image_of_reference.pixel_mapping
         self.exception = FrontHolesGridNotFoundException
 
@@ -57,7 +56,7 @@ class FrontHolesDetector(CircleGridDetector):
 
     def match3DModel(self, camera_matrix, camera_dist):
         """
-        Find the 3D coordinates of the Connect4
+        Find the 3D coordinates of the Connect4Handler
         :param camera_matrix: The intrinsic camera matrix that can be get via camera calibration
         :param camera_dist: The intrinsic camera distortion coefficients that can be get via camera calibration
         :return: (rvec, tvec) : rvec = rotation vector, tvec translation vector
@@ -82,4 +81,3 @@ class FrontHolesDetector(CircleGridDetector):
         if not retval:
             print "ERR: SolvePnP failed"
         return rvec, tvec
-
