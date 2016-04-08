@@ -208,3 +208,28 @@ class Connect4Handler(object):
             # print cv2.contourArea(box)
         # TODO : Test and change return when ok
         return transformed_img, img
+
+    def getUpperHoleCoordinates(self, img, copy_img):
+        """
+        Detect a hole inside the approx_coordinates in the image.
+        :param img: the image in which the hole will be detected
+        :param approx_coordinates: rectangle of coordinates indicating, using the solvePnP results, where the
+                                   hole is approximately.
+                                   /!\ must be ordered by top-left, top-right, bottom-right, and bottom-left
+        :rtype: np.array
+        """
+        # Find contours in the reshaped img
+        _, contours, _ = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            print cnt
+            # approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
+            # copy_img = cv2.drawContours(copy_img, [cnt], 0, (0, 255, 0), -1)
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            copy_img = cv2.drawContours(copy_img, [box], 0, (0, 0, 255), 2)
+            print cv2.contourArea(cnt)
+            print cv2.contourArea(rect)
+            # print cv2.contourArea(box)
+        # # # TODO : Test and change return when ok
+        return copy_img

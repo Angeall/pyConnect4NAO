@@ -31,41 +31,41 @@ class CircleGridDetector(object):
 
     def __init__(self):
         self.MIN_CIRCLES_PER_LINE = 2
-        self.referenceImg = None
-        self.referenceMapping = None
+        self.reference_img = None
+        self.reference_mapping = None
         self.circles = None
         self.img = None
-        self.gridShape = None
-        self.pixelErrorMargin = None
-        self.minSimilarVectors = None
+        self.grid_shape = None
+        self.pixel_error_margin = None
+        self.min_similar_vectors = None
         self.bounds = [0, 0, 0, 0]
         self.exception = CircleGridNotFoundException()
-        self.relativeCoordinates = None
-        self.filteredArcIndices = None
-        self.filteredArcVectors = None
-        self.noiseCircles = []
-        self.originalArcIndices = None
-        self.originalArcVectors = None
-        self.circleGridMapping = None
-        self.objectPerspective = None
-        self.upVectors = None
-        self.rightVectors = None
+        self.relative_coordinates = None
+        self.filtered_arc_indices = None
+        self.filtered_arc_vectors = None
+        self.noise_circles = []
+        self.original_arc_indices = None
+        self.original_arc_vectors = None
+        self.circle_grid_mapping = None
+        self.object_perspective = None
+        self.up_vectors = None
+        self.right_vectors = None
         self.homography = None
 
     def clear(self):
         """
         Private method: Clear the private parameters of the object
         """
-        self.relativeCoordinates = None
-        self.filteredArcIndices = None
-        self.filteredArcVectors = None
-        self.noiseCircles = []
-        self.originalArcIndices = None
-        self.originalArcVectors = None
-        self.circleGridMapping = None
-        self.objectPerspective = None
-        self.upVectors = None
-        self.rightVectors = None
+        self.relative_coordinates = None
+        self.filtered_arc_indices = None
+        self.filtered_arc_vectors = None
+        self.noise_circles = []
+        self.original_arc_indices = None
+        self.original_arc_vectors = None
+        self.circle_grid_mapping = None
+        self.object_perspective = None
+        self.up_vectors = None
+        self.right_vectors = None
         self.homography = None
 
     def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
@@ -107,11 +107,11 @@ class CircleGridDetector(object):
         self.prepareGrid(grid_shape)
         self.checkForGrid()
 
-        self.referenceImg = ref_img
+        self.reference_img = ref_img
         self.img = img
 
-        if self.referenceMapping is not None:
-            self.circleGridMapping = geom.index_mapping_into_pixel_mapping(self.relativeCoordinates, self.circles)
+        if self.reference_mapping is not None:
+            self.circle_grid_mapping = geom.index_mapping_into_pixel_mapping(self.relative_coordinates, self.circles)
             if img is not None:
                 # TODO : 3D Model
                 if ref_img is not None:
@@ -124,7 +124,7 @@ class CircleGridDetector(object):
                  Example : {(0, 0): (34, 43), (0, 1): (54, 43), ... }
         :rtype: dict
         """
-        return self.circleGridMapping
+        return self.circle_grid_mapping
 
     def checkInBounds(self, point):
         """
@@ -151,7 +151,7 @@ class CircleGridDetector(object):
         """
         self.circles = circles
         for i in range(len(circles)):
-            self.noiseCircles.append(False)
+            self.noise_circles.append(False)
         if bounds is None:
             tuple_max = geom.max_tuple(circles)
             tuple_min = geom.min_tuple(circles)
@@ -176,7 +176,7 @@ class CircleGridDetector(object):
         subdiv.initDelaunay(self.bounds)
         for i in range(len(keypoints)):
             keypoint = keypoints[i]
-            if not self.noiseCircles[i]:  # If the circle i is not a noisy circle
+            if not self.noise_circles[i]:  # If the circle i is not a noisy circle
                 key = (float(keypoint[0]), float(keypoint[1]))
                 circles_dict[key] = i
                 subdiv.insert(key)
@@ -217,8 +217,8 @@ class CircleGridDetector(object):
         for (pt1, pt2) in vectors_dict:
             vectors.append(vectors_dict[(pt1, pt2)])
             indices.append((circles_dict[pt1], circles_dict[pt2]))
-        self.originalArcVectors = vectors
-        self.originalArcIndices = indices
+        self.original_arc_vectors = vectors
+        self.original_arc_indices = indices
 
     def prepareFiltering(self, pixel_error_margin=10., min_similar_vectors=15):
         """
@@ -229,10 +229,10 @@ class CircleGridDetector(object):
                                     considered as non-noise
         :type min_similar_vectors: int
         """
-        if self.originalArcVectors is None or self.originalArcIndices is None:
+        if self.original_arc_vectors is None or self.original_arc_indices is None:
             raise CircleGridException("connectCircles must be performed before prepareFiltering")
-        self.pixelErrorMargin = pixel_error_margin
-        self.minSimilarVectors = min_similar_vectors
+        self.pixel_error_margin = pixel_error_margin
+        self.min_similar_vectors = min_similar_vectors
 
     def filterConnections(self):
         """
@@ -241,18 +241,18 @@ class CircleGridDetector(object):
         """
         filtered_arc_vectors = []
         filtered_arc_indices = []
-        if self.minSimilarVectors > len(self.originalArcVectors):
+        if self.min_similar_vectors > len(self.original_arc_vectors):
             raise self.exception
-        if len(self.originalArcVectors) > 0:
-            t = KDTree(self.originalArcVectors)
-            for j, connection in enumerate(self.originalArcVectors):
-                nearest_neighbours = t.query(connection, self.minSimilarVectors)[1]
-                if (geom.point_distance(connection, self.originalArcVectors[nearest_neighbours
-                [(self.minSimilarVectors - 1)]])) <= self.pixelErrorMargin:
+        if len(self.original_arc_vectors) > 0:
+            space_tree = KDTree(self.original_arc_vectors)
+            for j, connection in enumerate(self.original_arc_vectors):
+                nearest_neighbours = space_tree.query(connection, self.min_similar_vectors)[1]
+                if (geom.point_distance(connection, self.original_arc_vectors[nearest_neighbours
+                                                            [(self.min_similar_vectors - 1)]])) <= self.pixel_error_margin:
                     filtered_arc_vectors.append(connection)
-                    filtered_arc_indices.append(self.originalArcIndices[j])
-        self.filteredArcVectors = filtered_arc_vectors
-        self.filteredArcIndices = filtered_arc_indices
+                    filtered_arc_indices.append(self.original_arc_indices[j])
+        self.filtered_arc_vectors = filtered_arc_vectors
+        self.filtered_arc_indices = filtered_arc_indices
 
     def doublePassFilter(self):
         """
@@ -266,13 +266,13 @@ class CircleGridDetector(object):
         centers_to_remove = []
         for i in range(len(self.circles)):
             centers_to_remove.append(True)
-        for (center1, center2) in self.filteredArcIndices:
+        for (center1, center2) in self.filtered_arc_indices:
             if centers_to_remove[center1]:  # If the node was assumed as noisy, we set it as non-noisy
                 centers_to_remove[center1] = False
             if centers_to_remove[center2]:  # If the node was assumed as noisy, we set it as non-noisy
                 centers_to_remove[center2] = False
         # Second pass into the filters with a set of circles detected as noise
-        self.noiseCircles = centers_to_remove
+        self.noise_circles = centers_to_remove
         self.connectCircles()
         self.filterConnections()
 
@@ -282,9 +282,9 @@ class CircleGridDetector(object):
         Sets self.upVectors and self.rightVectors lists of index couples that forms vectors belonging
                  either to the "up" or the "right" cluster.
         """
-        if len(self.filteredArcVectors) == 0:
+        if len(self.filtered_arc_vectors) == 0:
             raise self.exception
-        clustering = geom.cluster_vectors(self.filteredArcVectors)
+        clustering = geom.cluster_vectors(self.filtered_arc_vectors)
         clusters_centroids = clustering[2]
         max_x = (-np.infty, None)
         min_y = (np.infty, None)
@@ -301,14 +301,14 @@ class CircleGridDetector(object):
         up_vectors = []
         for index, cluster in enumerate(belongs_to_cluster):
             if cluster == x:
-                right_vectors.append(self.filteredArcIndices[index])
+                right_vectors.append(self.filtered_arc_indices[index])
             if cluster == y:
-                up_vectors.append(self.filteredArcIndices[index])
-        self.upVectors = up_vectors
-        self.rightVectors = right_vectors
+                up_vectors.append(self.filtered_arc_indices[index])
+        self.up_vectors = up_vectors
+        self.right_vectors = right_vectors
 
     def prepareBFS(self):
-        if self.filteredArcIndices is None or self.filteredArcVectors is None or self.circles is None:
+        if self.filtered_arc_indices is None or self.filtered_arc_vectors is None or self.circles is None:
             raise CircleGridException("filtering must be performed before prepareBFS")
         self.filterRightUpVectors()
 
@@ -321,7 +321,7 @@ class CircleGridDetector(object):
         """
         frontier = Queue()  # Contains nodes and position of node
         start_node = 0
-        while self.noiseCircles[start_node]:
+        while self.noise_circles[start_node]:
             start_node += 1
         frontier.put([start_node, (0, 0)])
         adj_right_dict = {}
@@ -332,7 +332,7 @@ class CircleGridDetector(object):
         for i in range(len(self.circles)):
             explored.append(False)
 
-        for (x, y) in self.rightVectors:
+        for (x, y) in self.right_vectors:
             if x in adj_right_dict:
                 adj_right_dict[x][0].append((x, y))
             else:
@@ -344,7 +344,7 @@ class CircleGridDetector(object):
                 adj_right_dict[y] = [[], [(x, y)]]
                 adj_up_dict[y] = [[], []]
 
-        for (x, y) in self.upVectors:
+        for (x, y) in self.up_vectors:
             if x in adj_up_dict:
                 adj_up_dict[x][0].append((x, y))
             else:
@@ -358,7 +358,7 @@ class CircleGridDetector(object):
                 if y not in adj_right_dict:
                     adj_right_dict[y] = [[], []]
         if start_node not in adj_right_dict:
-            self.relativeCoordinates = {(0, 0): start_node}
+            self.relative_coordinates = {(0, 0): start_node}
             return
 
         while not frontier.empty():
@@ -379,7 +379,7 @@ class CircleGridDetector(object):
                     frontier.put([vector[0], (right_cost - 1, up_cost)])
                 for vector in neg_up_vectors:
                     frontier.put([vector[0], (right_cost, up_cost - 1)])
-        self.relativeCoordinates = mapping
+        self.relative_coordinates = mapping
         self.normalizeRelativeCoordinates()
 
     def normalizeRelativeCoordinates(self, x_shift=None, y_shift=None):
@@ -391,30 +391,30 @@ class CircleGridDetector(object):
         :param y_shift: The shift to apply to the Y axis
         """
         if x_shift is None and y_shift is None:
-            (x_shift, y_shift) = geom.min_tuple(self.relativeCoordinates.keys())
+            (x_shift, y_shift) = geom.min_tuple(self.relative_coordinates.keys())
         elif x_shift is None:
-            (x_shift, _) = geom.min_tuple(self.relativeCoordinates.keys())
+            (x_shift, _) = geom.min_tuple(self.relative_coordinates.keys())
         elif y_shift is None:
-            (_, y_shift) = geom.min_tuple(self.relativeCoordinates.keys())
+            (_, y_shift) = geom.min_tuple(self.relative_coordinates.keys())
         new_mapping = {}
         if x_shift != 0 and y_shift != 0:
-            keys = self.relativeCoordinates.keys()
+            keys = self.relative_coordinates.keys()
             for key in keys:
-                value = self.relativeCoordinates.pop(key)
+                value = self.relative_coordinates.pop(key)
                 new_mapping[(key[0] - x_shift, key[1] - y_shift)] = value
         elif x_shift != 0:
-            keys = self.relativeCoordinates.keys()
+            keys = self.relative_coordinates.keys()
             for key in keys:
-                value = self.relativeCoordinates.pop(key)
+                value = self.relative_coordinates.pop(key)
                 new_mapping[(key[0] - x_shift, key[1])] = value
         elif y_shift != 0:
-            keys = self.relativeCoordinates.keys()
+            keys = self.relative_coordinates.keys()
             for key in keys:
-                value = self.relativeCoordinates.pop(key)
+                value = self.relative_coordinates.pop(key)
                 new_mapping[(key[0], key[1] - y_shift)] = value
         else:
-            new_mapping = self.relativeCoordinates
-        self.relativeCoordinates = new_mapping
+            new_mapping = self.relative_coordinates
+        self.relative_coordinates = new_mapping
 
     def countRectangleConnections(self, rectangle):
         """
@@ -426,22 +426,22 @@ class CircleGridDetector(object):
         lines_counter = {}  # Will assure that the top and the bottom lines have at least MIN_CIRCLES_PER_LINE circles
         [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
         circles = []
-        for (x, y) in self.relativeCoordinates.keys():
+        for (x, y) in self.relative_coordinates.keys():
             if min_x <= x <= max_x and min_y <= y <= max_y:
-                circles.append(self.relativeCoordinates[(x, y)])
+                circles.append(self.relative_coordinates[(x, y)])
                 lines_counter[y] = lines_counter.get(x, 0) + 1
         if lines_counter[max(lines_counter.keys())] < self.MIN_CIRCLES_PER_LINE \
                 or lines_counter[min(lines_counter.keys())] < self.MIN_CIRCLES_PER_LINE:
             return -1
 
-        nb_connection = filter(lambda (x0, y0): x0 in circles and y0 in circles, self.rightVectors)
-        nb_connection += filter(lambda (x1, y1): x1 in circles and y1 in circles, self.upVectors)
+        nb_connection = filter(lambda (x0, y0): x0 in circles and y0 in circles, self.right_vectors)
+        nb_connection += filter(lambda (x1, y1): x1 in circles and y1 in circles, self.up_vectors)
         return len(nb_connection)
 
     def prepareGrid(self, grid_shape):
-        if self.relativeCoordinates is None or self.rightVectors is None or self.upVectors is None:
+        if self.relative_coordinates is None or self.right_vectors is None or self.up_vectors is None:
             raise CircleGridException("prepareBFS and bfsMarking must be called before prepareForGrid")
-        self.gridShape = grid_shape
+        self.grid_shape = grid_shape
 
     def checkForGrid(self):
         """
@@ -451,13 +451,13 @@ class CircleGridDetector(object):
         It will also decide, in the case of multiple possible grids, which grid is the good one by counting the
           number of vectors detected earlier inside the grid (the bigger amount of vectors, the better the grid)
         """
-        (max_x, max_y) = geom.max_tuple(self.relativeCoordinates.keys())
-        if max_x + 1 < self.gridShape[1] or max_y + 1 < self.gridShape[0]:
+        (max_x, max_y) = geom.max_tuple(self.relative_coordinates.keys())
+        if max_x + 1 < self.grid_shape[1] or max_y + 1 < self.grid_shape[0]:
             raise self.exception
-        elif max_x + 1 != self.gridShape[1] or max_y + 1 != self.gridShape[0]:
+        elif max_x + 1 != self.grid_shape[1] or max_y + 1 != self.grid_shape[0]:
             # Rectangle too big, need to consider inner rectangles
             rectangles = geom.get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
-                                                   self.gridShape[0], self.gridShape[1])
+                                                   self.grid_shape[0], self.grid_shape[1])
             max_connection = -np.infty
             max_rectangle = None
             unsure = False
@@ -476,10 +476,10 @@ class CircleGridDetector(object):
             if unsure or max_rectangle is None:
                 raise self.exception
             [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = max_rectangle
-            # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect
-            new_mapping = {(x, y): v for (x, y), v in self.relativeCoordinates.iteritems()
+            # Returns the rectangle that has the more connection inside (filters the dict with the values of the rect)
+            new_mapping = {(x, y): v for (x, y), v in self.relative_coordinates.iteritems()
                            if min_x <= x <= max_x and min_y <= y <= max_y}
-            self.relativeCoordinates = new_mapping
+            self.relative_coordinates = new_mapping
             self.normalizeRelativeCoordinates()
 
     def mappingHomography(self):
@@ -489,9 +489,9 @@ class CircleGridDetector(object):
         """
         obj = []
         scene = []
-        for key in self.circleGridMapping.keys():
-            obj.append(self.referenceMapping[key])
-            scene.append(self.circleGridMapping[key])
+        for key in self.circle_grid_mapping.keys():
+            obj.append(self.reference_mapping[key])
+            scene.append(self.circle_grid_mapping[key])
         obj = np.array(obj)
         scene = np.array(scene)
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
@@ -507,15 +507,15 @@ class CircleGridDetector(object):
         Sets self.objectPerspective to the scene image, reshaped and transformed so that
         only the object in the scene is visible, formatted as object_img
         """
-        rows, cols, _ = self.referenceImg.shape
+        rows, cols, _ = self.reference_img.shape
         self.mappingHomography()
-        self.objectPerspective = cv2.warpPerspective(self.img, self.homography, (cols, rows),
-                                                     flags=cv2.WARP_INVERSE_MAP)
-        for i in self.referenceMapping.values():
-            cv2.circle(self.objectPerspective, (i[0], i[1]), 2, (0, 0, 255), 2)
+        self.object_perspective = cv2.warpPerspective(self.img, self.homography, (cols, rows),
+                                                      flags=cv2.WARP_INVERSE_MAP)
+        for i in self.reference_mapping.values():
+            cv2.circle(self.object_perspective, (i[0], i[1]), 2, (0, 0, 255), 2)
 
     def getPerspective(self):
         """
         Get an image cropped and transformed of a specific object in a scene image
         """
-        return self.objectPerspective
+        return self.object_perspective

@@ -1,5 +1,7 @@
 import unittest
+from numpy.linalg import norm
 from utils.geom import *
+import numpy as np
 
 
 class GeomTestCase(unittest.TestCase):
@@ -121,15 +123,21 @@ class GeomTestCase(unittest.TestCase):
         vector_1 = transform_vector(self.vector_1, rmat=rot_mat, tvec=tvec)
         vector_2 = transform_vector(self.vector_2, rmat=rot_mat, tvec=tvec)
         vector_3 = transform_vector(self.vector_3, rmat=rot_mat, tvec=tvec)
-        print vector_1
-        print vector_2
-        print vector_3
+        vector_1 = vector_1.tolist()[0]
+        vector_2 = vector_2.tolist()[0]
+        vector_3 = vector_3.tolist()[0]
         for i in range(3):
             self.assertAlmostEqual(np.array([0, 0,  1])[i], vector_1[i], delta=0.0001)
         for i in range(3):
             self.assertAlmostEqual(np.array([-1, 0, 0])[i], vector_2[i], delta=0.0001)
         for i in range(3):
             self.assertAlmostEqual(np.array([0, -1, 0])[i], vector_3[i], delta=0.0001)
+
+    def test_common_area_included(self):
+        rect1 = ((2.34, 5.56), (12, 5), 45.)
+        rect2 = ((2.34, 5.56), (5, 2), 45.)
+        self.assertEqual(10, round(common_area(rect1, rect2)))
+
 
 if __name__ == '__main__':
     unittest.main()

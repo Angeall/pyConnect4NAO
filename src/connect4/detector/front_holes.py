@@ -35,7 +35,7 @@ class FrontHolesDetector(CircleGridDetector):
         self.model = connect4_model
         self.image_of_reference = connect4_model.image_of_reference
         self.connect4_img = self.model.image_of_reference.img
-        self.referenceMapping = self.image_of_reference.pixel_mapping
+        self.reference_mapping = self.image_of_reference.pixel_mapping
         self.exception = FrontHolesGridNotFoundException
 
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
@@ -65,12 +65,12 @@ class FrontHolesDetector(CircleGridDetector):
         image_points = []
         for i in range(42):
             image_points.append(0)
-        print "Reference Mapping", self.referenceMapping, "\n\n"
-        print "Reference Mapping Keys", self.referenceMapping.keys()
-        for key in self.referenceMapping.keys():
+        print "Reference Mapping", self.reference_mapping, "\n\n"
+        print "Reference Mapping Keys", self.reference_mapping.keys()
+        for key in self.reference_mapping.keys():
             model_key = self.model.FRONT_HOLE_MAPPING[key]
-            print "MODEL KEY", model_key, "Reference Value", self.referenceMapping[key]
-            image_points[model_key] = self.referenceMapping[key]
+            print "MODEL KEY", model_key, "Reference Value", self.reference_mapping[key]
+            image_points[model_key] = self.reference_mapping[key]
         print "IMG POINTS INIT", image_points
         print "OBJ POINTS", object_points
         image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),

@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from shapely.geometry import Polygon
 
 __author__ = 'Anthony Rouneau'
 
@@ -252,3 +253,29 @@ def convert_euler_to_matrix(rvec):
     return np.matrix([[m00, m01, m02],
                       [m10, m11, m12],
                       [m20, m21, m22]])
+
+
+def common_area(rect1, rect2):
+    """
+    Get the common area between two rectangles
+    :param rect1: the first rectangle
+    :param rect2: the second rectangle
+    :return: the common area between the two rectangles
+    :rtype: double
+    """
+    # The order in the result of the boxPoints : bottom_l, up_l, up_r, bottom_r.
+    box1 = cv2.boxPoints(rect1)
+    np.append(box1, [box1[0]], axis=0)
+    box2 = cv2.boxPoints(rect2)
+    np.append(box2, [box2[0]], axis=0)
+    return Polygon(box1).intersection(Polygon(box2)).area
+
+
+def rectangle_area(rect):
+    """
+    Get the area of an OpenCV rectangle
+    :param rect: the rectangle, obtained by an OpenCV method : ((center_x, center_y), (width, height), angle_degrees)
+    :return: the unsigned area of the rectangle
+    :rtype: double
+    """
+    return rect[1][0] * rect[1][1]
