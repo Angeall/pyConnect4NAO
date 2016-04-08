@@ -189,29 +189,18 @@ def test2():
     clean()
     while True:
 
-        img = get_nao_image(0)
+        img = get_nao_image(1)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        gray = cv2.GaussianBlur(gray, (1, 1), 0)
         # gray = cv2.medianBlur(gray, 3)
-        edges = cv2.Canny(gray, 90, 150, apertureSize=3)
-        edges2 = cv2.Canny(gray, 90, 150, apertureSize=3)
+        edges = cv2.Canny(gray, 125, 150, apertureSize=3)
+        edges2 = edges.copy()
         _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in cnts:
-            approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
-            # if cv2.contourArea(approx, False) > 40:
-            if len(approx) >= 3:
-                print len(approx)
-                for i in range(len(approx) - 1):
-                    tuple0 = (approx[i][0][0], approx[i][0][1])
-                    tuple1 = (approx[i + 1][0][0], approx[i + 1][0][1])
-                    cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
-                tuple0 = (approx[-1][0][0], approx[-1][0][1])
-                tuple1 = (approx[0][0][0], approx[0][0][1])
-                cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
-        # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 175)
+        # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
         # if lines is not None:
         #     print len(lines)
         #     for line in lines:
+        #         print line
         #         rho, theta = line[0]
         #         a = np.cos(theta)
         #         b = np.sin(theta)
@@ -222,8 +211,27 @@ def test2():
         #         x2 = int(x0 - 1000 * (-b))
         #         y2 = int(y0 - 1000 * (a))
         #
-        #         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-        #
+        #         cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        for cnt in cnts:
+            approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
+            # if cv2.contourArea(approx, False) > 40:
+            if len(approx) >= 3:
+                # print approx
+                for i in range(len(approx) - 1):
+                    tuple0 = (approx[i][0][0], approx[i][0][1])
+                    tuple1 = (approx[i + 1][0][0], approx[i + 1][0][1])
+                    # cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
+                tuple0 = (approx[-1][0][0], approx[-1][0][1])
+                tuple1 = (approx[0][0][0], approx[0][0][1])
+                # cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
+                rect = cv2.minAreaRect(cnt)
+                # rectArea = abs(rect[1][0] * rect[1][1])
+                box = cv2.boxPoints(rect)
+                cntArea = abs(cv2.contourArea(cv2.convexHull(approx), False))
+                box = np.int0(box)
+                rectArea = cv2.contourArea(np.array(box), False)
+                if rectArea <= 1.4*cntArea:
+                    cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
         cv2.imshow('contours', img)
         cv2.imshow('canny', edges)
         if cv2.waitKey(1) == 27:
@@ -273,46 +281,19 @@ def test2():
 def test4():
     global nao_video, nao_tracking, nao_motion
     myc4 = Connect4Handler(get_nao_image)
-    dist = 1.
-    sloped = False
-    img = get_nao_image(0)
-    # img = cv2.imread("test.png")
-    try:
-        myc4.detectFrontHoles(dist, sloped)
-        rvec, tvec = myc4.front_hole_detector.match3DModel(nao_video.cam_matrix, nao_video.cam_distorsion)
-        camera_position = nao_motion.getCameraPositionFromWorld()
-        nao_tracking.initializeTracking(rvec, tvec, camera_position)
-        temp = nao_tracking.getConnect4HolePosition(0, "Robot")
-        print temp
-        # nao_motion.putHandAt([temp[0], temp[1], temp[2] + 0.30, 0, 0, 0], 7)
-        nao_motion.motion_proxy.moveTo(temp[0] - 0.25, temp[1], 0.)
-        temp = nao_tracking.getConnect4HolePosition(0, "Robot")
-        nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # position = [temp[1], temp[2], temp[0]]
-        # print position
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(1)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(2)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(3)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(4)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(5)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # temp = nao_tracking.getConnect4HolePosition(6)
-        # nao_motion.track_proxy.lookAt(temp[0:3], 1, 0.1, False)
-        # nao_motion.track_proxy.pointAt("LArm", temp[0:3], 1, 0.1)
-        connect4 = myc4.front_hole_detector.getPerspective()
-        cv2.imshow("c4", connect4)
-        cv2.waitKey(100000)
-        # cv2.imwrite("test.png", img)
-    except c4.CircleGridNotFoundException:
-        pass
+    while True:
+        img = get_nao_image(1)
+        cv2.imshow("TEST", img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        cv2.imshow("Contour", myc4.getUpperHoleCoordinates(gray, gray.copy()))
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
 
 
 if __name__ == '__main__':
-    test3()
-    # test2()
+    # test3()
+    test2()
     # test4()
