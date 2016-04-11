@@ -211,12 +211,12 @@ class Connect4Handler(object):
 
     def getUpperHoleCoordinates(self, img, copy_img):
         """
-        Detect a hole inside the approx_coordinates in the image.
         :param img: the image in which the hole will be detected
-        :param approx_coordinates: rectangle of coordinates indicating, using the solvePnP results, where the
-                                   hole is approximately.
-                                   /!\ must be ordered by top-left, top-right, bottom-right, and bottom-left
+        :type img: np.ndarray
+        :return: The asked upper hole coordinates
         :rtype: np.array
+        Detect holes in the image.
+        TODO
         """
         # Find contours in the reshaped img
         _, contours, _ = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)

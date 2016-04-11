@@ -13,11 +13,11 @@ FRAME_ROBOT = 2
 class MotionController:
     def __init__(self, robot_ip=nao.IP, port=nao.PORT):
         """
-        Creates a new Virtual Controller for NAO
         :param robot_ip: The IP address of the robot
         :type robot_ip: str
         :param port: The port of the robot
         :type port: int
+        Creates a new Virtual Controller for NAO
         """
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, port)

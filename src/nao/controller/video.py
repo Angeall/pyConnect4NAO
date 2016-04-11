@@ -11,6 +11,11 @@ SUBSCRIBER_ID = "Connect4NAO"
 
 class VideoController(object):
     def __init__(self, robot_ip=nao.IP, port=nao.PORT):
+        """
+        :param robot_ip: the ip address of the robot
+        :param port: the port of the robot
+        Connect to the robot camera proxy
+        """
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
         self.subscriber_id = SUBSCRIBER_ID
         self.cam_connected = False

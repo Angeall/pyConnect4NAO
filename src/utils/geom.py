@@ -11,8 +11,6 @@ class ImpossibleEquationException(Exception):
 
 def al_kashi(a=None, b=None, c=None, angle=None):
     """
-    Solve the Al-Khachi equation :  a^2 = b^2 + c^2 - 2*b*c*Cos(angle)
-    There must be one and only one parameter set to None, it is the unknown
     :param a: The variable a in the equation
     :type a: float
     :param b: The variable b in the equation
@@ -23,6 +21,8 @@ def al_kashi(a=None, b=None, c=None, angle=None):
     :type angle: float
     :return: The unknown of the equation
     :rtype: float
+    Solve the Al-Khachi equation :  a^2 = b^2 + c^2 - 2*b*c*Cos(angle)
+    There must be one and only one parameter set to None, it is the unknown
     """
     nones = []
     args = [a, b, c, angle]
@@ -47,37 +47,60 @@ def al_kashi(a=None, b=None, c=None, angle=None):
         raise ImpossibleEquationException("There is no unknown")
 
 
-def vectorize(p1, p2):
+def vectorize(p1, p2, signed=True):
     """
-    Computes the vector made by the two input points
     :param p1: point 1
     :type p1: tuple
     :param p2: point 2
     :type p2: tuple
+    :param signed: false will make the vector positive in x and y
+    :type signed: false
     :return: The vector made by p1 and p2
     :rtype: tuple
+    Computes the vector made by the two input points
     """
-    (x0, x1) = p1
-    (y0, y1) = p2
-    return np.array([float(y0) - float(x0), float(y1) - float(x1)])
+    (x0, y0) = p1
+    (x1, y1) = p2
+    if not signed:
+        return np.array([abs(float(x1) - float(x0)), abs(float(y1) - float(y0))])
+    return np.array([float(x1) - float(x0), float(y1) - float(y0)])
 
 
 def point_distance(p1, p2):
     """
-    Returns the distance between two points (the norm of the vector made by the input two points)
-    :param p1:
-    :param p2:
+    :param p1: the first point
+    :type p1: tuple
+    :param p2: the second point
+    :type p2: tuple
     :return: The distance between p1 and p2
+    :rtype: double
+    Returns the distance between two points (the norm of the vector made by the input two points)
     """
     return np.linalg.norm(vectorize(p1, p2))
 
 
+def vector_distance(v1, v2, signed=True):
+    """
+    :param v1: the first vector
+    :type v1: tuple
+    :param v2: the second vector
+    :type v2: tuple
+    :param signed: true if the vectors must be oriented the same way to be similar
+    :type signed: false
+    :return: The distance between v1 and v2
+    :rtype: double
+    Returns the distance between two points (the norm of the vector made by the input two points)
+    """
+    return np.linalg.norm(vectorize(v1, v2, signed))
+
+
 def normalize(vector):
     """
-    Normalize the input vector
-    :param vector:
+    :param vector: the vector to normalize
     :type vector: tuple
     :return: The normalized form of vector
+    :rtype: tuple
+    Normalize the input vector
     """
     norm = np.linalg.norm(vector)
     return vector[0] / norm, vector[1] / norm
@@ -85,7 +108,6 @@ def normalize(vector):
 
 def transform_vector(vector, rmat, tvec):
     """
-    Apply a rotation and a translation to a vector of coordinates
     :param vector: The coordinates to transform
     :type vector: np.array
     :param rmat: The rotation matrix
@@ -94,6 +116,7 @@ def transform_vector(vector, rmat, tvec):
     :type tvec: np.array
     :return: The transformed coordinates
     :rtype: np.array
+    Apply a rotation and a translation to a vector of coordinates
     """
     # Assure that we can make the rotation using the matrix
     assert (rmat.shape[1] == len(vector))
@@ -108,13 +131,13 @@ def transform_vector(vector, rmat, tvec):
 
 def cluster_vectors(vectors, nb_clusters=4):
     """
-    Cluster vectors into "nb_clusters" clusters.
     :param vectors: A list containing vectors
     :type vectors: list
     :param nb_clusters: The number of clusters returned
     :type nb_clusters: int
     :return: A list with clusters and mean of clusters
     :rtype: list
+    Cluster vectors into "nb_clusters" clusters.
     """
     result = [[], [], []]
     if len(vectors) > 3:
@@ -128,11 +151,11 @@ def cluster_vectors(vectors, nb_clusters=4):
 
 def max_tuple(list_tuple):
     """
-    Get the two max values of a list of tuple
     :param list_tuple: A list of tuple to explore. [..., (x_i, y_i), ...]
     :type list_tuple: list
     :return: A tuple that contains (max_x, max_y)
     :rtype: tuple
+    Get the two max values of a list of tuple
     """
     x_max = -np.infty
     y_max = -np.infty
@@ -148,11 +171,11 @@ def max_tuple(list_tuple):
 
 def min_tuple(list_tuple):
     """
-    Get the two min values of a list of tuple
     :param list_tuple: A list of tuple to explore. [..., (x_i, y_i), ...]
     :type list_tuple: list
     :return: A tuple that contains (min_x, min_y)
     :rtype: tuple
+    Get the two min values of a list of tuple
     """
     x_min = np.infty
     y_min = np.infty
@@ -168,7 +191,6 @@ def min_tuple(list_tuple):
 
 def get_inner_rectangles(rectangle, y_max_length, x_max_length):
     """
-    Computes a list of inner rectangles of dimensions (y_max_length, x_max_length) that are included inside "rectangle".
     :param rectangle: The rectangle to consider in the grid.
                       A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
     :type rectangle: list
@@ -178,6 +200,7 @@ def get_inner_rectangles(rectangle, y_max_length, x_max_length):
     :type x_max_length: int
     :return: A list of inner rectangles inside the rectangles defined in parameters
     :rtype: list
+    Computes a list of inner rectangles of dimensions (y_max_length, x_max_length) that are included inside "rectangle".
     """
     # Make sure it is a rectangle
     [[up_left, up_right], [down_left, down_right]] = rectangle
@@ -210,13 +233,13 @@ def get_inner_rectangles(rectangle, y_max_length, x_max_length):
 
 def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
     """
-    Transform an index mapping (indices referring to keypoints_list)  into a pixel mapping
     :param index_mapping: The index mapping to transform.
     :type index_mapping: dict
     :param keypoints_list: The list that contains the values of the new pixel mapping
     :type keypoints_list: list
     :return: The new mapping, its values are pixels.
     :rtype: dict
+    Transform an index mapping (indices referring to keypoints_list)  into a pixel mapping
     """
     mapping_pixels = {}
     for key in index_mapping.keys():
@@ -227,11 +250,11 @@ def index_mapping_into_pixel_mapping(index_mapping, keypoints_list):
 
 def convert_euler_to_matrix(rvec):
     """
-    Convert euler angles ZYX into a 3D rotation matrix
     :param rvec: The vector of roation in Euler angle in the form : [roll, pitch, yaw]
     :type rvec: tuple
     :return: The rotation matrix that corresponds to the input rotation vector
     :rtype: np.matrix
+    Convert euler angles ZYX into a 3D rotation matrix
     """
     [roll, pitch, yaw] = rvec
     c1 = np.cos(yaw)
@@ -257,25 +280,53 @@ def convert_euler_to_matrix(rvec):
 
 def common_area(rect1, rect2):
     """
-    Get the common area between two rectangles
     :param rect1: the first rectangle
     :param rect2: the second rectangle
     :return: the common area between the two rectangles
     :rtype: double
+    Get the common area between two rectangles
+    """
+    return common_boxes_area(cv2.boxPoints(rect1), cv2.boxPoints(rect2))
+
+
+def common_boxes_area(box1, box2):
+    """
+    :param box1: the first box, an array of edges coordinates
+    :param box2: the second box, an array of edges coordinates
+    :return: the common area between the two boxes
+    :rtype: double
+    Get the common  area between two boxes
     """
     # The order in the result of the boxPoints : bottom_l, up_l, up_r, bottom_r.
-    box1 = cv2.boxPoints(rect1)
-    np.append(box1, [box1[0]], axis=0)
-    box2 = cv2.boxPoints(rect2)
-    np.append(box2, [box2[0]], axis=0)
+    if not (box1[0] == box1[-1]).all():  # If the box is not closed, we close it
+        box1 = np.append(box1, [box1[0]], axis=0)
+    if not (box2[0] == box2[-1]).all():  # If the box is not closed, we close it
+        box2 = np.append(box2, [box2[0]], axis=0)
     return Polygon(box1).intersection(Polygon(box2)).area
 
 
 def rectangle_area(rect):
     """
-    Get the area of an OpenCV rectangle
     :param rect: the rectangle, obtained by an OpenCV method : ((center_x, center_y), (width, height), angle_degrees)
+    :type rect: tuple
     :return: the unsigned area of the rectangle
     :rtype: double
+    Get the area of an OpenCV rectangle
     """
     return rect[1][0] * rect[1][1]
+
+
+def are_vectors_similar(vector1, vector2, max_distance, signed=True):
+    """
+    :param vector1: the first vector
+    :type vector1: tuple
+    :param vector2: the second vector
+    :type vector2: tuple
+    :param max_distance: the maximum distance to allow between the two vectors to consider them as similar
+    :type max_distance: float
+    :param signed: true if the vectors must be oriented the same way to be similar
+    :type signed: false
+    :return: true if the two vectors are similar, for the given maximum distance
+    """
+    return vector_distance(vector1, vector2, signed) < max_distance
+

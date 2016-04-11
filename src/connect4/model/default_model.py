@@ -190,31 +190,31 @@ class DefaultConnect4Model(object):
 
     def getUpperHole(self, index):
         """
-        Get the coordinates of an upper hole of the 3D model of the Connect 4
         :param index: Indicates which hole you want to get (see the constants)
         :type index: int
         :return: The 3D coordinate of the wanted hole in the model
         :rtype: np.array
+        Get the coordinates of an upper hole of the 3D model of the Connect 4
         """
         return self.three_d[2][index * 4], self.three_d[2][(index * 4) + 1], self.three_d[2][(index * 4) + 2], \
                self.three_d[2][(index * 4) + 3]
 
     def getFrontHole(self, index):
         """
-        Get the coordinates of a front hole of the 3D model of the Connect 4
         :param index: Indicates which hole you want to get (see the constants)
         :type index: int
         :return: The 3D coordinate of the wanted hole in the model
         :rtype: np.array
+        Get the coordinates of a front hole of the 3D model of the Connect 4
         """
         return self.three_d[1][index]
 
     def getCorner(self, index):
         """
-        Get the coordinates of a corner of the 3D model of the Connect 4
         :param index: Indicates which corner you want to get (see the constants)
         :type index: int
         :return: The 3D coordinate of the wanted corner in the model
         :rtype: np.array
+        Get the coordinates of a corner of the 3D model of the Connect 4
         """
         return self.three_d[0][index]

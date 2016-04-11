@@ -28,7 +28,6 @@ class CircleGridDetector(object):
     """
     Class used to detect a circle grid using circles detected in a picture.
     """
-
     def __init__(self):
         self.MIN_CIRCLES_PER_LINE = 2
         self.reference_img = None
@@ -71,8 +70,6 @@ class CircleGridDetector(object):
     def runDetection(self, circles, pixel_error_margin=10., min_similar_vectors=15, img=None,
                      ref_img=None, grid_shape=None):
         """
-        Public method.
-        Runs a new detection to find a Connect 4
         :param circles: The circles in which detect a circle grid
         :type circles: list
         :param pixel_error_margin: The error margin allowed to consider two vectors equal
@@ -86,6 +83,8 @@ class CircleGridDetector(object):
         :type ref_img: numpy.ndarray
         :param grid_shape: The shape of the grid to detect (e.g. (6, 7) for a 6x7 connect 4 board)
         :type grid_shape: tuple
+        Public method.
+        Runs a new detection to find a Connect 4
         """
         self.clear()
         if grid_shape is None:
@@ -143,11 +142,11 @@ class CircleGridDetector(object):
 
     def prepareConnection(self, circles, bounds=None):
         """
-        Method to call before self.connectCircles to set the object parameters properly
         :param circles: The circles in which a circle grid will be detected
         :type circles: list
         :param bounds: The boundaries of the image in which the circles have been detected
         :type bounds: list
+        Method to call before self.connectCircles to set the object parameters properly
         """
         self.circles = circles
         for i in range(len(circles)):
@@ -161,12 +160,12 @@ class CircleGridDetector(object):
 
     def connectCircles(self):
         """
+        Private method.
         Computes a list with connections between circle centres.
         For every couple of centres (a, b) such that a is not b:
                if there's no centre c such that ((dist(a,c) < dist(a,b)) and (dist(c, b) < dist(a, c)))
                then add the vector (a,b) to the connection with the indices of the centres a and b
-
-        self.prepareGraph must be set before use
+        self.prepareGraph must be called before this one
         """
         keypoints = self.circles
         circles_dict = {}
@@ -222,12 +221,12 @@ class CircleGridDetector(object):
 
     def prepareFiltering(self, pixel_error_margin=10., min_similar_vectors=15):
         """
-        must be called after self.connectCircles
         :param pixel_error_margin: The error margin allowed to consider two vector as equal
         :type pixel_error_margin: float
         :param min_similar_vectors: The minimum number of similar vector a considered vector must have to be
                                     considered as non-noise
         :type min_similar_vectors: int
+        Must be called after self.connectCircles
         """
         if self.original_arc_vectors is None or self.original_arc_indices is None:
             raise CircleGridException("connectCircles must be performed before prepareFiltering")
@@ -257,10 +256,10 @@ class CircleGridDetector(object):
     def doublePassFilter(self):
         """
          Goal : erase noise, then try to connect more true circle centres (by avoiding noise)
-         1) Connect into a graph
-         2) Filter it
-         3) Remove every centre that is not linked with another centre after 2)
-         4) Re-connect couple of centres, ignoring the centers removed in 3) and re-filter
+             1) Connect into a graph
+             2) Filter it
+             3) Remove every centre that is not linked with another centre after 2)
+             4) Re-connect couple of centres, ignoring the centers removed in 3) and re-filter
         """
         self.filterConnections()
         centers_to_remove = []
@@ -278,6 +277,7 @@ class CircleGridDetector(object):
 
     def filterRightUpVectors(self):
         """
+        Private method.
         Computes vectors belonging to the cluster right and the cluster up
         Sets self.upVectors and self.rightVectors lists of index couples that forms vectors belonging
                  either to the "up" or the "right" cluster.
@@ -314,6 +314,7 @@ class CircleGridDetector(object):
 
     def bfsMarking(self):
         """
+        Private method.
         Must execute prepareBFS first.
         Explore circle centres as a graph using vectors (filtered before) marking
         with relative positions.
@@ -384,11 +385,13 @@ class CircleGridDetector(object):
 
     def normalizeRelativeCoordinates(self, x_shift=None, y_shift=None):
         """
+        :param x_shift: The shift to apply to the X axis
+        :type x_shift: int
+        :param y_shift: The shift to apply to the Y axis
+        :type y_shift: int
         Shift a mapping so that all values of the mapping are shifted by x_shift and y_shift.
         If x_shift is None, The lowest x value will be 0 and other x values are adapted in consequence.
         If y_shift is None, The lowest y value will be 0 and other y values are adapted in consequence.
-        :param x_shift: The shift to apply to the X axis
-        :param y_shift: The shift to apply to the Y axis
         """
         if x_shift is None and y_shift is None:
             (x_shift, y_shift) = geom.min_tuple(self.relative_coordinates.keys())
@@ -418,10 +421,10 @@ class CircleGridDetector(object):
 
     def countRectangleConnections(self, rectangle):
         """
-        Count the keypoints connections inside a rectangle in the grid.
         :param rectangle: The rectangle to consider in the grid.
                           A rectangle is [[(coord_up_left), (coord_up_right)], [(coord_down_left), (coord_down_right)]]
         :type rectangle: list
+        Count the keypoints connections inside a rectangle in the grid.
         """
         lines_counter = {}  # Will assure that the top and the bottom lines have at least MIN_CIRCLES_PER_LINE circles
         [[(min_x, max_y), (max_x, _)], [(_, min_y), (_, _)]] = rectangle
@@ -439,6 +442,10 @@ class CircleGridDetector(object):
         return len(nb_connection)
 
     def prepareGrid(self, grid_shape):
+        """
+        :param grid_shape: the shape of the grid to detect
+        :type grid_shape: tuple
+        """
         if self.relative_coordinates is None or self.right_vectors is None or self.up_vectors is None:
             raise CircleGridException("prepareBFS and bfsMarking must be called before prepareForGrid")
         self.grid_shape = grid_shape

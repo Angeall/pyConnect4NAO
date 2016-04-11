@@ -1,10 +1,10 @@
 from time import sleep
 import time
-
 import cv2
 import numpy as np
-
+from matplotlib import pyplot as plt
 import connect4.detector.front_holes as c4
+import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
 from connect4.image.default_image import DefaultConnect4Image
 from connect4.model.default_model import DefaultConnect4Model
@@ -187,31 +187,34 @@ def tracker_test():
 
 def test2():
     clean()
+    imgs = []
+    uhc = upper_hole.UpperHoleDetector(DefaultConnect4Model())
+    j = 1
     while True:
-
-        img = get_nao_image(1)
+        # img = get_nao_image(1)
+        img = cv2.imread("test_img/img" + str((j % 154) + 1) + ".png")
+        # imgs.append(img.copy())
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (1, 1), 0)
         # gray = cv2.medianBlur(gray, 3)
-        edges = cv2.Canny(gray, 125, 150, apertureSize=3)
+        edges = cv2.Canny(gray, 175, 200, apertureSize=3)
         edges2 = edges.copy()
         _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
-        # if lines is not None:
-        #     print len(lines)
-        #     for line in lines:
-        #         print line
-        #         rho, theta = line[0]
-        #         a = np.cos(theta)
-        #         b = np.sin(theta)
-        #         x0 = a * rho
-        #         y0 = b * rho
-        #         x1 = int(x0 + 1000 * (-b))
-        #         y1 = int(y0 + 1000 * (a))
-        #         x2 = int(x0 - 1000 * (-b))
-        #         y2 = int(y0 - 1000 * (a))
-        #
-        #         cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
+        if lines is not None:
+            for line in lines:
+                rho, theta = line[0]
+                a = np.cos(theta)
+                b = np.sin(theta)
+                x0 = a * rho
+                y0 = b * rho
+                x1 = int(x0 + 1000 * (-b))
+                y1 = int(y0 + 1000 * (a))
+                x2 = int(x0 - 1000 * (-b))
+                y2 = int(y0 - 1000 * (a))
+
+                cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 1)
+        rectangles = []
         for cnt in cnts:
             approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
             # if cv2.contourArea(approx, False) > 40:
@@ -231,13 +234,24 @@ def test2():
                 box = np.int0(box)
                 rectArea = cv2.contourArea(np.array(box), False)
                 if rectArea <= 1.4*cntArea:
+                    rectangles.append(rect)
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
+        uhc.runDetection(rectangles, None)
+        for hole in uhc.holes:
+            box = cv2.boxPoints(hole)
+            box = np.int0(box)
+            cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
         cv2.imshow('contours', img)
         cv2.imshow('canny', edges)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()
+            i = 0
+            for img in imgs:
+                i += 1
+                cv2.imwrite("test_img/img" + str(i) + ".png", img)
             break
+        j += 1
     return 0
 
 

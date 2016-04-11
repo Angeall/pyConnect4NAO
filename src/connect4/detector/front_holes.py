@@ -30,6 +30,9 @@ class FrontHolesDetector(CircleGridDetector):
     """
 
     def __init__(self, connect4_model):
+        """
+        :param connect4_model: the Connect 4 model to use
+        """
         super(FrontHolesDetector, self).__init__()
         # Image of reference
         self.model = connect4_model
@@ -41,14 +44,20 @@ class FrontHolesDetector(CircleGridDetector):
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
                      ref_img=None, grid_shape=(6, 7)):
         """
-        Runs the detection on circles
         :param circles: The circles detected in an image that could be the connect 4 front holes
+        :type circles: list
         :param pixel_error_margin: The maximum error to allow to consider two circles as neighbours
+        :type pixel_error_margin: int
         :param min_similar_vectors: The minimum number of similar vectors to consider a connection
                                     between two circles as not a noise
+        :type min_similar_vectors: int
         :param img: The image in which the detection has been
+        :type img: np.ndarray
         :param ref_img: The image of reference
+        :type ref_img: np.ndarray
         :param grid_shape: The shape of the grid (used in superclass, but constant in Connect 4 : (6, 7))
+        :type grid_shape: tuple
+        Runs the detection on circles
         """
         grid_shape = (6, 7)
         super(FrontHolesDetector, self).runDetection(circles, pixel_error_margin, min_similar_vectors, img,
@@ -56,10 +65,13 @@ class FrontHolesDetector(CircleGridDetector):
 
     def match3DModel(self, camera_matrix, camera_dist):
         """
-        Find the 3D coordinates of the Connect4Handler
         :param camera_matrix: The intrinsic camera matrix that can be get via camera calibration
+        :type camera_matrix: np.matrix
         :param camera_dist: The intrinsic camera distortion coefficients that can be get via camera calibration
+        :type camera_dist: np.array
         :return: (rvec, tvec) : rvec = rotation vector, tvec translation vector
+        :rtype tuple:
+        Find the 3D coordinates of the Connect4Handler
         """
         object_points = np.array(self.model.three_d[1])
         image_points = []
