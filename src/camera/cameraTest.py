@@ -2,7 +2,6 @@ from time import sleep
 import time
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 import connect4.detector.front_holes as c4
 import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
@@ -196,24 +195,24 @@ def test2():
         # imgs.append(img.copy())
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (1, 1), 0)
-        # gray = cv2.medianBlur(gray, 3)
-        edges = cv2.Canny(gray, 175, 200, apertureSize=3)
+        gray = cv2.medianBlur(gray, 1)
+        edges = cv2.Canny(gray, 154, 200, apertureSize=3)
         edges2 = edges.copy()
         _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
-        if lines is not None:
-            for line in lines:
-                rho, theta = line[0]
-                a = np.cos(theta)
-                b = np.sin(theta)
-                x0 = a * rho
-                y0 = b * rho
-                x1 = int(x0 + 1000 * (-b))
-                y1 = int(y0 + 1000 * (a))
-                x2 = int(x0 - 1000 * (-b))
-                y2 = int(y0 - 1000 * (a))
-
-                cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 1)
+        # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
+        # if lines is not None:
+        #     for line in lines:
+        #         rho, theta = line[0]
+        #         a = np.cos(theta)
+        #         b = np.sin(theta)
+        #         x0 = a * rho
+        #         y0 = b * rho
+        #         x1 = int(x0 + 1000 * (-b))
+        #         y1 = int(y0 + 1000 * (a))
+        #         x2 = int(x0 - 1000 * (-b))
+        #         y2 = int(y0 - 1000 * (a))
+        #
+        #         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 1)
         rectangles = []
         for cnt in cnts:
             approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
@@ -243,7 +242,7 @@ def test2():
             cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
         cv2.imshow('contours', img)
         cv2.imshow('canny', edges)
-        if cv2.waitKey(1) == 27:
+        if cv2.waitKey(500) == 27:
             print "Esc pressed : exit"
             close_camera()
             i = 0
