@@ -231,15 +231,16 @@ def test2():
                 box = cv2.boxPoints(rect)
                 cntArea = abs(cv2.contourArea(cv2.convexHull(approx), False))
                 box = np.int0(box)
-                rectArea = cv2.contourArea(np.array(box), False)
-                if rectArea <= 1.4*cntArea:
+                # rectArea = cv2.contourArea(np.array(box), False)
+                rectArea = rect[1][0] * rect[1][1]
+                if abs(rectArea) <= 1.35*abs(cntArea):
                     rectangles.append(rect)
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
         uhc.runDetection(rectangles, None)
         for hole in uhc.holes:
             box = cv2.boxPoints(hole)
             box = np.int0(box)
-            cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
+            # cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
         cv2.imshow('contours', img)
         cv2.imshow('canny', edges)
         if cv2.waitKey(500) == 27:
