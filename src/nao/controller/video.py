@@ -9,6 +9,8 @@ __author__ = 'Anthony Rouneau'
 SUBSCRIBER_ID = "Connect4NAO"
 
 
+
+
 class VideoController(object):
     def __init__(self, robot_ip=nao.IP, port=nao.PORT):
         """
@@ -17,6 +19,8 @@ class VideoController(object):
         Connect to the robot camera proxy
         """
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
+        self.landmark_detector = ALProxy("ALLandMarkDetection,", robot_ip, port)
+        self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_id = SUBSCRIBER_ID
         self.cam_connected = False
         self.cam_matrix = nao.CAM_MATRIX
@@ -92,3 +96,13 @@ class VideoController(object):
         """
         for i in range(7):
             self.disconnectFromCamera(subscriber_id=self.subscriber_id + "_" + str(i))
+
+    def detectLandmarks(self, period, subscriber_id="Upper_Holes"):
+        """
+        :param period: the period between two detection in millisecond
+        :type period: int
+        :param subscriber_id: the subscriber id to the nao memory
+        :type subscriber_id: str
+        :return:
+        """
+        self.landmark_detector.subscribe(subscriber_id, period)
