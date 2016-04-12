@@ -330,3 +330,47 @@ def are_vectors_similar(vector1, vector2, max_distance, signed=True):
     """
     return vector_distance(vector1, vector2, signed) < max_distance
 
+
+def get_box_info(box):
+    """
+    :param box: the box, consisting of 4 points
+    :type box: np.ndarray
+    :return: ((long_side_vector, long_side_norm), (short_side_vector, short_side_norm))
+    :rtype: tuple
+    """
+    vector1 = vectorize(box[1], box[2])
+    vector2 = vectorize(box[0], box[1])
+    norm1 = np.linalg.norm(vector1)
+    norm2 = np.linalg.norm(vector2)
+    if norm1 > norm2:
+        return (vector1, norm1), (vector2, norm2)
+    else:
+        return (vector2, norm2), (vector1, norm1)
+
+
+def are_ratio_similar(ratio1, ratio2, max_difference):
+    """
+    :param ratio1: the first ratio
+    :type ratio1: double
+    :param ratio2: the second ratio
+    :type ratio2: double
+    :param max_difference: the maximum allowed difference between the two ratios
+    :type max_difference: double
+    :return: true if the two ratio are similar, given the maximum allowed difference
+    :rtype: bool
+    """
+    return abs(ratio1 - ratio2) < max_difference
+
+
+def are_vectors_parallel(vector1, vector2, max_difference):
+    """
+    :param vector1: the first vector
+    :type vector1: tuple
+    :param vector2: the second vector
+    :type vector2: tuple
+    :param max_difference: the maximum allowed error to consider the two vectors as parallels
+    :type max_difference: double
+    :return: true if the two vectors can be considered as parallel, given the maximum allowed error
+    """
+    return abs(abs(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))) - 1) < max_difference
+

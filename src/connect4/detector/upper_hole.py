@@ -100,31 +100,14 @@ class UpperHoleDetector(object):
         for centre in self.filtered_rectangle_centres:
             if not contains_map.get(centre, False):
                 box = self.boxes[self.centres_to_indices[centre]]
-                vectors = [geom.vectorize(box[1], box[2]), geom.vectorize(box[0], box[1])]
-                norms = [np.linalg.norm(vectors[0]), np.linalg.norm(vectors[1])]
-                box_vector = vectors[0]
-                box_length = norms[0]
-                box_width = norms[1]
-                if norms[1] > box_length:
-                    box_vector = vectors[1]
-                    box_length = norms[1]
-                    box_width = norms[0]
+                box_vector, box_length, _, box_width = geom.get_box_info(box)
                 max_distance = 0.5 * box_length
                 # If the rectangle is not too small and the length/width ratio is the ratio expected by the model
-                if box_length > 30 and abs((box_length / box_width) - model_length_width_ratio) < 1.75:
+                if box_length > 30 and geom.are_ratio_similar(box_length / box_width, model_length_width_ratio, 1.75):
                     for other_centre in self.filtered_rectangle_centres:
                         if other_centre is not centre:
                             other_box = self.boxes[self.centres_to_indices[other_centre]]
-                            vectors = [geom.vectorize(other_box[1], other_box[2]),
-                                       geom.vectorize(other_box[0], other_box[1])]
-                            norms = [np.linalg.norm(vectors[0]), np.linalg.norm(vectors[1])]
-                            other_box_vector = vectors[0]
-                            other_box_length = norms[0]
-                            other_box_width = norms[1]
-                            if norms[1] > other_box_length:
-                                other_box_vector = vectors[1]
-                                other_box_length = norms[1]
-                                other_box_width = norms[0]
+                            other_box_vector, other_box_length, _, other_box_width = geom.get_box_info(other_box)
                             centres_vector = geom.vectorize(centre, other_centre)
                             # If the other rectangle is not too small and the length/width ratio
                             #   is the ratio expected by the model
@@ -133,11 +116,12 @@ class UpperHoleDetector(object):
                             #   and : the vector of the long_side of the rectangle and the vector that binds the
                             #       two centres is approximately parallel
                             if other_box_length > 30 \
-                                    and abs((other_box_length / other_box_width) - model_length_width_ratio) < 1.75 \
+                                    and geom.are_ratio_similar(other_box_length / other_box_width,
+                                                               model_length_width_ratio, 1.75) \
                                     and geom.are_vectors_similar(box_vector, other_box_vector, max_distance,
                                                                  signed=False) \
-                                    and (abs(np.linalg.norm(
-                                        centres_vector) / box_length - model_hole_space_ratio) < 0.25) \
+                                    and geom.are_ratio_similar(np.linalg.norm(centres_vector) / box_length,
+                                                               model_hole_space_ratio, 0.25) \
                                     and abs((np.dot(box_vector, centres_vector) / (
                                                 box_length * np.linalg.norm(centres_vector))) - 1 < 0.4):
                                 if not contains_map.get(centre, False):
