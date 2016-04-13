@@ -1,14 +1,15 @@
 import numpy as np
 import time
-from naoqi import ALProxy
+from naoqi import ALProxy, ALModule, ALBroker
 
 import nao.data as nao
+import threading
 
 __author__ = 'Anthony Rouneau'
 
 SUBSCRIBER_ID = "Connect4NAO"
 
-
+event = threading.Event()
 
 
 class VideoController(object):
@@ -18,9 +19,9 @@ class VideoController(object):
         :param port: the port of the robot
         Connect to the robot camera proxy
         """
+        self.ip = robot_ip
+        self.port = port
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
-        self.landmark_detector = ALProxy("ALLandMarkDetection,", robot_ip, port)
-        self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_id = SUBSCRIBER_ID
         self.cam_connected = False
         self.cam_matrix = nao.CAM_MATRIX
@@ -59,9 +60,9 @@ class VideoController(object):
 
     def disconnectFromCamera(self, subscriber_id=None):
         """
-        Unsubscribe from the camera using the subscriber identifier
         :param subscriber_id: The subscriber identifier to disconnect from. If None, use the default id
         :type subscriber_id: str
+        Unsubscribe from the camera using the subscriber identifier
         """
         try:
             if subscriber_id is None:
@@ -73,9 +74,9 @@ class VideoController(object):
 
     def getImageFromCamera(self):
         """
-        Take a picture that can be used by OpenCV
         :return: The picture taken or None if there was a connection problem
         :rtype: np.matrix
+        Take a picture that can be used by OpenCV
         """
         if not self.cam_connected:
             self.connectToCamera()
@@ -97,12 +98,56 @@ class VideoController(object):
         for i in range(7):
             self.disconnectFromCamera(subscriber_id=self.subscriber_id + "_" + str(i))
 
-    def detectLandmarks(self, period, subscriber_id="Upper_Holes"):
+    def detectLandmarks(self, expected_landmarks_number=2, timeout=500, detection_period=200, subscriber_id="C4_Holes"):
         """
-        :param period: the period between two detection in millisecond
-        :type period: int
+        :param expected_landmarks_number: the minimum number of landmarks to detect to consider the detection as
+            successful.
+        :type expected_landmarks_number: int
+        :param timeout: if no landmark was detected in this amount of milliseconds, raise an excetion
+        :type timeout: int
+        :param detection_period: the period between two detection in millisecond
+        :type detection_period: int
         :param subscriber_id: the subscriber id to the nao memory
         :type subscriber_id: str
         :return:
         """
-        self.landmark_detector.subscribe(subscriber_id, period)
+        global event
+        # Broker to be able to subscribe to NAO events
+        broker = ALBroker("myBroker", "127.0.0.1", 0, self.ip, self.port)
+        # Landmark detector proxy to the robot
+        landmark_detector = ALProxy("ALLandMarkDetection,", self.ip, self.port)
+        # Launch the detector every "detection_period" ms
+        landmark_detector.subscribe(subscriber_id, detection_period, 1.0)
+
+        # Preparing the callback method
+        landmark_callback_name = "landmark_callback"
+        landmark_callback = LandmarkCallbackModule(landmark_callback_name, expected_landmarks_number)
+        memory_proxy = ALProxy("ALMemory")
+        memory_proxy.subscribeToEvent("LandmarkDetected", landmark_callback_name, "onMarksUpdated")
+
+        # Waiting for the detector to detect landmarks
+        event.wait(timeout/1000.0)
+
+        # Exiting...
+        landmark_detector.unsubscribe(subscriber_id)
+        broker.shutdown()
+        event.clear()
+
+
+class LandmarkCallbackModule(object, ALModule):
+    """ The main point here is to declare a module with a call back function
+      that is called by ALMemory whenever the landmark's results change. """
+    def __init__(self, variable_name, expected_landmarks_number):
+        super(LandmarkCallbackModule, self).__init__(variable_name)
+        self.expected_landmarks_number = expected_landmarks_number
+
+    # Call back function registered with subscribeOnDataChange that handles
+    # changes in LandMarkDetection results.
+    def onMarksUpdated(self, dataName, value, msg):
+        global event
+        """ Call back method called when naomark detection updates its results. """
+        if len(value) != 0:
+            # TODO: Use expected_landmarks_number
+            event.set()
+            print "We detected naomarks !"
+            print str(value)
