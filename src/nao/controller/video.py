@@ -22,6 +22,8 @@ class VideoController(object):
         self.ip = robot_ip
         self.port = port
         self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
+        # self.barcode_reader = ALProxy("ALBarcodeReader,", robot_ip, port)
+        # self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_id = SUBSCRIBER_ID
         self.cam_connected = False
         self.cam_matrix = nao.CAM_MATRIX
@@ -98,56 +100,54 @@ class VideoController(object):
         for i in range(7):
             self.disconnectFromCamera(subscriber_id=self.subscriber_id + "_" + str(i))
 
-    def detectLandmarks(self, expected_landmarks_number=2, timeout=500, detection_period=200, subscriber_id="C4_Holes"):
-        """
-        :param expected_landmarks_number: the minimum number of landmarks to detect to consider the detection as
-            successful.
-        :type expected_landmarks_number: int
-        :param timeout: if no landmark was detected in this amount of milliseconds, raise an excetion
-        :type timeout: int
-        :param detection_period: the period between two detection in millisecond
-        :type detection_period: int
-        :param subscriber_id: the subscriber id to the nao memory
-        :type subscriber_id: str
-        :return:
-        """
-        global event
-        # Broker to be able to subscribe to NAO events
-        broker = ALBroker("myBroker", "127.0.0.1", 0, self.ip, self.port)
-        # Landmark detector proxy to the robot
-        landmark_detector = ALProxy("ALLandMarkDetection,", self.ip, self.port)
-        # Launch the detector every "detection_period" ms
-        landmark_detector.subscribe(subscriber_id, detection_period, 1.0)
-
-        # Preparing the callback method
-        landmark_callback_name = "landmark_callback"
-        landmark_callback = LandmarkCallbackModule(landmark_callback_name, expected_landmarks_number)
-        memory_proxy = ALProxy("ALMemory")
-        memory_proxy.subscribeToEvent("LandmarkDetected", landmark_callback_name, "onMarksUpdated")
-
-        # Waiting for the detector to detect landmarks
-        event.wait(timeout/1000.0)
-
-        # Exiting...
-        landmark_detector.unsubscribe(subscriber_id)
-        broker.shutdown()
-        event.clear()
-
-
-class LandmarkCallbackModule(object, ALModule):
-    """ The main point here is to declare a module with a call back function
-      that is called by ALMemory whenever the landmark's results change. """
-    def __init__(self, variable_name, expected_landmarks_number):
-        super(LandmarkCallbackModule, self).__init__(variable_name)
-        self.expected_landmarks_number = expected_landmarks_number
-
-    # Call back function registered with subscribeOnDataChange that handles
-    # changes in LandMarkDetection results.
-    def onMarksUpdated(self, dataName, value, msg):
-        global event
-        """ Call back method called when naomark detection updates its results. """
-        if len(value) != 0:
-            # TODO: Use expected_landmarks_number
-            event.set()
-            print "We detected naomarks !"
-            print str(value)
+#     def detectBarcode(self, expected_barcode_number=2, timeout=500, detection_period=100, subscriber_id="C4_Holes"):
+#         """
+#         :param expected_barcode_number: the minimum number of landmarks to detect to consider the detection as
+#             successful.
+#         :type expected_barcode_number: int
+#         :param timeout: if no landmark was detected in this amount of milliseconds, raise an excetion
+#         :type timeout: int
+#         :param detection_period: the period between two detection in millisecond
+#         :type detection_period: int
+#         :param subscriber_id: the subscriber id to the nao memory
+#         :type subscriber_id: str
+#         :return:
+#         """
+#         global event
+#         # Broker to be able to subscribe to NAO events
+#         broker = ALBroker("myBroker", "127.0.0.1", 0, self.ip, self.port)
+#         # Launch the detector every "detection_period" ms
+#         self.barcode_reader.subscribe(subscriber_id, detection_period, 1.0)
+#
+#         # Preparing the callback method
+#         barcode_callback_name = "barcode_callback"
+#         barcode_callback = BarcodeCallbackModule(barcode_callback_name, expected_barcode_number)
+#         self.memory_proxy.subscribeToEvent("BarcodeReader/BarcodeDetected", barcode_callback_name, "onBarcodeUpdated")
+#
+#         # Waiting for the detector to detect landmarks
+#         event.wait(timeout/1000.0)
+#
+#         # Exiting...
+#         self.barcode_reader.unsubscribe(subscriber_id)
+#         self.memory_proxy.unsubscribeToEvent("BarcodeReader/BarcodeDetected", barcode_callback_name)
+#         broker.shutdown()
+#         event.clear()
+#
+#
+# class BarcodeCallbackModule(ALModule):
+#     """ The main point here is to declare a module with a call back function
+#       that is called by ALMemory whenever the landmark's results change. """
+#     def __init__(self, variable_name, expected_barcode_number):
+#         super(BarcodeCallbackModule, self).__init__(variable_name)
+#         self.expected_barcode_number = expected_barcode_number
+#
+#     # Call back function registered with subscribeOnDataChange that handles
+#     # changes in LandMarkDetection results.
+#     def onBarcodeUpdated(self, dataName, value, msg):
+#         global event
+#         """ Call back method called when naomark detection updates its results. """
+#         if len(value) != 0:
+#             # TODO: Use expected_barcode_number
+#             event.set()
+#             print "We detected barcode !"
+#             print str(value)

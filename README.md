@@ -8,6 +8,7 @@
 
 ##Dependencies
  - `OpenCV 3`
- - `Numpy`
- - `Scipy`
- - `Shapely`
+ - [`Numpy`](https://pypi.python.org/pypi/numpy/1.10.1)
+ - [`Scipy`](https://pypi.python.org/pypi/scipy/0.17.0)
+ - [`Shapely`](https://pypi.python.org/pypi/Shapely)
+ - [`Hampy`](https://pypi.python.org/pypi/hampy/1.4.1)

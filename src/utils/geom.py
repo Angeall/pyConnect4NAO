@@ -343,9 +343,9 @@ def get_box_info(box):
     norm1 = np.linalg.norm(vector1)
     norm2 = np.linalg.norm(vector2)
     if norm1 > norm2:
-        return (vector1, norm1), (vector2, norm2)
+        return vector1, norm1, vector2, norm2
     else:
-        return (vector2, norm2), (vector1, norm1)
+        return vector2, norm2, vector1, norm1
 
 
 def are_ratio_similar(ratio1, ratio2, max_difference):

@@ -2,6 +2,8 @@ from time import sleep
 import time
 import cv2
 import numpy as np
+from hampy import detect_markers
+
 import connect4.detector.front_holes as c4
 import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
@@ -41,14 +43,14 @@ def get_webcam_image():
     return img
 
 
-def get_nao_image(camera_num=0):
+def get_nao_image(camera_num=0, res=1):
     global nao_video, nao_motion, nao_tracking
     if nao_video is None:
         nao_video = VideoController()
         nao_motion = MotionController()
         nao_tracking = TrackingController()
         clean()
-        ret = nao_video.connectToCamera(res=1, fps=30, camera_num=camera_num)
+        ret = nao_video.connectToCamera(res=res, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
@@ -190,13 +192,13 @@ def test2():
     uhc = upper_hole.UpperHoleDetector(DefaultConnect4Model())
     j = 1
     while True:
-        # img = get_nao_image(1)
-        img = cv2.imread("test_img/img" + str((j % 154) + 1) + ".png")
+        img = get_nao_image(1)
+        # img = cv2.imread("test_img/img" + str((j % 154) + 1) + ".png")
         # imgs.append(img.copy())
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (1, 1), 0)
-        gray = cv2.medianBlur(gray, 1)
-        edges = cv2.Canny(gray, 154, 200, apertureSize=3)
+        # gray = cv2.medianBlur(gray, 1)
+        edges = cv2.Canny(gray, 195, 200, apertureSize=3)
         edges2 = edges.copy()
         _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         # lines = cv2.HoughLines(edges, 1.5, np.pi / 360, 133)
@@ -233,14 +235,14 @@ def test2():
                 box = np.int0(box)
                 # rectArea = cv2.contourArea(np.array(box), False)
                 rectArea = rect[1][0] * rect[1][1]
-                if abs(rectArea) <= 1.35*abs(cntArea):
+                if abs(rectArea) <= 1.4*abs(cntArea):
                     rectangles.append(rect)
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
         uhc.runDetection(rectangles, None)
         for hole in uhc.holes:
             box = cv2.boxPoints(hole)
             box = np.int0(box)
-            # cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
+            cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
         cv2.imshow('contours', img)
         cv2.imshow('canny', edges)
         if cv2.waitKey(500) == 27:
@@ -306,8 +308,28 @@ def test4():
             close_camera()
             break
 
+def testBarCode():
+    while True:
+        img = get_nao_image(1, res=2)
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        markers = detect_markers(img)
+
+        for m in markers:
+            m.draw_contour(img)
+            print str(m.id) + " " + str(m.contours)
+            cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+        print
+        cv2.imshow('live', img)
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
+
 
 if __name__ == '__main__':
     # test3()
-    test2()
+    # test2()
     # test4()
+    testBarCode()
