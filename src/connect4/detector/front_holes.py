@@ -77,17 +77,11 @@ class FrontHolesDetector(CircleGridDetector):
         image_points = []
         for i in range(42):
             image_points.append(0)
-        print "Reference Mapping", self.reference_mapping, "\n\n"
-        print "Reference Mapping Keys", self.reference_mapping.keys()
         for key in self.reference_mapping.keys():
             model_key = self.model.FRONT_HOLE_MAPPING[key]
-            print "MODEL KEY", model_key, "Reference Value", self.reference_mapping[key]
             image_points[model_key] = self.reference_mapping[key]
-        print "IMG POINTS INIT", image_points
-        print "OBJ POINTS", object_points
         image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),
                                                 self.homography).reshape(-1, 2)
-        print "IMG POINTS", image_points
         # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, np.eye(3), None)
         retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
         if not retval:

@@ -49,7 +49,7 @@ class Connect4Handler(object):
         :param dist: The distance from the board in meters
         :return: The estimated minimum radius to detect
         """
-        return int(np.ceil(4.4143 * (dist ** (-1.1446)) / (self.model.circle / 0.046)))
+        return int(np.ceil(4.4143 * (dist ** (-1.1446)) / (self.model.circle_diameter / 0.046)))
 
     def estimateMaxRadius(self, dist):
         """
@@ -57,7 +57,7 @@ class Connect4Handler(object):
         :param dist: The distance from the board in meters
         :return: The estimated maximum radius to detect
         """
-        return int(round(8.5468 * (dist ** (-0.7126)) / (self.model.circle / 0.046)))
+        return int(round(8.5468 * (dist ** (-0.7126)) / (self.model.circle_diameter / 0.046)))
 
     def computeMaxRadiusRatio(self, distance):
         """
@@ -69,7 +69,7 @@ class Connect4Handler(object):
         max_angle = np.pi / 2.
         ab = distance  # The length of the vector between the robot and the
         #                farthest point of the farthest vector
-        bc = self.model.circle  # The length of the vector of a circle
+        bc = self.model.circle_diameter  # The length of the vector of a circle
         ac = geom.al_kashi(b=ab, c=bc, angle=max_angle)  # The length of the vector between the robot and the closest
         #                                                   point of the farthest vector
         beta = geom.al_kashi(a=bc, b=ab, c=ac)  # Angle of vision of the robot to the farthest vector
@@ -108,9 +108,9 @@ class Connect4Handler(object):
         :return: The maximum error in pixel to consider during the front hole detection
         :rtype: float
         """
-        cm_to_pixels = min_radius / (self.model.circle / 2)
-        hor = (self.model.circle_h_space + self.model.circle) * cm_to_pixels
-        ver = (self.model.circle_v_space + self.model.circle) * cm_to_pixels
+        cm_to_pixels = min_radius / (self.model.circle_diameter / 2)
+        hor = (self.model.circle_h_space + self.model.circle_diameter) * cm_to_pixels
+        ver = (self.model.circle_v_space + self.model.circle_diameter) * cm_to_pixels
         hyp = np.sqrt(hor ** 2 + ver ** 2)
         return 0.9 * hyp
 

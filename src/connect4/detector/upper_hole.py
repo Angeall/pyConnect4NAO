@@ -20,7 +20,7 @@ class UpperHoleDetector(object):
         self.model = c4_model
         self.rectangles = []
         self.holes = []
-        self.lines = []
+        self.hamcodes = []
         # The KDTree only stocks Point2Ds. Hence we maintain a correspondence table
         #  between the rectangle centres and the rectangles indices.
         self.centres_to_indices = {}
@@ -34,16 +34,16 @@ class UpperHoleDetector(object):
         """
         self.rectangles = []
         self.holes = []
-        self.lines = []
+        self.hamcodes = []
         self.centres_to_indices = {}
         self.boxes = []
         self.kdtree = None
         self.filtered_rectangle_centres = []
 
-    def runDetection(self, rectangles, lines):
+    def runDetection(self, rectangles, hamcodes):
         self.clear()
         self.rectangles = rectangles
-        self.lines = lines
+        self.hamcodes = hamcodes
         self.kdtree, self.centres_to_indices, self.boxes = self.init_structures()
         self.filtered_rectangle_centres = self.filter_included_rectangles()
         self.filtered_rectangle_centres = self.filter_other_rectangles()
@@ -131,3 +131,24 @@ class UpperHoleDetector(object):
                                     filtered_rectangle_centres.append(other_centre)
                                     contains_map[other_centre] = True
         return filtered_rectangle_centres
+
+    def match_3d_model(self, camera_matrix, camera_dist):
+        # TODO : try to order the corners of the hamcode corners
+        # object_points = []
+        # for hamcode in self.hamcodes:
+        #
+        # object_points = np.array(object_points)
+        # image_points = []
+        # for i in range(42):
+        #     image_points.append(0)
+        # for key in self.reference_mapping.keys():
+        #     model_key = self.model.FRONT_HOLE_MAPPING[key]
+        #     image_points[model_key] = self.reference_mapping[key]
+        # image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),
+        #                                         self.homography).reshape(-1, 2)
+        # # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, np.eye(3), None)
+        # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
+        # if not retval:
+        #     print "ERR: SolvePnP failed"
+        # return rvec, tvec
+        pass
