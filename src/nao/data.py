@@ -3,7 +3,7 @@ import numpy as np
 __author__ = 'Anthony Rouneau'
 
 # IP = "127.0.0.1"
-IP = "192.168.2.24"
+IP = "192.168.208.42"
 # IP = "192.168.2.16"
 # PORT = 17402
 PORT = 9559

@@ -29,7 +29,7 @@ class Connect4Handler(object):
         self.img = None
         self.next_img_func = next_img_func
         self.front_hole_detector = FrontHolesDetector(self.model)
-        self.upper_hole_detector = UpperHoleDetector()
+        self.upper_hole_detector = UpperHoleDetector(self.model)
         # Used for the detection
         self.front_holes_detection_prepared = False
         self.circles = []

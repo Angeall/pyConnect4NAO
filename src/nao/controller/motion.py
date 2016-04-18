@@ -31,7 +31,7 @@ class MotionController:
                                              True)
 
     def putHandAt(self, coord, mask=7):
-        self.motion_proxy.setPositions("LArm", 1, coord, 0.1, mask)
+        self.motion_proxy.setPositions("LArm", 0, coord, 0.1, mask)
 
     def moveAt(self, coord, mask=7):
-        self.motion_proxy.setPositions("Legs", 1, coord, 0.1, mask)
+        self.motion_proxy.setPositions("Legs", 0, coord, 0.6, mask)

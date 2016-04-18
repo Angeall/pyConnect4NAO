@@ -73,7 +73,7 @@ class FrontHolesDetector(CircleGridDetector):
         :rtype tuple:
         Find the 3D coordinates of the Connect4Handler
         """
-        object_points = np.array(self.model.three_d[1])
+        object_points = np.array(self.model.three_d[self.model.FRONT_HOLES])
         image_points = []
         for i in range(42):
             image_points.append(0)

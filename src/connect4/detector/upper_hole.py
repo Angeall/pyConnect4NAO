@@ -132,23 +132,29 @@ class UpperHoleDetector(object):
                                     contains_map[other_centre] = True
         return filtered_rectangle_centres
 
-    def match_3d_model(self, camera_matrix, camera_dist):
-        # TODO : try to order the corners of the hamcode corners
-        # object_points = []
-        # for hamcode in self.hamcodes:
-        #
-        # object_points = np.array(object_points)
-        # image_points = []
-        # for i in range(42):
-        #     image_points.append(0)
-        # for key in self.reference_mapping.keys():
-        #     model_key = self.model.FRONT_HOLE_MAPPING[key]
-        #     image_points[model_key] = self.reference_mapping[key]
-        # image_points = cv2.perspectiveTransform(np.float32(image_points).reshape(1, -1, 2),
-        #                                         self.homography).reshape(-1, 2)
-        # # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, np.eye(3), None)
-        # retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
-        # if not retval:
-        #     print "ERR: SolvePnP failed"
-        # return rvec, tvec
-        pass
+    def match_3d_model(self, camera_matrix, camera_dist, res=640):
+        res_diff = res/320.
+        # TODO : Include rectangles in this
+        object_points = []
+        image_points = []
+        for hamcode in self.hamcodes:
+            hole_id = int(round(int(hamcode.id)/1000))-1
+            if 0 <= hole_id <= 6:  # If the code has been read correctly and is one of the Connect 4 Hamming codes
+                object_points.extend(self.model.getHamcode(hole_id))
+                # image_points.append(np.uint16(geom.sort_rectangle_corners(hamcode.contours)/res_diff))
+                sorted_ar = geom.sort_rectangle_corners(hamcode.contours)
+                image_points.extend(sorted_ar)
+        print "OLD_IMAGE", image_points
+        print "OLD_OBJECT", object_points
+        for i in range(len(image_points)):
+            image_points[i] = tuple(image_points[i])
+            object_points[i] = tuple(object_points[i])
+        print "Same Size", len(image_points) == len(object_points)
+        object_points = np.array(object_points)
+        image_points = np.array(image_points)/res_diff
+        print "IMAGE", image_points
+        print "OBJECT", object_points
+        retval, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, camera_dist)
+        if not retval:
+            print "ERR: SolvePnP failed"
+        return rvec, tvec

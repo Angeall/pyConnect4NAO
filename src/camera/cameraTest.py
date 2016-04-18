@@ -7,8 +7,10 @@ from hampy import detect_markers
 import connect4.detector.front_holes as c4
 import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
+from connect4.connect4tracker import Connect4Tracker
 from connect4.image.default_image import DefaultConnect4Image
 from connect4.model.default_model import DefaultConnect4Model
+from nao import data
 from nao.controller.motion import MotionController
 from nao.controller.tracking import TrackingController
 from nao.controller.video import VideoController
@@ -168,8 +170,9 @@ def tracker_test():
                 connect4 = c4_detector.getPerspective()
                 # print repr(np.float32(np.array(Connect4Handler(get_nao_image).reference_mapping[(0, 0)])))
                 # print repr(c4_detector.homography)
-                print cv2.perspectiveTransform(np.float32(Connect4Handler(get_nao_image).reference_mapping[(0, 0)]).reshape(1, -1, 2),
-                                               c4_detector.homography).reshape(-1, 2)
+                print cv2.perspectiveTransform(
+                    np.float32(Connect4Handler(get_nao_image).reference_mapping[(0, 0)]).reshape(1, -1, 2),
+                    c4_detector.homography).reshape(-1, 2)
                 rows, cols, _ = img.shape
                 # print c4_detector.homography
                 # print cv2.warpPerspective(np.uint8(np.array([[Connect4Handler(get_nao_image).reference_mapping[(3, 3)]]])),
@@ -235,7 +238,7 @@ def test2():
                 box = np.int0(box)
                 # rectArea = cv2.contourArea(np.array(box), False)
                 rectArea = rect[1][0] * rect[1][1]
-                if abs(rectArea) <= 1.4*abs(cntArea):
+                if abs(rectArea) <= 1.4 * abs(cntArea):
                     rectangles.append(rect)
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
         uhc.runDetection(rectangles, None)
@@ -308,18 +311,18 @@ def test4():
             close_camera()
             break
 
+
 def testBarCode():
     while True:
         img = get_nao_image(1, res=2)
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         markers = detect_markers(img)
 
         for m in markers:
             m.draw_contour(img)
-            print str(m.id) + " " + str(m.contours)
             cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+            print str(m.id) + " " + str(m.contours)
         print
         cv2.imshow('live', img)
         if cv2.waitKey(1) == 27:
@@ -328,8 +331,114 @@ def testBarCode():
             break
 
 
+def test_front_holes_coordinates():
+    global nao_motion
+    myc4 = Connect4Handler(get_nao_image)
+    c4tracker = Connect4Tracker(myc4.model)
+    dist = 0.5
+    sloped = False
+    while True:
+        try:
+            myc4.detectFrontHoles(dist, sloped, tries=4)
+            cv2.imshow("Connect4Handler", myc4.front_hole_detector.getPerspective())
+            rvec, tvec = myc4.front_hole_detector.match3DModel(data.CAM_MATRIX, data.CAM_DISTORSION)
+            print \
+            c4tracker.get_holes_coordinates(rvec, tvec, nao_motion.motion_proxy.getPosition("CameraTop", 0, True))[3]
+        except c4.FrontHolesGridNotFoundException:
+            pass
+        img2 = draw_circles(myc4.img, myc4.circles)
+        cv2.imshow("Circles detected", img2)
+        cv2.imshow("Original picture", myc4.img)
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
+    return 0
+
+
+def test_upper_holes_coordinates():
+    global nao_motion
+    c4tracker = Connect4Tracker(DefaultConnect4Model())
+    uhc = upper_hole.UpperHoleDetector(DefaultConnect4Model())
+    j = 1
+    while True:
+        img = get_nao_image(1, res=2)
+
+        # # img = cv2.imread("test_img/img" + str((j % 154) + 1) + ".png")
+        # # imgs.append(img.copy())
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # gray = cv2.GaussianBlur(gray, (1, 1), 0)
+        # # gray = cv2.medianBlur(gray, 1)
+        # edges = cv2.Canny(gray, 195, 200, apertureSize=3)
+        # edges2 = edges.copy()
+        # _, cnts, _ = cv2.findContours(edges2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        # rectangles = []
+        # for cnt in cnts:
+        #     approx = cv2.approxPolyDP(cnt, cv2.arcLength(cnt, True) * 0.01, True)
+        #     # if cv2.contourArea(approx, False) > 40:
+        #     if len(approx) >= 3:
+        #         # print approx
+        #         for i in range(len(approx) - 1):
+        #             tuple0 = (approx[i][0][0], approx[i][0][1])
+        #             tuple1 = (approx[i + 1][0][0], approx[i + 1][0][1])
+        #             # cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
+        #         tuple0 = (approx[-1][0][0], approx[-1][0][1])
+        #         tuple1 = (approx[0][0][0], approx[0][0][1])
+        #         # cv2.line(img, tuple0, tuple1, (0, 0, 255), 2)
+        #         rect = cv2.minAreaRect(cnt)
+        #         # rectArea = abs(rect[1][0] * rect[1][1])
+        #         box = cv2.boxPoints(rect)
+        #         cntArea = abs(cv2.contourArea(cv2.convexHull(approx), False))
+        #         box = np.int0(box)
+        #         # rectArea = cv2.contourArea(np.array(box), False)
+        #         rectArea = rect[1][0] * rect[1][1]
+        #         if abs(rectArea) <= 1.4 * abs(cntArea):
+        #             rectangles.append(rect)
+        #             cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
+
+        markers = detect_markers(img)
+        uhc.hamcodes = markers
+        for hole in uhc.holes:
+            box = cv2.boxPoints(hole)
+            box = np.int0(box)
+            cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
+        # cv2.imshow('contours', img)
+        # cv2.imshow('canny', edges)
+        if cv2.waitKey(500) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            # i = 0
+            # for img in imgs:
+            #     i += 1
+            #     cv2.imwrite("test_img/img" + str(i) + ".png", img)
+            break
+        j += 1
+        if len(markers) > 0:
+            for m in markers:
+                m.draw_contour(img)
+                cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+                print str(m.id) + " " + str(m.contours)
+            print
+            cv2.imshow('live', img)
+            rvec, tvec = uhc.match_3d_model(data.CAM_MATRIX, data.CAM_DISTORSION)
+            coords = c4tracker.get_holes_coordinates(rvec, tvec,
+                                                     nao_motion.motion_proxy.getPosition("CameraBottom", 0, True))[3]
+            coords[2] += 0.05
+            print coords.tolist()
+            nao_motion.putHandAt(coords.tolist())
+        if cv2.waitKey(1) == 27:
+            print "Esc pressed : exit"
+            close_camera()
+            break
+        sleep(2)
+    return 0
+
+
 if __name__ == '__main__':
     # test3()
     # test2()
     # test4()
-    testBarCode()
+    # testBarCode()
+    test_upper_holes_coordinates()
+    # test_front_holes_coordinates()

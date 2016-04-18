@@ -374,3 +374,21 @@ def are_vectors_parallel(vector1, vector2, max_difference):
     """
     return abs(abs(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))) - 1) < max_difference
 
+
+def sort_rectangle_corners(rectangle):
+    """
+    :param rectangle: the rectangle (box points) from which we will sort the corners
+    :type rectangle: np.array
+    :return: the sorted corners of the rectangle ( [NW, NE, SW, SE] )
+    :rtype: list
+    """
+    ordered_corners = []
+    rect = rectangle.reshape(4, 2)
+    rect = rect[
+        np.lexsort((rect[:, 0], rect[:, 1]))]  # The contours are now ordered following the y-axis
+    # We take the two topmost points and we order it following the x-axis
+    ordered_corners.extend(rect[0:2][np.lexsort((rect[0:2][:, 1], rect[0:2][:, 0]))])
+    # Now we take the two other points and we order it following the x-axis
+    ordered_corners.extend(rect[-2:][np.lexsort((rect[-2:][:, 1], rect[-2:][:, 0]))])
+    # At this point, ordered contains [NW, NE, SW, SE]
+    return ordered_corners

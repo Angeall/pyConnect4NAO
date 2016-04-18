@@ -5,6 +5,7 @@ __author__ = 'Anthony Rouneau'
 
 
 class DefaultConnect4Model(object):
+    CORNERS = 0
     # MODEL INDICES : CORNERS
     UPPER_LEFT_BACK_CORNER = 1
     UPPER_LEFT_FRONT_CORNER = 0
@@ -16,6 +17,7 @@ class DefaultConnect4Model(object):
     LOWER_RIGHT_FRONT_CORNER = 6
     NUMBER_OF_CORNERS = 8
 
+    FRONT_HOLES = 1
     # MODEL INDICES : FRONT HOLES (Left to right, bottom to top)
     FRONT_HOLE_0_0 = 35
     FRONT_HOLE_0_1 = 28
@@ -68,6 +70,7 @@ class DefaultConnect4Model(object):
                           (5, 0): 40, (5, 1): 33, (5, 2): 26, (5, 3): 19, (5, 4): 12, (5, 5): 5,
                           (6, 0): 41, (6, 1): 34, (6, 2): 27, (6, 3): 20, (6, 4): 13, (6, 5): 6}
 
+    UPPER_HOLES = 2
     # MODEL INDICES : UPPER HOLES (Left to right)
     UPPER_HOLE_0_TOP_LEFT = 0
     UPPER_HOLE_0_TOP_RIGHT = 1
@@ -99,6 +102,7 @@ class DefaultConnect4Model(object):
     UPPER_HOLE_6_BOTTOM_RIGHT = 27
     NUMBER_OF_UPPER_HOLE_CORNERS = 28
 
+    HAMCODES = 2
     # MODEL INDICES : HAMMING CODES (Left to right)
     HAMCODE_0_TOP_LEFT = 0
     HAMCODE_0_TOP_RIGHT = 1
@@ -265,7 +269,7 @@ class DefaultConnect4Model(object):
                 current_z += self.hamcode_side
                 current_x += self.hamcode_h_space
 
-        model = [corners, front_holes, upper_holes, hamcodes]
+        model = np.array([corners, front_holes, upper_holes, hamcodes])
         return model
 
     def getUpperHole(self, index):
@@ -276,8 +280,8 @@ class DefaultConnect4Model(object):
         :rtype: np.array
         Get the coordinates of an upper hole of the 3D model of the Connect 4
         """
-        return self.three_d[2][index * 4], self.three_d[2][(index * 4) + 1], self.three_d[2][(index * 4) + 2], \
-               self.three_d[2][(index * 4) + 3]
+        return self.three_d[self.UPPER_HOLES][index * 4], self.three_d[self.UPPER_HOLES][(index * 4) + 1], \
+               self.three_d[self.UPPER_HOLES][(index * 4) + 2], self.three_d[self.UPPER_HOLES][(index * 4) + 3]
 
     def getFrontHole(self, index):
         """
@@ -287,7 +291,7 @@ class DefaultConnect4Model(object):
         :rtype: np.array
         Get the coordinates of a front hole of the 3D model of the Connect 4
         """
-        return self.three_d[1][index]
+        return self.three_d[self.FRONT_HOLES][index]
 
     def getCorner(self, index):
         """
@@ -297,7 +301,7 @@ class DefaultConnect4Model(object):
         :rtype: np.array
         Get the coordinates of a corner of the 3D model of the Connect 4
         """
-        return self.three_d[0][index]
+        return self.three_d[self.CORNERS][index]
 
     def getHamcode(self, index):
         """
@@ -307,5 +311,5 @@ class DefaultConnect4Model(object):
         :rtype: np.array
         Get the coordinates of a hamming code of the 3D model of the Connect 4
         """
-        return self.three_d[3][index * 4], self.three_d[3][(index * 4) + 1], self.three_d[3][(index * 4) + 2], \
-               self.three_d[3][(index * 4) + 3]
+        return self.three_d[self.HAMCODES][index * 4], self.three_d[self.HAMCODES][(index * 4) + 1],\
+               self.three_d[self.HAMCODES][(index * 4) + 2], self.three_d[self.HAMCODES][(index * 4) + 3]
