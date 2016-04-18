@@ -133,8 +133,8 @@ class DefaultConnect4Model(object):
     def __init__(self, disc_diameter=0.056, length=0.519, width=0.066, height=0.337,
                  hole_length=0.0585, hole_width=0.0095, hole_h_space=0.0095, hole_v_margin=0.004, hole_h_margin=0.0275,
                  circle_diameter=0.046, circle_h_space=0.02183, circle_v_space=0.009, circle_h_margin=0.033,
-                 circle_v_margin=0.008, hamcode_side=0., hamcode_h_space=0., hamcode_h_margin=0.,
-                 hamcode_v_margin=0., hamcode_hole_space=0., ):  # TODO hamcode
+                 circle_v_margin=0.008, hamcode_side=0.0425, hamcode_h_space=0.0255, hamcode_h_margin=0.03525,
+                 hamcode_v_margin=0.019, hamcode_hole_space=0.01, ):  # TODO hamcode
         """
         :param disc_diameter: the size of a playing disc (m)
         :param length: the lateral length of the Connect 4 (m)
