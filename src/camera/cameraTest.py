@@ -424,9 +424,10 @@ def test_upper_holes_coordinates():
             rvec, tvec = uhc.match_3d_model(data.CAM_MATRIX, data.CAM_DISTORSION)
             coords = c4tracker.get_holes_coordinates(rvec, tvec,
                                                      nao_motion.motion_proxy.getPosition("CameraBottom", 0, True))[3]
-            coords[2] += 0.05
+            coords[2] += 0.1
             print coords.tolist()
-            nao_motion.putHandAt(coords.tolist())
+            nao_motion.put_hand_at(coords.tolist())
+            # time.sleep(5)
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()

@@ -1,6 +1,7 @@
 import numpy as np
 from naoqi import ALProxy
 import nao.data as nao
+import math
 
 __author__ = "Anthony Rouneau"
 
@@ -11,27 +12,62 @@ FRAME_ROBOT = 2
 
 
 class MotionController:
-    def __init__(self, robot_ip=nao.IP, port=nao.PORT):
+    def __init__(self, robot_ip=nao.IP, robot_port=nao.PORT):
         """
         :param robot_ip: The IP address of the robot
         :type robot_ip: str
-        :param port: The port of the robot
-        :type port: int
+        :param robot_port: The port of the robot
+        :type robot_port: int
         Creates a new Virtual Controller for NAO
         """
         # Connect and wake up the robot
-        self.motion_proxy = ALProxy("ALMotion", robot_ip, port)
-        self.track_proxy = ALProxy("ALTracker", robot_ip, port)
-        self.localization_proxy = ALProxy("ALLocalization", robot_ip, port)
+        self.motion_proxy = ALProxy("ALMotion", robot_ip, robot_port)
+        self.track_proxy = ALProxy("ALTracker", robot_ip, robot_port)
+        self.localization_proxy = ALProxy("ALLocalization", robot_ip, robot_port)
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
-    def getCameraPositionFromWorld(self):
+    def get_camera_position_from_world(self):
         return self.motion_proxy.getPosition("CameraTop",
                                              FRAME_WORLD,
                                              True)
 
-    def putHandAt(self, coord, mask=7):
-        self.motion_proxy.setPositions("LArm", 0, coord, 0.1, mask)
+    def put_hand_at(self, coord, mask=7):
+        self.motion_proxy.setPositions("LArm", 0, coord, 0.5, mask)
 
-    def moveAt(self, coord, mask=7):
+    def move_at(self, coord, mask=7):
         self.motion_proxy.setPositions("Legs", 0, coord, 0.6, mask)
+
+    def get_left_arm_angles(self):
+        """
+        :return: the angles in radians of the left arm of NAO in this order :
+            [ShoulderPitch, ShoulderRoll, ElbowYaw, ElbowRoll, WristYaw]
+        :rtype: list
+        """
+        joint_names = ["LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw"]
+        use_sensors = True
+        return self.motion_proxy.getAngles(joint_names, use_sensors)
+
+    def raise_left_arm(self):
+        """
+        Raise the robot left arm to the sky
+        """
+        joint_name = "LShoulderPitch"
+        angle = -2
+        fraction_max_speed = 0.4
+        self.motion_proxy.setAngles(joint_name, angle, fraction_max_speed)
+
+    def move_head(self, pitch, yaw, radians=False):
+        """
+        :param pitch: the future pitch of NAO's head
+        :param yaw: the future yaw of NAO's head
+        :param radians: True if the angles are given in radians. False by default => angles in degree.
+        """
+        joint_names = ["HeadYaw", "HeadPitch"]
+        if not radians:
+            yaw = math.radians(yaw)
+            pitch = math.radians(pitch)
+        angles = [yaw, pitch]
+        fraction_max_speed = 0.1
+        self.motion_proxy.setAngles(joint_names, angles, fraction_max_speed)
+
+

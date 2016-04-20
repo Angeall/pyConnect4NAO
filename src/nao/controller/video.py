@@ -13,28 +13,21 @@ event = threading.Event()
 
 
 class VideoController(object):
-    def __init__(self, robot_ip=nao.IP, port=nao.PORT):
+    def __init__(self, robot_ip=nao.IP, robot_port=nao.PORT):
         """
         :param robot_ip: the ip address of the robot
-        :param port: the port of the robot
+        :param robot_port: the port of the robot
         Connect to the robot camera proxy
         """
         self.ip = robot_ip
-        self.port = port
-        self.video_device = ALProxy("ALVideoDevice", robot_ip, port)
+        self.port = robot_port
+        self.video_device = ALProxy("ALVideoDevice", robot_ip, robot_port)
         # self.barcode_reader = ALProxy("ALBarcodeReader,", robot_ip, port)
         # self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_id = SUBSCRIBER_ID
         self.cam_connected = False
         self.cam_matrix = nao.CAM_MATRIX
         self.cam_distorsion = nao.CAM_DISTORSION
-
-    def clean(self):
-        """
-        Disconnect NAO from all camera subscription of this application
-        """
-        for i in range(7):
-            self.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
 
     def connectToCamera(self, res=1, fps=11, camera_num=0, color_space=13, subscriber_id="Connect4NAO"):
         """
@@ -53,6 +46,8 @@ class VideoController(object):
         :rtype: int
         """
         try:
+            self.subscriber_id = subscriber_id
+            self.unsubscribeAllCameras()
             self.cam_connected = True
             self.subscriber_id = self.video_device.subscribeCamera(subscriber_id, camera_num, res, color_space, fps)
         except BaseException, err:
