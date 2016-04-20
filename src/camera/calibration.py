@@ -37,10 +37,20 @@ def get_nao_image(camera_num=0):
 def get_camera_information():
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
+    v_margin = 0.  # FIXME: vertical space from the origin
+    h_margin = 0.  # FIXME: horizontal space from the origin
+    square_length = 0.  # FIXME: square length
+
     # noinspection PyPep8
-    objp = np.ones((6 * 7, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
-    objp *= 0.025875
+    objp = np.zeros((6 * 7, 3), np.float32)
+    objp[:, 1:3] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp *= square_length
+    np.add(objp, np.array([0, v_margin, h_margin]))
+
+    objp2 = np.zeros((6 * 7, 3), np.float32)
+    objp2[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp2 *= square_length
+    np.add(objp2, np.array([h_margin, v_margin, 0]))
 
     objpoints = []  # 3d point
     imgpoints = []  # 2d point
@@ -56,19 +66,20 @@ def get_camera_information():
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             # Find the chess board corners
+            # FIXME: Detect two Chessboard...
             ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
 
             # If the chessboard is found, add object points, image points
             if ret:
                 objpoints.append(objp)
 
-                cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                imgpoints.append(corners)
+                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                imgpoints.append(corners2)
 
                 # Draw and display the corners
                 cv2.drawChessboardCorners(img, (7, 6), corners, ret)
                 cv2.imshow('img', img)
-                if cv2.waitKey(2500) == 27:  # ESC pressed ?
+                if cv2.waitKey(1) == 27:  # ESC pressed ?
                     finished = True
                 if not finished:
                     # We wait 2 seconds so the operator can move the chessboard
