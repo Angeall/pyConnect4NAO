@@ -122,9 +122,9 @@ def transform_vector(vector, rmat, tvec):
     assert (rmat.shape[1] == len(vector))
     # Assure that we can translate the coordinates using tvec
     assert (tvec.size == len(vector))
-    # Translate the coordinates
     # Rotate the coordinates
     temp = np.dot(rmat, vector.reshape((3, 1))).reshape(1, 3)[0]
+    # Translate the coordinates
     temp = temp + tvec.reshape(1, 3)[0]
     return temp
 
