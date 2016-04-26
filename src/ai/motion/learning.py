@@ -85,7 +85,7 @@ class Connect4Learning(object):
 
     def record(self, marker, pitch, yaw):
         # Variables set
-        corners = geom.sort_rectangle_corners(marker.contours)
+        corners = np.array(geom.sort_rectangle_corners(marker.contours)).ravel().tolist()
         variables = [pitch, yaw]
         variables.extend(corners)
         variables = np.array(variables)
@@ -121,7 +121,7 @@ class Connect4Learning(object):
 
 
 if __name__ == '__main__':
-    c4l = Connect4Learning("169.254.254.250", 9559)
+    c4l = Connect4Learning("169.254.40.131", 9559)
     c4l.learn()
 
 
