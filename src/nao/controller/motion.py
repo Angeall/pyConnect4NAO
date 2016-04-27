@@ -32,7 +32,7 @@ class MotionController:
                                              True)
 
     def put_hand_at(self, coord, mask=7):
-        self.motion_proxy.setPositions("LArm", 0, coord, 0.5, mask)
+        self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [2.0])
 
     def move_at(self, coord, mask=7):
         self.motion_proxy.setPositions("Legs", 0, coord, 0.6, mask)
