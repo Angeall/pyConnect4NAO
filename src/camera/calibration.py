@@ -1,5 +1,6 @@
 import time
 
+from nao import data
 from nao.controller.motion import MotionController
 from connect4.connect4handler import *
 from connect4.detector import front_holes as c4
@@ -8,88 +9,131 @@ from utils import latex_generator
 
 __author__ = 'Anthony Rouneau'
 
-connect4 = Connect4Handler()
-connect4_model = connect4.model
-detector = c4.FrontHolesDetector(connect4_model)
-nao_video = None
-nao_motion = None
-
-
-def clean():
-    global nao_video
-    if nao_video is not None:
-        nao_video.clean()
-
 
 def get_nao_image(camera_num=0):
     global nao_video, nao_motion
     if nao_video is None:
         nao_video = VideoController()
         nao_motion = MotionController()
-        clean()
-        ret = nao_video.connectToCamera(res=1, fps=30, camera_num=camera_num)
+        # clean()
+        ret = nao_video.connectToCamera(res=2, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
             return None
     return nao_video.getImageFromCamera()
 
+connect4 = Connect4Handler(get_nao_image)
+# connect4 = None
+connect4_model = connect4.model
+# connect4_model = None
+detector = c4.FrontHolesDetector(connect4_model)
+nao_video = None
+nao_motion = None
+
 
 def get_camera_information():
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    v_margin = 0.  # FIXME: vertical space from the origin
-    h_margin = 0.  # FIXME: horizontal space from the origin
-    square_length = 0.  # FIXME: square length
+    v_margin = 0.024
+    h_margin = 0.0135
+    square_length = 0.025
+
+    colors_boundaries = [
+        (np.array([0, 0, 0]), np.array([255, 80, 80])),
+        (np.array([0, 0, 0]), np.array([80, 255, 120])),
+        (np.array([0, 0, 0]), np.array([120, 80, 255]))]
+    color_names = ["Blue", "Green", "Red"]
 
     # noinspection PyPep8
-    objp = np.zeros((6 * 7, 3), np.float32)
-    objp[:, 1:3] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp = np.zeros((6 * 9, 3), np.float32)
+    objp[:, 1:3][:, ::-1] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
+    objp[:, 2] *= -1  # So it's left to right
+    objp[:, 2] += 8
     objp *= square_length
     np.add(objp, np.array([0, v_margin, h_margin]))
 
-    objp2 = np.zeros((6 * 7, 3), np.float32)
-    objp2[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp2 = np.zeros((6 * 9, 3), np.float32)
+    objp2[:, ::2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
     objp2 *= square_length
-    np.add(objp2, np.array([h_margin, v_margin, 0]))
+    np.add(objp2, np.array([h_margin, 0, v_margin]))
+
+    objp3 = np.zeros((6 * 9, 3), np.float32)
+    objp3[:, :2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
+    objp3 *= square_length
+    np.add(objp3, np.array([h_margin, h_margin, 0]))
+
+    objp = np.append(np.append(objp, objp2, axis=0), objp3, axis=0)
 
     objpoints = []  # 3d point
     imgpoints = []  # 2d point
 
     finished = False
     gray = None
-    ctr = -1
+    # ctr = -1
     while not finished:
         img = get_nao_image()
         if img is not None:
-            ctr += 1
-            cv2.imwrite("../../values/calibration" + "_" + str(ctr) + ".png", img)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            chessboards_not_found = False
+            chessboards_corners = [None, None, None]
+            # ctr += 1
+            # cv2.imwrite("../../values/calibration" + "_" + str(ctr) + ".png", img)
+            i = 0
+            img2 = img.copy()
+            for (lower, upper) in colors_boundaries:
+                mask = cv2.inRange(img2, lower, upper)
+                output = cv2.bitwise_and(img2, img2, mask=mask)
+                gray2 = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
+                gray = cv2.bitwise_not(gray2, gray2)
+                color_name = color_names[i]
+                i += 1
+                # Find the chess board corners
+                ret, corners = cv2.findChessboardCorners(gray, (9, 6), None)
+                cv2.imshow(color_name, gray)
+                cv2.waitKey(500)
+                # If one of the chessboards is not detected, we break
+                if not ret:
+                    chessboards_not_found = True
+                    print "NOT FOUND", color_name
+                    break
+                # If the chessboard is found, add object points, image points
+                else:
+                    chessboards_corners[i - 1] = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    # cv2.putText(img, str(color_name), tuple(int(p) for p in corners[0]),
+                    #             cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(colors_boundaries[i - 1][1]), 3)
+                    # Draw and display the corners
+                    cv2.drawChessboardCorners(img, (9, 6), corners, ret)
 
-            # Find the chess board corners
-            # FIXME: Detect two Chessboard...
-            ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
+            # If three chessboards have been detected
+            if not chessboards_not_found:
+                if geom.point_distance(chessboards_corners[0][0][0], chessboards_corners[1][0][0]) \
+                        > geom.point_distance(chessboards_corners[0][45][0], chessboards_corners[1][0][0]):
+                    chessboards_corners[0] = chessboards_corners[0][::-1]
+                if geom.point_distance(chessboards_corners[2][0][0], chessboards_corners[1][0][0]) \
+                        > geom.point_distance(chessboards_corners[2][45][0], chessboards_corners[1][0][0]):
+                    chessboards_corners[2] = chessboards_corners[2][::-1]
+                if geom.point_distance(chessboards_corners[1][0][0], chessboards_corners[2][0][0]) \
+                        > geom.point_distance(chessboards_corners[1][45][0], chessboards_corners[2][0][0]):
+                    chessboards_corners[1] = chessboards_corners[1][::-1]
+                chessboards_corners = np.append(np.append(chessboards_corners[0], chessboards_corners[1], axis=0),
+                                                chessboards_corners[2], axis=0)
+                print "3D Model"
+                print objp
+                print
+                print "Found Chessboard"
+                print chessboards_corners
 
-            # If the chessboard is found, add object points, image points
-            if ret:
                 objpoints.append(objp)
-
-                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                imgpoints.append(corners2)
-
-                # Draw and display the corners
-                cv2.drawChessboardCorners(img, (7, 6), corners, ret)
-                cv2.imshow('img', img)
-                if cv2.waitKey(1) == 27:  # ESC pressed ?
-                    finished = True
-                if not finished:
-                    # We wait 2 seconds so the operator can move the chessboard
-                    time.sleep(2)
+                imgpoints.append(chessboards_corners)
+            cv2.imshow('img', img)
+            if cv2.waitKey(1) == 27:  # ESC pressed ?
+                finished = True
+            if not finished:
+                # We wait 2 seconds so the operator can move the chessboard
+                time.sleep(2)
 
     cv2.destroyAllWindows()
-    init_intrinsic = np.matrix([[249.89693416,    0.,          178.02883199],
-                                [0.,            244.00611377,   96.64409278],
-                                [0.,              0.,            1.]])
-    dist = np.matrix([[0.1363378,  -1.97377046,  0.01807662,  0.00988139,  4.50583262]])
+    init_intrinsic = data.CAM_MATRIX
+    dist = data.CAM_DISTORSION
     ret, mtx, disto, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], init_intrinsic, dist,
                                                         flags=cv2.CALIB_USE_INTRINSIC_GUESS)
     return mtx, disto
