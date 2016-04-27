@@ -38,7 +38,7 @@ class Game(object):
         :param _disc: the disc to place, mainly contains the color
         :type _disc: Disc
         """
-        self.game_state.make_move(_column, _disc)
+        self.game_state.perform_action(_column, _disc)
         red_won, green_won, draw = self.game_state.check_end()
         if red_won:
             if self.player1.color == disc.RED:

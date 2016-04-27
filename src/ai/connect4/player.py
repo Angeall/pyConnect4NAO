@@ -28,7 +28,7 @@ class Player(object):
     def choose_move(self, game_state):
         """
         :param game_state: the current state of the game
-        :type game_state: GameState
+        :type game_state: C4State
         :return: the number of the hole in which place the disc
         :rtype: int
         """

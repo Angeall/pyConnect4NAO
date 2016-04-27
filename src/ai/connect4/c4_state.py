@@ -2,16 +2,18 @@ import disc
 from disc import Disc
 import numpy as np
 
+from utils.game_state import GameState
+
 __author__ = 'Anthony Rouneau'
 
 
-class GameState(object):
+class C4State(GameState):
     def __init__(self, _next_color=disc.RED, _board=None, _hash=None):
         self.next_color = _next_color
         if _board is None:  # If the game has not started yet
             self.board = np.array(np.zeros((6, 7)), np.int8)
             self.board[:] = disc.EMPTY
-        else:  # If this GameState is created from another one
+        else:  # If this C4State is created from another one
             self.board = _board
         self.possible_actions = []
         self.refresh_possible_actions()
@@ -26,21 +28,18 @@ class GameState(object):
         """
         self.possible_actions = np.dstack(np.where(self.board[0] == 0))[0][:, 0]
 
+    # @Override
     def possible_actions(self):
         """
         :return: the indices of the holes that can be used
         """
         return self.possible_actions
 
-    def make_fake_action(self, action):
-        new_state = self.copy()
-        new_state.make_move(action)
-
-    def make_move(self, _action):
+    # @Override
+    def perform_action(self, _action):
         """
         :param _action: the number of the column where the disc will be placed if possible
         :type _action: int
-        :return:
         """
         if _action not in self.possible_actions:
             raise AttributeError("This column is full")
@@ -53,9 +52,6 @@ class GameState(object):
         self.next_color = disc.get_opposite_color(self.next_color)
         self.refresh_possible_actions()
         self.refresh_hash()
-
-    def get_board(self):
-        return self.board
 
     def check_end(self):
         """
@@ -121,11 +117,17 @@ class GameState(object):
         return rows
 
     def copy(self):
-        return GameState(self.next_color, self.board.copy(), self.hash)
+        """
+        :return: A copy of this GameState
+        """
+        return C4State(self.next_color, self.board.copy(), self.hash)
 
     def __hash__(self):
         return self.hash
 
     def refresh_hash(self):
+        """
+        Refresh the hash code of this GameState
+        """
         self.hash = (tuple(self.board.ravel().tolist()), self.next_color).__hash__()
 
