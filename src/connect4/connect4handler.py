@@ -1,11 +1,10 @@
 import cv2
 import numpy as np
 
+import utils.camera.geom as geom
 from detector.front_holes import FrontHolesDetector, FrontHolesGridNotFoundException
 from detector.upper_hole import UpperHoleDetector
 from model.default_model import DefaultConnect4Model
-
-import utils.geom as geom
 
 __author__ = 'Anthony Rouneau'
 

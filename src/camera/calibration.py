@@ -1,9 +1,9 @@
 import time
 
-from nao import data
-from nao.controller.motion import MotionController
 from connect4.connect4handler import *
 from connect4.detector import front_holes as c4
+from nao import data
+from nao.controller.motion import MotionController
 from nao.controller.video import VideoController
 from utils import latex_generator
 

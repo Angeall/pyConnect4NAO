@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 
-from connect4.image.default_image import DefaultConnect4Image
-from utils.circle_grid_detector import CircleGridDetector, CircleGridNotFoundException
+from utils.camera.circle_grid_detector import CircleGridDetector, CircleGridNotFoundException
 
 __author__ = 'Angeall'
 
@@ -39,7 +38,7 @@ class FrontHolesDetector(CircleGridDetector):
         self.image_of_reference = connect4_model.image_of_reference
         self.connect4_img = self.model.image_of_reference.img
         self.reference_mapping = self.image_of_reference.pixel_mapping
-        self.exception = FrontHolesGridNotFoundException
+        self._exception = FrontHolesGridNotFoundException
 
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
                      ref_img=None, grid_shape=(6, 7)):

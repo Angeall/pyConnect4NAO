@@ -6,6 +6,9 @@ __author__ = 'Anthony Rouneau'
 class GameState:
     __metaclass__ = ABCMeta
 
+    def __init__(self):
+        pass
+
     def simulate_action(self, action):
         """
         :param action: The action to simulate
@@ -40,6 +43,7 @@ class GameState:
         :return: A hash code for this Game State
         :rtype: int
         """
+        print "OK..."
         pass  # ToImplement
 
     @abstractmethod
@@ -51,3 +55,11 @@ class GameState:
         """
         pass  # ToImplement
 
+    @abstractproperty
+    def terminal_test(self):
+        """
+        Checks if the game is finished
+        :return: Three booleans : (current_player_has_won, previous_player_has_won, is_a_draw)
+        :rtype: tuple
+        """
+        pass

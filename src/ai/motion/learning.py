@@ -1,11 +1,10 @@
-import sklearn
+import numpy as np
 from hampy import detect_markers
 
 import nao.data as nao
-import numpy as np
 from nao.controller.motion import MotionController
 from nao.controller.video import VideoController
-from utils import geom
+from utils.camera import geom
 
 __author__ = 'Anthony Rouneau'
 

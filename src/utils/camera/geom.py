@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 from shapely.geometry import Polygon
 
 __author__ = 'Anthony Rouneau'

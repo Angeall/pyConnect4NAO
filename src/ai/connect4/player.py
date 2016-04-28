@@ -1,8 +1,3 @@
-from ai.connect4 import disc
-from ai.connect4.strategy import Strategy
-from ai.connect4.game import GameState
-
-
 __author__ = 'Anthony Rouneau'
 
 
@@ -32,6 +27,6 @@ class Player(object):
         :return: the number of the hole in which place the disc
         :rtype: int
         """
-        return self.strategy.next_move(game_state)
+        return self.strategy.choose_next_action(game_state)
 
 

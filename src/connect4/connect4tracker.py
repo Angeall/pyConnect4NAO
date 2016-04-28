@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from connect4handler import Connect4Handler
-from utils import geom
+
+from utils.camera import geom
 
 __author__ = 'Anthony Rouneau'
 

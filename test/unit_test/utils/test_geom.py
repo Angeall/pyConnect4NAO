@@ -1,7 +1,6 @@
 import unittest
-from numpy.linalg import norm
-from utils.geom import *
-import numpy as np
+
+from utils.camera.geom import *
 
 
 class GeomTestCase(unittest.TestCase):

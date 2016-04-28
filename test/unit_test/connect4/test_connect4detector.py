@@ -1,7 +1,7 @@
 import random
-import utils.geom as geom
 import unittest
 
+import utils.camera.geom as geom
 from connect4.detector.front_holes import *
 from connect4.model.default_model import DefaultConnect4Model
 
@@ -111,7 +111,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         grid = self.circles_0
         self.circleGridDetector.prepareConnection(grid)
         self.circleGridDetector.connectCircles()
-        result = self.circleGridDetector.original_arc_indices
+        result = self.circleGridDetector._original_arc_indices
         expected_1 = [(7, 2), (2, 7), (2, 4), (4, 2), (6, 8), (8, 6), (8, 3), (3, 8), (0, 1), (1, 0), (1, 5), (5, 1),
                       (7, 6), (6, 7), (6, 0), (0, 6), (2, 8), (8, 2), (8, 1), (1, 8), (4, 3), (3, 4), (3, 5), (5, 3)]
         self.assertItemsEqual(result, expected_1)
@@ -121,7 +121,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         expected_1 = [(3, 0), (0, 3), (0, 4), (4, 0), (4, 1), (1, 4), (1, 2), (2, 1)]
         self.circleGridDetector.prepareConnection(grid)
         self.circleGridDetector.connectCircles()
-        result = self.circleGridDetector.original_arc_indices
+        result = self.circleGridDetector._original_arc_indices
         self.assertItemsEqual(result, expected_1)
 
     def test_connect_keypoints_missing_noise(self):
@@ -130,7 +130,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
                       (5, 0), (0, 5), (6, 4), (4, 6), (3, 7), (7, 3), (7, 4), (4, 7)]
         self.circleGridDetector.prepareConnection(grid)
         self.circleGridDetector.connectCircles()
-        result = self.circleGridDetector.original_arc_indices
+        result = self.circleGridDetector._original_arc_indices
         self.assertItemsEqual(result, expected_1)
 
     def test_filter_connection_perfect(self):
@@ -139,8 +139,8 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.connectCircles()
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.33, min_similar_vectors=4)
         self.circleGridDetector.filterConnections()
-        expected = self.circleGridDetector.original_arc_indices
-        result = self.circleGridDetector.filtered_arc_indices
+        expected = self.circleGridDetector._original_arc_indices
+        result = self.circleGridDetector._filtered_arc_indices
         self.assertItemsEqual(result, expected)
 
     def test_filter_connection_missing(self):
@@ -149,8 +149,8 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.connectCircles()
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.33, min_similar_vectors=2)
         self.circleGridDetector.filterConnections()
-        expected = self.circleGridDetector.original_arc_indices
-        result = self.circleGridDetector.filtered_arc_indices
+        expected = self.circleGridDetector._original_arc_indices
+        result = self.circleGridDetector._filtered_arc_indices
         self.assertItemsEqual(result, expected)
 
     def test_filter_connection_missing_noise(self):
@@ -159,8 +159,8 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.connectCircles()
         self.circleGridDetector.prepareFiltering(pixel_error_margin=1., min_similar_vectors=2)
         self.circleGridDetector.filterConnections()
-        expected = self.circleGridDetector.original_arc_indices
-        result = self.circleGridDetector.filtered_arc_indices
+        expected = self.circleGridDetector._original_arc_indices
+        result = self.circleGridDetector._filtered_arc_indices
         expected.remove((0, 6))
         expected.remove((6, 0))
         expected.remove((6, 4))
@@ -178,7 +178,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.1, min_similar_vectors=2)
         self.circleGridDetector.filterConnections()
         self.circleGridDetector.filterRightUpVectors()
-        result = [self.circleGridDetector.right_vectors, self.circleGridDetector.up_vectors]
+        result = [self.circleGridDetector._right_vectors, self.circleGridDetector._up_vectors]
         expected = [[(7, 2), (2, 4), (6, 8), (8, 3), (0, 1), (1, 5)], [(6, 0), (7, 6), (8, 1), (2, 8), (3, 5), (4, 3)]]
         self.assertItemsEqual(result[0], expected[0])
         self.assertItemsEqual(result[1], expected[1])
@@ -190,7 +190,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.1, min_similar_vectors=2)
         self.circleGridDetector.filterConnections()
         self.circleGridDetector.filterRightUpVectors()
-        result = [self.circleGridDetector.right_vectors, self.circleGridDetector.up_vectors]
+        result = [self.circleGridDetector._right_vectors, self.circleGridDetector._up_vectors]
         expected = [[(3, 0), (4, 1)], [(0, 4), (1, 2)]]
         self.assertItemsEqual(result[0], expected[0])
         self.assertItemsEqual(result[1], expected[1])
@@ -202,7 +202,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.1, min_similar_vectors=2)
         self.circleGridDetector.filterConnections()
         self.circleGridDetector.filterRightUpVectors()
-        result = [self.circleGridDetector.right_vectors, self.circleGridDetector.up_vectors]
+        result = [self.circleGridDetector._right_vectors, self.circleGridDetector._up_vectors]
         expected = [[(7, 4), (4, 1)], [(3, 7), (1, 2)]]
         self.assertItemsEqual(result[0], expected[0])
         self.assertItemsEqual(result[1], expected[1])
@@ -213,7 +213,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.connectCircles()
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0.22, min_similar_vectors=2)
         self.circleGridDetector.doublePassFilter()
-        result = self.circleGridDetector.filtered_arc_indices
+        result = self.circleGridDetector._filtered_arc_indices
         expected = [(3, 7), (7, 3), (4, 1), (1, 4), (1, 2), (2, 1), (4, 7), (7, 4)]
         self.assertItemsEqual(expected, result)
 
@@ -223,7 +223,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.connectCircles()
         self.circleGridDetector.prepareFiltering(pixel_error_margin=0, min_similar_vectors=2)
         self.circleGridDetector.doublePassFilter()
-        result = self.circleGridDetector.filtered_arc_indices
+        result = self.circleGridDetector._filtered_arc_indices
         expected = [(3, 6), (6, 3), (3, 0), (0, 3), (0, 4), (4, 0), (4, 1), (1, 4), (1, 2), (2, 1), (4, 6), (6, 4)]
         self.assertItemsEqual(expected, result)
 
@@ -244,7 +244,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.doublePassFilter()
         self.circleGridDetector.prepareBFS()
         self.circleGridDetector.bfsMarking()
-        result = self.circleGridDetector.relative_coordinates
+        result = self.circleGridDetector._relative_coordinates
         self.assertDictEqual(expected, result)
 
     def test_bfs_marking_missing(self):
@@ -260,7 +260,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.doublePassFilter()
         self.circleGridDetector.prepareBFS()
         self.circleGridDetector.bfsMarking()
-        result = self.circleGridDetector.relative_coordinates
+        result = self.circleGridDetector._relative_coordinates
         self.assertDictEqual(expected, result)
 
     def test_bfs_marking_missing_noise(self):
@@ -276,7 +276,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.doublePassFilter()
         self.circleGridDetector.prepareBFS()
         self.circleGridDetector.bfsMarking()
-        result = self.circleGridDetector.relative_coordinates
+        result = self.circleGridDetector._relative_coordinates
         # isolated nodes, not linked with the rest of the grid
         # 0 included, isolated because of noise
         self.assertDictEqual(expected, result)
@@ -295,13 +295,13 @@ class Connect4DetectorTestCase(unittest.TestCase):
         self.circleGridDetector.doublePassFilter()
         self.circleGridDetector.prepareBFS()
         self.circleGridDetector.bfsMarking()
-        result = self.circleGridDetector.relative_coordinates
+        result = self.circleGridDetector._relative_coordinates
         self.assertDictEqual(expected, result)
 
     def test_detect_grid_perfect(self):
         connect4 = self.connect4_0
         self.c4Detector.runDetection(connect4, pixel_error_margin=20., min_similar_vectors=15)
-        result = self.c4Detector.relative_coordinates
+        result = self.c4Detector._relative_coordinates
         self.assertTrue(len(result) == 42)
 
     def test_detect_grid_worst(self):
@@ -311,6 +311,6 @@ class Connect4DetectorTestCase(unittest.TestCase):
                     (2, 4): 28, (3, 4): 29, (5, 4): 30, (6, 4): 31, (4, 5): 34, (5, 5): 36, (6, 5): 37}
         try:
             self.c4Detector.runDetection(connect4, pixel_error_margin=15., min_similar_vectors=8)
-            result = self.c4Detector.relative_coordinates
+            result = self.c4Detector._relative_coordinates
         except CircleGridNotFoundException:  # Must fail because the possible rectangles can't be trusted (equality)
             pass

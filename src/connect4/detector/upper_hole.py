@@ -1,8 +1,9 @@
-import numpy as np
-from connect4.model.default_model import DefaultConnect4Model
 import cv2
+import numpy as np
 from scipy.spatial import KDTree
-import utils.geom as geom
+
+import utils.camera.geom as geom
+from connect4.model.default_model import DefaultConnect4Model
 
 __author__ = 'Anthony Rouneau'
 
