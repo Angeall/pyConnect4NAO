@@ -21,9 +21,9 @@ class TrackingController(object):
     # def initializeTracking(self, rvec, tvec, camera_position):
     #     """
     #     :param camera_position: The camera position refering to NAO'w World
-    #     :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
+    #     :param rvec: The rotation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coordinates
     #     :type rvec: np.array
-    #     :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
+    #     :param tvec: The translation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coordinates
     #     :type tvec: np.array
     #     Begin to track the Connect 4 that was already detected inside the room
     #     """
@@ -46,7 +46,7 @@ class TrackingController(object):
     #     Get the position of an upper hole of the Connect 4 relative to the World
     #     """
     #     if hole_no > 6:
-    #         print "ERR: The Connect4Handler have only 7 holes. Please ask for a hole between 0 and 6"
+    #         print "ERR: The Connect4Handler have only 7 _holes. Please ask for a hole between 0 and 6"
     #         return None
     #     else:
     #         return self.world_repr.getPosition6D(world, self.tracker.objects_tab[hole_no])
@@ -54,9 +54,9 @@ class TrackingController(object):
     # def refreshConnect4Position(self, rvec, tvec, camera_position):
     #     """
     #     :param camera_position:
-    #     :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
+    #     :param rvec: The rotation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coordinates
     #     :type rvec: np.array
-    #     :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coordinates
+    #     :param tvec: The translation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coordinates
     #     :type tvec: np.array
     #     Refresh the connect 4 position in the World Representation of NAO
     #     """

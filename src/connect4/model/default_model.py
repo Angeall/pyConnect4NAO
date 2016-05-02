@@ -138,7 +138,7 @@ class DefaultConnect4Model(object):
                  hole_length=0.0585, hole_width=0.0095, hole_h_space=0.0095, hole_v_margin=0.004, hole_h_margin=0.0275,
                  circle_diameter=0.046, circle_h_space=0.02183, circle_v_space=0.009, circle_h_margin=0.033,
                  circle_v_margin=0.008, hamcode_side=0.0425, hamcode_h_space=0.0255, hamcode_h_margin=0.03525,
-                 hamcode_v_margin=0.019, hamcode_hole_space=0.01, ):  # TODO hamcode
+                 hamcode_v_margin=0.019, hamcode_hole_space=0.01, ):
         """
         :param disc_diameter: the size of a playing disc (m)
         :param length: the lateral length of the Connect 4 (m)
@@ -146,14 +146,14 @@ class DefaultConnect4Model(object):
         :param height: the height of the Connect 4 (m)
         :param hole_length: the length of an upper hole on the Connect 4 (m)
         :param hole_width: the width of an upper hole on the Connect 4 (m)
-        :param hole_h_space: the space between two upper holes on the Connect 4 (m)
+        :param hole_h_space: the space between two upper _holes on the Connect 4 (m)
         :param hole_v_margin: the margin between the front side of the Connect 4
             and the bottom left corner of an upper hole (m)
         :param hole_h_margin: the margin between the left side of the Connect 4
             and the bottom left corner of an upper hole (m)
         :param circle_diameter: the diameter of a front hole on the Connect 4 (m)
-        :param circle_h_space: the horizontal space between two neighbour front holes (m)
-        :param circle_v_space: the vertical space between two neighbour front holes (m)
+        :param circle_h_space: the horizontal space between two neighbour front _holes (m)
+        :param circle_v_space: the vertical space between two neighbour front _holes (m)
         :param circle_h_margin: the horizontal margin between the left side of the Connect 4
             and a left side front hole (m)
         :param circle_v_margin: the vertical margin between the upper side of the Connect 4
@@ -189,9 +189,9 @@ class DefaultConnect4Model(object):
 
     def generate3DModel(self):
         """
-        Generate the inner variables containing the Connect 4 3D model to consider during the Connect 4 detection
+        Generate the inner variables containing the Connect 4 3D _model to consider during the Connect 4 detection
         """
-        # Corners model
+        # Corners _model
         corners = range(self.NUMBER_OF_CORNERS)
         corners[self.UPPER_LEFT_FRONT_CORNER] = np.array([0, 0, 0])
         corners[self.UPPER_LEFT_BACK_CORNER] = np.array([0, 0, self.width])
@@ -202,7 +202,7 @@ class DefaultConnect4Model(object):
         corners[self.LOWER_RIGHT_FRONT_CORNER] = np.array([self.length, self.height, 0])
         corners[self.LOWER_RIGHT_BACK_CORNER] = np.array([self.length, self.height, self.width])
 
-        # Front holes model
+        # Front _holes _model
         front_holes = range(self.NUMBER_OF_FRONT_HOLES)
         x_start = self.circles_h_margin + self.circle_diameter / 2
         y_start = self.circles_v_margin + self.circle_diameter / 2
@@ -235,7 +235,7 @@ class DefaultConnect4Model(object):
             current_x = x_start
             current_y -= self.circle_v_space + self.circle_diameter
 
-        # Upper holes model
+        # Upper _holes _model
         upper_holes = []
         current_x = corners[self.UPPER_LEFT_FRONT_CORNER][0] + self.hole_h_margin
         current_y = 0
@@ -276,9 +276,9 @@ class DefaultConnect4Model(object):
         """
         :param index: Indicates which hole you want to get (see the constants)
         :type index: int
-        :return: The 3D coordinate of the wanted hole in the model
+        :return: The 3D coordinate of the wanted hole in the _model : [NW, NE, SW, SE]
         :rtype: np.array
-        Get the coordinates of an upper hole of the 3D model of the Connect 4
+        Get the coordinates of an upper hole of the 3D _model of the Connect 4
         """
         return self.three_d[self.UPPER_HOLES][index * 4], self.three_d[self.UPPER_HOLES][(index * 4) + 1], \
                self.three_d[self.UPPER_HOLES][(index * 4) + 2], self.three_d[self.UPPER_HOLES][(index * 4) + 3]
@@ -287,9 +287,9 @@ class DefaultConnect4Model(object):
         """
         :param index: Indicates which front hole you want to get (see the constants)
         :type index: int
-        :return: The 3D coordinate of the wanted hole in the model
+        :return: The 3D coordinate of the wanted hole in the _model
         :rtype: np.array
-        Get the coordinates of a front hole of the 3D model of the Connect 4
+        Get the coordinates of a front hole of the 3D _model of the Connect 4
         """
         return self.three_d[self.FRONT_HOLES][index]
 
@@ -297,9 +297,9 @@ class DefaultConnect4Model(object):
         """
         :param index: Indicates which corner you want to get (see the constants)
         :type index: int
-        :return: The 3D coordinate of the wanted corner in the model
+        :return: The 3D coordinate of the wanted corner in the _model
         :rtype: np.array
-        Get the coordinates of a corner of the 3D model of the Connect 4
+        Get the coordinates of a corner of the 3D _model of the Connect 4
         """
         return self.three_d[self.CORNERS][index]
 
@@ -307,9 +307,9 @@ class DefaultConnect4Model(object):
         """
         :param index: indicates which hamming code you want to get (see the constants)
         :type index: int
-        :return:  the 3D coordinates of the wanted hamming code
+        :return:  the 3D coordinates of the wanted hamming code : [NW, NE, SW, SE]
         :rtype: np.array
-        Get the coordinates of a hamming code of the 3D model of the Connect 4
+        Get the coordinates of a hamming code of the 3D _model of the Connect 4
         """
         return self.three_d[self.HAMCODES][index * 4], self.three_d[self.HAMCODES][(index * 4) + 1],\
                self.three_d[self.HAMCODES][(index * 4) + 2], self.three_d[self.HAMCODES][(index * 4) + 3]

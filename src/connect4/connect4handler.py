@@ -15,7 +15,7 @@ DEFAULT_MODEL = "DEFAULT_MODEL"
 
 class Connect4ModelNotFound(Exception):
     def __init__(self, model_name):
-        msg = "The model " + model_name + " does not exists"
+        msg = "The _model " + model_name + " does not exists"
         super(Connect4ModelNotFound, self).__init__(msg)
 
 
@@ -214,7 +214,7 @@ class Connect4Handler(object):
         :type img: np.ndarray
         :return: The asked upper hole coordinates
         :rtype: np.array
-        Detect holes in the image.
+        Detect _holes in the image.
         TODO
         """
         # Find contours in the reshaped img

@@ -41,13 +41,13 @@ class Connect4Tracker(object):
 
     def get_holes_coordinates(self, rvec, tvec, camera_position6d):
         """
-        :param rvec: The rotation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coord.
+        :param rvec: The rotation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coord.
         :type rvec: np.array
-        :param tvec: The translation vector given by SolvePnP to apply to the model to get the Connect4Handler 3D coord.
+        :param tvec: The translation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coord.
         :type tvec: np.array
         :param camera_position6d: the position 6D (x, y, z, Wx, Wy, Wz) of the camera from the robot torso
         :type camera_position6d: array
-        :return: The list that contains the upper holes position
+        :return: The list that contains the upper _holes position
         :rtype: list
         Computes the position of each upper hole of the board.
         """

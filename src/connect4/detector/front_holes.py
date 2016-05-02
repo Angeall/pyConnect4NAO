@@ -30,7 +30,7 @@ class FrontHolesDetector(CircleGridDetector):
 
     def __init__(self, connect4_model):
         """
-        :param connect4_model: the Connect 4 model to use
+        :param connect4_model: the Connect 4 _model to use
         """
         super(FrontHolesDetector, self).__init__()
         # Image of reference
@@ -43,7 +43,7 @@ class FrontHolesDetector(CircleGridDetector):
     def runDetection(self, circles, pixel_error_margin=10, min_similar_vectors=15, img=None,
                      ref_img=None, grid_shape=(6, 7)):
         """
-        :param circles: The circles detected in an image that could be the connect 4 front holes
+        :param circles: The circles detected in an image that could be the connect 4 front _holes
         :type circles: list
         :param pixel_error_margin: The maximum error to allow to consider two circles as neighbours
         :type pixel_error_margin: int

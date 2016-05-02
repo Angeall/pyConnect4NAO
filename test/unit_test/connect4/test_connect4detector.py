@@ -312,5 +312,5 @@ class Connect4DetectorTestCase(unittest.TestCase):
         try:
             self.c4Detector.runDetection(connect4, pixel_error_margin=15., min_similar_vectors=8)
             result = self.c4Detector._relative_coordinates
-        except CircleGridNotFoundException:  # Must fail because the possible rectangles can't be trusted (equality)
+        except CircleGridNotFoundException:  # Must fail because the possible _rectangles can't be trusted (equality)
             pass

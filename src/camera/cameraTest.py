@@ -241,7 +241,7 @@ def test2():
                     rectangles.append(rect)
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
         uhc.runDetection(rectangles, None)
-        for hole in uhc.holes:
+        for hole in uhc._holes:
             box = cv2.boxPoints(hole)
             box = np.int0(box)
             cv2.drawContours(img, [box], 0, (0, 255, 0), 5)
@@ -367,7 +367,7 @@ def test_upper_holes_coordinates():
         # # img = cv2.imread("test_img/img" + str((j % 154) + 1) + ".png")
         # # imgs.append(img.copy())
         markers = detect_markers(img)
-        uhc.hamcodes = markers
+        uhc._hamcodes = markers
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (1, 1), 0)
         # gray = cv2.medianBlur(gray, 1)
@@ -399,7 +399,7 @@ def test_upper_holes_coordinates():
                     cv2.drawContours(img, [box], 0, (255, 0, 0), 2)
 
 
-        for hole in uhc.holes:
+        for hole in uhc._holes:
             box = cv2.boxPoints(hole)
             box = np.int0(box)
             cv2.drawContours(img, [box], 0, (0, 255, 0), 5)

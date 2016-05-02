@@ -464,7 +464,7 @@ class CircleGridDetector(object):
         if max_x + 1 < self._grid_shape[1] or max_y + 1 < self._grid_shape[0]:
             raise self._exception
         elif max_x + 1 != self._grid_shape[1] or max_y + 1 != self._grid_shape[0]:
-            # Rectangle too big, need to consider inner rectangles
+            # Rectangle too big, need to consider inner _rectangles
             rectangles = geom.get_inner_rectangles([[(0, max_y), (max_x, max_y)], [(0, 0), (max_x, 0)]],
                                                    self._grid_shape[0], self._grid_shape[1])
             max_connection = -np.infty
@@ -480,7 +480,7 @@ class CircleGridDetector(object):
                     unsure = False
                     max_connection = nb_connection
                     max_rectangle = rectangle
-            # If two rectangles could be a circle grid or no correct rectangle was found,
+            # If two _rectangles could be a circle grid or no correct rectangle was found,
             #   then we decide to reject this analysis
             if unsure or max_rectangle is None:
                 raise self._exception
@@ -506,7 +506,7 @@ class CircleGridDetector(object):
         self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
 
     def match3DModel(self, camera_matrix, camera_dist):
-        # Need to define 3D model in subclass
+        # Need to define 3D _model in subclass
         return None
 
     def findPerspective(self):

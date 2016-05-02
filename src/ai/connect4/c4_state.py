@@ -36,7 +36,7 @@ class C4State(GameState):
     # @Override
     def possible_actions(self):
         """
-        :return: the indices of the holes that can be used
+        :return: the indices of the _holes that can be used
         """
         return self.actions
 
@@ -130,12 +130,12 @@ class C4State(GameState):
             while j <= len(row) and not red_won and not green_won:
                 slack = row[i:j]
                 if np.logical_or(slack == disc.EMPTY, slack == disc.RED).all():
-                    win_possible = True  # If 4 holes can be filled with red discs, a win can happen
+                    win_possible = True  # If 4 _holes can be filled with red discs, a win can happen
                     if (slack == disc.RED).all():
                         red_won = True
                         break
                 if np.logical_or(slack == disc.EMPTY, slack == disc.GREEN).all():
-                    win_possible = True  # If 4 holes can be filled with green discs, a win can happen
+                    win_possible = True  # If 4 _holes can be filled with green discs, a win can happen
                     if (slack == disc.GREEN).all():
                         green_won = True
                         break

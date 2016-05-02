@@ -198,9 +198,9 @@ def get_inner_rectangles(rectangle, y_max_length, x_max_length):
     :type y_max_length: int
     :param x_max_length: The maximum horizontal length of the searched grid.
     :type x_max_length: int
-    :return: A list of inner rectangles inside the rectangles defined in parameters
+    :return: A list of inner _rectangles inside the _rectangles defined in parameters
     :rtype: list
-    Computes a list of inner rectangles of dimensions (y_max_length, x_max_length) that are included inside "rectangle".
+    Computes a list of inner _rectangles of dimensions (y_max_length, x_max_length) that are included inside "rectangle".
     """
     # Make sure it is a rectangle
     [[up_left, up_right], [down_left, down_right]] = rectangle
@@ -282,9 +282,9 @@ def common_area(rect1, rect2):
     """
     :param rect1: the first rectangle
     :param rect2: the second rectangle
-    :return: the common area between the two rectangles
+    :return: the common area between the two _rectangles
     :rtype: double
-    Get the common area between two rectangles
+    Get the common area between two _rectangles
     """
     return common_boxes_area(cv2.boxPoints(rect1), cv2.boxPoints(rect2))
 
@@ -293,9 +293,9 @@ def common_boxes_area(box1, box2):
     """
     :param box1: the first box, an array of edges coordinates
     :param box2: the second box, an array of edges coordinates
-    :return: the common area between the two boxes
+    :return: the common area between the two _boxes
     :rtype: double
-    Get the common  area between two boxes
+    Get the common  area between two _boxes
     """
     # The order in the result of the boxPoints : bottom_l, up_l, up_r, bottom_r.
     if not (box1[0] == box1[-1]).all():  # If the box is not closed, we close it
@@ -338,7 +338,7 @@ def get_box_info(box):
     :return: ((long_side_vector, long_side_norm), (short_side_vector, short_side_norm))
     :rtype: tuple
     """
-    vector1 = vectorize(box[1], box[2])
+    vector1 = vectorize(box[0], box[2])
     vector2 = vectorize(box[0], box[1])
     norm1 = np.linalg.norm(vector1)
     norm2 = np.linalg.norm(vector2)
