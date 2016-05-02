@@ -1,7 +1,8 @@
-import numpy as np
-from naoqi import ALProxy
-import nao.data as nao
 import math
+
+from naoqi import ALProxy
+
+import nao.data as nao
 
 __author__ = "Anthony Rouneau"
 
@@ -32,7 +33,7 @@ class MotionController:
                                              True)
 
     def put_hand_at(self, coord, mask=7):
-        self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [2.0])
+        self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [5.0])
 
     def move_at(self, coord, mask=7):
         self.motion_proxy.setPositions("Legs", 0, coord, 0.6, mask)

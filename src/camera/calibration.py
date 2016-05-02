@@ -71,7 +71,7 @@ def get_camera_information():
     gray = None
     # ctr = -1
     while not finished:
-        img = get_nao_image()
+        img = get_nao_image(1)
         if img is not None:
             chessboards_not_found = False
             chessboards_corners = [None, None, None]

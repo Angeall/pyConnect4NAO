@@ -48,6 +48,8 @@ class UpperHoleDetector(object):
         self.kdtree, self.centres_to_indices, self.boxes = self.init_structures()
         self.filtered_rectangle_centres = self.filter_included_rectangles()
         self.filtered_rectangle_centres = self.filter_other_rectangles()
+        if len(hamcodes) > 0:
+            self.filtered_rectangle_centres = self.filter_rectangles_hamcodes()
         for rect_centre in self.filtered_rectangle_centres:
             self.holes.append(self.rectangles[self.centres_to_indices[rect_centre]])
 
@@ -133,6 +135,13 @@ class UpperHoleDetector(object):
                                     contains_map[other_centre] = True
         return filtered_rectangle_centres
 
+    # def filter_rectangles_hamcodes(self):
+    #     for hamcode in self.hamcodes:
+    #         hamcode.contours = geom.sort_rectangle_corners(hamcode.contours)
+    #         for rectangle in self.filtered_rectangle_centres:
+    #             if
+    # TODO: Get the rectangle in front of the hamcode (if it exists !)
+
     def match_3d_model(self, camera_matrix, camera_dist, res=640):
         res_diff = res/320.
         # TODO : Include rectangles in this
@@ -143,8 +152,7 @@ class UpperHoleDetector(object):
             if 0 <= hole_id <= 6:  # If the code has been read correctly and is one of the Connect 4 Hamming codes
                 object_points.extend(self.model.getHamcode(hole_id))
                 # image_points.append(np.uint16(geom.sort_rectangle_corners(hamcode.contours)/res_diff))
-                sorted_ar = geom.sort_rectangle_corners(hamcode.contours)
-                image_points.extend(sorted_ar)
+                image_points.extend(hamcode.contours)
         print "OLD_IMAGE", image_points
         print "OLD_OBJECT", object_points
         for i in range(len(image_points)):
