@@ -135,11 +135,11 @@ class UpperHoleDetector(object):
                                     contains_map[other_centre] = True
         return filtered_rectangle_centres
 
-    # def filter_rectangles_hamcodes(self):
-    #     for hamcode in self.hamcodes:
-    #         hamcode.contours = geom.sort_rectangle_corners(hamcode.contours)
-    #         for rectangle in self.filtered_rectangle_centres:
-    #             if
+    def filter_rectangles_hamcodes(self):
+        for hamcode in self.hamcodes:
+            hamcode.contours = geom.sort_rectangle_corners(hamcode.contours)
+            for rectangle in self.filtered_rectangle_centres:
+                ((long_side_vector, long_side_norm), (short_side_vector, short_side_norm)) = geom.get_box_info()
     # TODO: Get the rectangle in front of the hamcode (if it exists !)
 
     def match_3d_model(self, camera_matrix, camera_dist, res=640):
