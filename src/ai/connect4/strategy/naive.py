@@ -39,3 +39,6 @@ class Naive(Strategy):
 
     def choose_next_action(self, state):
         return self.alpha_beta.alpha_beta_searching(state)
+
+    def display_action(self, action):
+        print "Chosen action:", action
