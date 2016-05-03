@@ -27,16 +27,22 @@ class MotionController:
         self.localization_proxy = ALProxy("ALLocalization", robot_ip, robot_port)
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
 
-    def get_camera_position_from_world(self):
+    def get_camera_top_position_from_torso(self):
         return self.motion_proxy.getPosition("CameraTop",
-                                             FRAME_WORLD,
+                                             FRAME_TORSO,
+                                             True)
+
+    def get_camera_bottom_position_from_torso(self):
+        return self.motion_proxy.getPosition("CameraBottom",
+                                             FRAME_TORSO,
                                              True)
 
     def put_hand_at(self, coord, mask=7):
-        self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [5.0])
+        self.motion_proxy.setPositions("LArm", FRAME_TORSO, coord, 0.6, mask)
+        # self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [5.0])
 
     def move_at(self, coord, mask=7):
-        self.motion_proxy.setPositions("Legs", 0, coord, 0.6, mask)
+        self.motion_proxy.setPositions("Legs", FRAME_TORSO, coord, 0.6, mask)
 
     def get_left_arm_angles(self):
         """

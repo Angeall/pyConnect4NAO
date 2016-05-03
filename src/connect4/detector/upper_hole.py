@@ -53,8 +53,9 @@ class UpperHoleDetector(object):
         self._rectangles = rectangles
         self._hamcodes = hamcodes
         self._kdtree, self._centres_to_indices, self._boxes = self._init_structures()
-        self._filtered_rectangle_centres = self._filter_included_rectangles()
-        self._filtered_rectangle_centres = self._filter_other_rectangles()
+        # self._filtered_rectangle_centres = self._filter_included_rectangles()
+        if len(self._rectangles) != 0:
+            self._filtered_rectangle_centres = self._filter_other_rectangles()
         if hamcodes is not None and len(hamcodes) > 0:
             self._ham_id_to_rect_centres = self._find_hamcodes_rectangles()
         for rect_centre in self._filtered_rectangle_centres:
@@ -73,7 +74,11 @@ class UpperHoleDetector(object):
             centres_to_indices[rect[0]] = i
             boxes.append(geom.sort_rectangle_corners(cv2.boxPoints(rect)))
             data.append(rect[0])
-        return KDTree(data), centres_to_indices, boxes
+        self._filtered_rectangle_centres = data
+        if len(data) > 0:
+            return KDTree(data), centres_to_indices, boxes
+        else:
+            return None, None, None
 
     def _filter_included_rectangles(self):
         """
@@ -110,14 +115,14 @@ class UpperHoleDetector(object):
         for centre in self._filtered_rectangle_centres:
             if not contains_map.get(centre, False):
                 box = self._boxes[self._centres_to_indices[centre]]
-                box_vector, box_length, _, box_width = geom.get_box_info(box)
+                ((box_vector, box_length), (_, box_width)) = geom.get_box_info(box)
                 max_distance = 0.5 * box_length
                 # If the rectangle is not too small and the length/width ratio is the ratio expected by the _model
                 if box_length > 30 and geom.are_ratio_similar(box_length / box_width, model_length_width_ratio, 1.75):
                     for other_centre in self._filtered_rectangle_centres:
                         if other_centre is not centre:
                             other_box = self._boxes[self._centres_to_indices[other_centre]]
-                            other_box_vector, other_box_length, _, other_box_width = geom.get_box_info(other_box)
+                            ((other_box_vector, other_box_length),(_, other_box_width)) = geom.get_box_info(other_box)
                             centres_vector = geom.vectorize(centre, other_centre)
                             # If the other rectangle is not too small and the length/width ratio
                             #   is the ratio expected by the _model
@@ -132,8 +137,8 @@ class UpperHoleDetector(object):
                                                                  signed=False) \
                                     and geom.are_ratio_similar(np.linalg.norm(centres_vector) / box_length,
                                                                model_hole_space_ratio, 0.25) \
-                                    and abs((np.dot(box_vector, centres_vector) / (
-                                                box_length * np.linalg.norm(centres_vector))) - 1 < 0.4):
+                                    and geom.are_vectors_parallel(box_vector, centres_vector, 0.4):
+
                                 if not contains_map.get(centre, False):
                                     filtered_rectangle_centres.append(centre)
                                     contains_map[centre] = True
@@ -155,27 +160,30 @@ class UpperHoleDetector(object):
                     model_ratio = (self._model.hamcode_v_margin + (self._model.hamcode_side / 2.)
                                    - self._model.hole_v_margin - (self._model.hole_width / 2.)) / self._model.hamcode_side
                     image_ratio = np.linalg.norm(centers_vector) / np.linalg.norm(hamcode_vector)
-                    if geom.are_ratio_similar(image_ratio, model_ratio, 1.75):
+                    if geom.are_ratio_similar(image_ratio, model_ratio, 1.3):
                         hamcodes_id_to_rect_centres[hamcode.id] = rect_centre
         return hamcodes_id_to_rect_centres
 
-    def match_3d_model(self, camera_matrix, camera_dist, res=640, min_number_of_holes=2):
+    def match_3d_model(self, camera_matrix, camera_dist, res=640, min_nb_of_codes=2):
         if self._hamcodes is None:
             raise NotImplementedError("The current 3D matching algorithm uses Hamming codes and can't work without")
-        if len(self._hamcodes) < min_number_of_holes:
-            raise NotEnoughLandmarksException("The model needs at least " + str(min_number_of_holes) + " detected codes")
         res_diff = res/320.  # Because the calibration was made using 320x240 images
         object_points = []
         image_points = []
+        nb_of_codes = 0
         for hamcode in self._hamcodes:
             hole_id = int(round(int(hamcode.id)/1000))-1
             if 0 <= hole_id <= 6:  # If the code has been read correctly and is one of the Connect 4 Hamming codes
+                nb_of_codes += 1
                 object_points.extend(self._model.getHamcode(hole_id))
                 # image_points.append(np.uint16(geom.sort_rectangle_corners(hamcode.contours)/res_diff))
                 image_points.extend(hamcode.contours)
-                if self._ham_id_to_rect_centres.get(hamcode.id) is not None:
-                    object_points.extend(self._model.getUpperHole(hole_id))
-                    image_points.extend(self._boxes[self._centres_to_indices[self._ham_id_to_rect_centres[hamcode.id]]])
+                # if self._ham_id_to_rect_centres.get(hamcode.id) is not None:
+                #     object_points.extend(self._model.getUpperHole(hole_id))
+                #     image_points.extend(self._boxes[self._centres_to_indices[self._ham_id_to_rect_centres[hamcode.id]]])
+        if nb_of_codes < min_nb_of_codes:
+            raise NotEnoughLandmarksException(
+                "The model needs at least " + str(min_nb_of_codes) + " detected codes")
         for i in range(len(image_points)):
             image_points[i] = tuple(image_points[i])
             object_points[i] = tuple(object_points[i])

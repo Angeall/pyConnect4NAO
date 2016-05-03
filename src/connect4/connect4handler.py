@@ -1,9 +1,13 @@
+import time
+
 import cv2
 import numpy as np
+from hampy import detect_markers
 
 import utils.camera.geom as geom
+from connect4.connect4tracker import Connect4Tracker
 from detector.front_holes import FrontHolesDetector, FrontHolesGridNotFoundException
-from detector.upper_hole import UpperHoleDetector
+from detector.upper_hole import UpperHoleDetector, NotEnoughLandmarksException
 from model.default_model import DefaultConnect4Model
 
 __author__ = 'Anthony Rouneau'
@@ -29,6 +33,7 @@ class Connect4Handler(object):
         self.next_img_func = next_img_func
         self.front_hole_detector = FrontHolesDetector(self.model)
         self.upper_hole_detector = UpperHoleDetector(self.model)
+        self.tracker = Connect4Tracker(self.model)
         # Used for the detection
         self.front_holes_detection_prepared = False
         self.circles = []
@@ -208,27 +213,28 @@ class Connect4Handler(object):
         # TODO : Test and change return when ok
         return transformed_img, img
 
-    def getUpperHoleCoordinates(self, img, copy_img):
+    def getUpperHoleCoordinates(self, img, index, bottom_camera_position, camera_matrix, camera_dist, debug=False):
         """
         :param img: the image in which the hole will be detected
         :type img: np.ndarray
-        :return: The asked upper hole coordinates
+        :return: The asked upper hole 3D coordinates
         :rtype: np.array
-        Detect _holes in the image.
-        TODO
+        Detect holes in the image using the Hamming codes.
         """
-        # Find contours in the reshaped img
-        _, contours, _ = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            print cnt
-            # approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-            # copy_img = cv2.drawContours(copy_img, [cnt], 0, (0, 255, 0), -1)
-            rect = cv2.minAreaRect(cnt)
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            copy_img = cv2.drawContours(copy_img, [box], 0, (0, 0, 255), 2)
-            print cv2.contourArea(cnt)
-            print cv2.contourArea(rect)
-            # print cv2.contourArea(box)
-        # # # TODO : Test and change return when ok
-        return copy_img
+        min_number_of_codes = 2
+        markers = detect_markers(img)
+        if debug:
+            if len(markers) > 0:
+                for m in markers:
+                    m.draw_contour(img)
+                    cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+        if markers is not None and len(markers) >= min_number_of_codes:
+            self.upper_hole_detector._hamcodes = markers
+            self.upper_hole_detector.runDetection([], markers)
+            rvec, tvec = self.upper_hole_detector.match_3d_model(camera_matrix, camera_dist)
+            coords = self.tracker.get_holes_coordinates(rvec, tvec, bottom_camera_position)[index]
+            coords[2] += 0.1
+            time.sleep(1)
+            return coords.tolist()
+        raise NotEnoughLandmarksException("The model needs at least " + str(min_number_of_codes) + " detected codes")
