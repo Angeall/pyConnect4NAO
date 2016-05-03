@@ -364,8 +364,10 @@ def test_upper_holes_coordinates():
         img = get_nao_image(1, res=2)
         try:
             nao_motion.put_hand_at(
-            c4handler.getUpperHoleCoordinates(img, 4, nao_motion.get_camera_bottom_position_from_torso(),
-                                              data.CAM_MATRIX, data.CAM_DISTORSION))
+                c4handler.getUpperHoleCoordinates(img, 4, nao_motion.get_camera_bottom_position_from_torso(),
+                                                  data.CAM_MATRIX, data.CAM_DISTORSION))
+            if cv2.waitKey(100) == 27:
+                break
         except upper_hole.NotEnoughLandmarksException:
             continue
     return 0
