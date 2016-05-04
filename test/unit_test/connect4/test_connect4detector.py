@@ -3,7 +3,7 @@ import unittest
 
 import utils.camera.geom as geom
 from connect4.detector.front_holes import *
-from connect4.model.default_model import DefaultConnect4Model
+from connect4.model.default_model import DefaultModel
 
 __author__ = 'Angeall'
 
@@ -103,7 +103,7 @@ class Connect4DetectorTestCase(unittest.TestCase):
             y0 = y - tuple_min[1]
             temp.append((x0, y0))
         self.connect4_1 = temp
-        self.connect4_model = DefaultConnect4Model()
+        self.connect4_model = DefaultModel()
         self.c4Detector = FrontHolesDetector(self.connect4_model)
         self.circleGridDetector = CircleGridDetector()
 

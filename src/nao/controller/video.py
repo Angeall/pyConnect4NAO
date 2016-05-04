@@ -1,15 +1,11 @@
 import numpy as np
-import time
-from naoqi import ALProxy, ALModule, ALBroker
+from naoqi import ALProxy
 
 import nao.data as nao
-import threading
 
 __author__ = 'Anthony Rouneau'
 
 SUBSCRIBER_ID = "Connect4NAO"
-
-event = threading.Event()
 
 
 class VideoController(object):

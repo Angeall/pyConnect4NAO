@@ -8,10 +8,9 @@ import connect4.detector.front_holes as c4
 import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
 from connect4.connect4tracker import Connect4Tracker
-from connect4.model.default_model import DefaultConnect4Model
+from connect4.model.default_model import DefaultModel
 from nao import data
 from nao.controller.motion import MotionController
-from nao.controller.tracking import TrackingController
 from nao.controller.video import VideoController
 
 __author__ = 'Anthony Rouneau'
@@ -49,7 +48,6 @@ def get_nao_image(camera_num=0, res=1):
     if nao_video is None:
         nao_video = VideoController()
         nao_motion = MotionController()
-        nao_tracking = TrackingController()
         clean()
         ret = nao_video.connectToCamera(res=res, fps=30, camera_num=camera_num)
         if ret < 0:
@@ -79,7 +77,7 @@ def draw_circles(img, circles):
 
 
 def test():
-    connect4_model = DefaultConnect4Model()
+    connect4_model = DefaultModel()
     c4_detector = c4.FrontHolesDetector(connect4_model)
     while True:
         i = 0
@@ -115,7 +113,7 @@ def test():
 
 def test3():
     myc4 = Connect4Handler(get_nao_image)
-    dist = 0.5
+    dist = 1.3
     sloped = False
     while True:
         try:
@@ -191,7 +189,7 @@ def tracker_test():
 def test2():
     clean()
     imgs = []
-    uhc = upper_hole.UpperHoleDetector(DefaultConnect4Model())
+    uhc = upper_hole.UpperHolesDetector(DefaultModel())
     j = 1
     while True:
         img = get_nao_image(1)
@@ -359,7 +357,7 @@ def test_front_holes_coordinates():
 
 def test_upper_holes_coordinates():
     global nao_motion
-    c4handler = Connect4Handler(DefaultConnect4Model())
+    c4handler = Connect4Handler(DefaultModel())
     while True:
         img = get_nao_image(1, res=2)
         try:
@@ -374,9 +372,10 @@ def test_upper_holes_coordinates():
 
 
 if __name__ == '__main__':
-    # test3()
+    test3()
     # test2()
     # test4()
     # testBarCode()
-    test_upper_holes_coordinates()
+    # test_upper_holes_coordinates()
     # test_front_holes_coordinates()
+    # test_wait_for_disc()

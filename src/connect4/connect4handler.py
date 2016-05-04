@@ -7,8 +7,8 @@ from hampy import detect_markers
 import utils.camera.geom as geom
 from connect4.connect4tracker import Connect4Tracker
 from detector.front_holes import FrontHolesDetector, FrontHolesGridNotFoundException
-from detector.upper_hole import UpperHoleDetector, NotEnoughLandmarksException
-from model.default_model import DefaultConnect4Model
+from detector.upper_hole import UpperHolesDetector, NotEnoughLandmarksException
+from model.default_model import DefaultModel
 
 __author__ = 'Anthony Rouneau'
 
@@ -26,13 +26,13 @@ class Connect4ModelNotFound(Exception):
 class Connect4Handler(object):
     def __init__(self, next_img_func, model_type=DEFAULT_MODEL):
         if model_type == DEFAULT_MODEL:
-            self.model = DefaultConnect4Model()
+            self.model = DefaultModel()
         else:
             raise Connect4ModelNotFound(model_type)
         self.img = None
         self.next_img_func = next_img_func
         self.front_hole_detector = FrontHolesDetector(self.model)
-        self.upper_hole_detector = UpperHoleDetector(self.model)
+        self.upper_hole_detector = UpperHolesDetector(self.model)
         self.tracker = Connect4Tracker(self.model)
         # Used for the detection
         self.front_holes_detection_prepared = False
@@ -53,7 +53,7 @@ class Connect4Handler(object):
         :param dist: The distance from the board in meters
         :return: The estimated minimum radius to detect
         """
-        return int(np.ceil(4.4143 * (dist ** (-1.1446)) / (self.model.circle_diameter / 0.046)))
+        return int(np.ceil(5.1143 * (dist ** (-1.1446)) / (self.model.circle_diameter / 0.046)))
 
     def estimateMaxRadius(self, dist):
         """
@@ -133,8 +133,8 @@ class Connect4Handler(object):
         self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped)
         self.pixel_error_margin = self.computeMaxPixelError(self.min_radius)
         self.min_dist = int(self.min_radius * 2.391 * (self.res / 320))
-        self.param1 = 77
-        self.param2 = 9.75
+        self.param1 = 70
+        self.param2 = 10.5
         if self.sloped:
             self.param2 = 8
 
@@ -232,7 +232,7 @@ class Connect4Handler(object):
         if markers is not None and len(markers) >= min_number_of_codes:
             self.upper_hole_detector._hamcodes = markers
             self.upper_hole_detector.runDetection([], markers)
-            rvec, tvec = self.upper_hole_detector.match_3d_model(camera_matrix, camera_dist)
+            rvec, tvec = self.upper_hole_detector.match3DModel(camera_matrix, camera_dist)
             coords = self.tracker.get_holes_coordinates(rvec, tvec, bottom_camera_position)[index]
             coords[2] += 0.1
             time.sleep(1)

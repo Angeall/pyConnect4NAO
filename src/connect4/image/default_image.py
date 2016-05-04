@@ -35,7 +35,7 @@ class DefaultConnect4Image(object):
         self.img = cv2.imread(self.IMAGE_NAME)
         self.pixel_mapping = self.generate2DReference()
 
-    def generate2DReference(self, ):
+    def generate2DReference(self):
         """
         Create a virtual mapping using a pattern defined with the parameters that refers to the image of reference
         for the homography
@@ -49,8 +49,8 @@ class DefaultConnect4Image(object):
         current_y = self.y_start
         y_pos = 5
         x_pos = 0
-        for i in range(self.ver):
-            for j in range(self.hor):
+        for k in range(self.ver):
+            for l in range(self.hor):
                 grid[(x_pos, y_pos)] = np.array([current_x, current_y])
                 current_x += self.x_dist
                 x_pos += 1

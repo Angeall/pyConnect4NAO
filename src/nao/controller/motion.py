@@ -7,6 +7,10 @@ import nao.data as nao
 __author__ = "Anthony Rouneau"
 
 
+callbackObject = None
+memory_proxy = None
+broker = None
+
 FRAME_TORSO = 0
 FRAME_WORLD = 1
 FRAME_ROBOT = 2
@@ -21,6 +25,9 @@ class MotionController:
         :type robot_port: int
         Creates a new Virtual Controller for NAO
         """
+        self.ip = robot_ip
+        self.port = robot_port
+
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, robot_port)
         self.track_proxy = ALProxy("ALTracker", robot_ip, robot_port)
@@ -76,5 +83,10 @@ class MotionController:
         angles = [yaw, pitch]
         fraction_max_speed = 0.1
         self.motion_proxy.setAngles(joint_names, angles, fraction_max_speed)
+
+
+
+    def playDisc(self, hole_coordinates):
+        pass
 
 

@@ -15,7 +15,7 @@ class Human(Strategy):
     def eval(self, state, other_player=False):
         return 0
 
-    def choose_next_action(self, state):
+    def chooseNextAction(self, state):
         """
         :param state:
         :type state: GameState

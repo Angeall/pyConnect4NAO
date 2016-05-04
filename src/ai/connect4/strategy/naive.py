@@ -37,7 +37,7 @@ class Naive(Strategy):
         else:
             return factor * self.DRAW
 
-    def choose_next_action(self, state):
+    def chooseNextAction(self, state):
         return self.alpha_beta.alpha_beta_searching(state)
 
     def display_action(self, action):

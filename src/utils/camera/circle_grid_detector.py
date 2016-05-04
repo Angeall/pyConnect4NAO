@@ -503,7 +503,7 @@ class CircleGridDetector(object):
             scene.append(self._circle_grid_mapping[key])
         obj = np.array(obj)
         scene = np.array(scene)
-        self.homography = cv2.findHomography(obj, scene, cv2.RANSAC)[0]
+        self.homography = cv2.findHomography(obj, scene, cv2.LMEDS)[0]
 
     def match3DModel(self, camera_matrix, camera_dist):
         # Need to define 3D _model in subclass
@@ -520,8 +520,8 @@ class CircleGridDetector(object):
         self.mappingHomography()
         self.object_perspective = cv2.warpPerspective(self._img, self.homography, (cols, rows),
                                                       flags=cv2.WARP_INVERSE_MAP)
-        for i in self.reference_mapping.values():
-            cv2.circle(self.object_perspective, (i[0], i[1]), 2, (0, 0, 255), 2)
+        # for i in self.reference_mapping.values():
+        #     cv2.circle(self.object_perspective, (i[0], i[1]), 2, (0, 0, 255), 2)
 
     def getPerspective(self):
         """

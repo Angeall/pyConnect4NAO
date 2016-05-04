@@ -15,7 +15,7 @@ class Strategy:
         self.other_id = _other_id
 
     @abstractmethod
-    def choose_next_action(self, state):
+    def chooseNextAction(self, state):
         pass
 
     @abstractmethod

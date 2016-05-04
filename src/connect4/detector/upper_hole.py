@@ -3,7 +3,7 @@ import numpy as np
 from scipy.spatial import KDTree
 
 import utils.camera.geom as geom
-from connect4.model.default_model import DefaultConnect4Model
+from connect4.model.default_model import DefaultModel
 
 __author__ = 'Anthony Rouneau'
 
@@ -13,15 +13,15 @@ class NotEnoughLandmarksException(BaseException):
         super(NotEnoughLandmarksException, self).__init__(msg)
 
 
-class UpperHoleDetector(object):
+class UpperHolesDetector(object):
     """
-
+    Allow to detect and give the 3D coordinates of the Upper holes of a Connect 4 board
     """
 
     def __init__(self, c4_model):
         """
         :param c4_model: the _model that represents the connect 4
-        :type c4_model: DefaultConnect4Model
+        :type c4_model: DefaultModel
         """
         self._model = c4_model
         self._rectangles = []
@@ -52,16 +52,16 @@ class UpperHoleDetector(object):
         self._clear()
         self._rectangles = rectangles
         self._hamcodes = hamcodes
-        self._kdtree, self._centres_to_indices, self._boxes = self._init_structures()
-        # self._filtered_rectangle_centres = self._filter_included_rectangles()
+        self._kdtree, self._centres_to_indices, self._boxes = self._initStructures()
+        # self._filtered_rectangle_centres = self._filterIncludedRectangles()
         if len(self._rectangles) != 0:
-            self._filtered_rectangle_centres = self._filter_other_rectangles()
+            self._filtered_rectangle_centres = self._filterOtherRectangles()
         if hamcodes is not None and len(hamcodes) > 0:
-            self._ham_id_to_rect_centres = self._find_hamcodes_rectangles()
+            self._ham_id_to_rect_centres = self._findHamcodesRectangles()
         for rect_centre in self._filtered_rectangle_centres:
             self._holes.append(self._rectangles[self._centres_to_indices[rect_centre]])
 
-    def _init_structures(self):
+    def _initStructures(self):
         """
         :return: the _kdtree, the centre to indices map and the box list, in this order
         :rtype: tuple
@@ -80,7 +80,7 @@ class UpperHoleDetector(object):
         else:
             return None, None, None
 
-    def _filter_included_rectangles(self):
+    def _filterIncludedRectangles(self):
         """
         :return: the list containing all the rectangle centres that passed through the filter
         :rtype: list
@@ -106,7 +106,7 @@ class UpperHoleDetector(object):
                                 added = True
         return filtered_rectangle_centres
 
-    def _filter_other_rectangles(self):
+    def _filterOtherRectangles(self):
         filtered_rectangle_centres = []
         contains_map = {}
         # The ratio between the hole length + the horizontal space and the hole length
@@ -147,7 +147,7 @@ class UpperHoleDetector(object):
                                     contains_map[other_centre] = True
         return filtered_rectangle_centres
 
-    def _find_hamcodes_rectangles(self):
+    def _findHamcodesRectangles(self):
         hamcodes_id_to_rect_centres = {}
         for hamcode in self._hamcodes:
             hamcode.contours = geom.sort_rectangle_corners(hamcode.contours)
@@ -164,7 +164,7 @@ class UpperHoleDetector(object):
                         hamcodes_id_to_rect_centres[hamcode.id] = rect_centre
         return hamcodes_id_to_rect_centres
 
-    def match_3d_model(self, camera_matrix, camera_dist, res=640, min_nb_of_codes=2):
+    def match3DModel(self, camera_matrix, camera_dist, res=640, min_nb_of_codes=2):
         if self._hamcodes is None:
             raise NotImplementedError("The current 3D matching algorithm uses Hamming codes and can't work without")
         res_diff = res/320.  # Because the calibration was made using 320x240 images

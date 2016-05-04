@@ -9,8 +9,6 @@ IP = "169.254.254.250"
 # PORT = 35271
 PORT = 9559
 
-# TODO : Make the CAM_MATRIX resolution independant
-
 # CAM_MATRIX = np.matrix([[284.633411,    0.,           152.559524],
 #                         [0.,            283.623835,   109.060664],
 #                         [0.,              0.,         1.]])

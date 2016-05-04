@@ -27,6 +27,6 @@ class Player(object):
         :return: the number of the hole in which place the disc
         :rtype: int
         """
-        return self.strategy.choose_next_action(game_state)
+        return self.strategy.chooseNextAction(game_state)
 
 

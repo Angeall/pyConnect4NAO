@@ -1,10 +1,11 @@
-from connect4.image.default_image import DefaultConnect4Image
 import numpy as np
+
+from connect4.image.default_image import DefaultConnect4Image
 
 __author__ = 'Anthony Rouneau'
 
 
-class DefaultConnect4Model(object):
+class DefaultModel(object):
     CORNERS = 0
     # MODEL INDICES : CORNERS
     UPPER_LEFT_BACK_CORNER = 1
