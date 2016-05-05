@@ -48,12 +48,8 @@ class C4State(GameState):
         """
         if column_no not in self.actions:
             raise AttributeError("This column is full")
-        column = self.board[:, column_no]
-        # has_disc is a vector of bool in which a slot is True if it contains a disc
-        has_disc = column > disc.EMPTY
-        # We fulfill the lowest slot available by looking at the slot just before the first disc
-        line_no = np.argmax(has_disc) - 1
-        column[line_no] = self.next_color
+        line_no = self.get_top_slot_number(column_no)
+        self.board[line_no][column_no] = self.next_color
         color_played = self.next_color
         # Now, it's the other player's turn
         self.next_color = disc.get_opposite_color(self.next_color)
@@ -211,4 +207,15 @@ class C4State(GameState):
         """
         res = (tuple(self.board.ravel().tolist()), self.next_color).__hash__()
         return res
+
+    def get_top_slot_number(self, column_no):
+        column = self.board[:, column_no]
+        # has_disc is a vector of bool in which a slot is True if it contains a disc
+        has_disc = column > disc.EMPTY
+        # We take the lowest slot available by looking at the slot just before the first disc
+        return (np.argmax(has_disc) - 1) % 6
+
+    def check_top_column(self, line_no, column_no):
+        # We check if line_no is the lowest slot available by looking at the slot just before the first disc
+        return line_no == self.get_top_slot_number(column_no)
 

@@ -7,7 +7,6 @@ from hampy import detect_markers
 import connect4.detector.front_holes as c4
 import connect4.detector.upper_hole as upper_hole
 from connect4.connect4handler import Connect4Handler
-from connect4.connect4tracker import Connect4Tracker
 from connect4.model.default_model import DefaultModel
 from nao import data
 from nao.controller.motion import MotionController
@@ -29,7 +28,7 @@ def clean():
     global nao_video, cap
     if nao_video is not None:
         for i in range(7):
-            nao_video.disconnectFromCamera(subscriber_id="Connect4NAO_" + str(i))
+            nao_video.disconnectFromCamera()
 
 
 def get_webcam_image():
@@ -53,7 +52,7 @@ def get_nao_image(camera_num=0, res=1):
         if ret < 0:
             print "Could not open camera"
             return None
-    return nao_video.getImageFromCamera()
+    return nao_video.getImageFromCamera(camera_num=camera_num)
 
 
 def close_camera():
@@ -113,12 +112,13 @@ def test():
 
 def test3():
     myc4 = Connect4Handler(get_nao_image)
-    dist = 1.3
+    dist = 0.7
     sloped = False
     while True:
         try:
             myc4.detectFrontHoles(dist, sloped, tries=4)
             cv2.imshow("Connect4Handler", myc4.front_hole_detector.getPerspective())
+            # cv2.imwrite("state_detection_test.png", myc4.front_hole_detector.getPerspective())
         except c4.FrontHolesGridNotFoundException:
             pass
         img2 = draw_circles(myc4.img, myc4.circles)
@@ -168,7 +168,9 @@ def tracker_test():
                 # print repr(np.float32(np.array(Connect4Handler(get_nao_image).reference_mapping[(0, 0)])))
                 # print repr(c4_detector.homography)
                 print cv2.perspectiveTransform(
-                    np.float32(Connect4Handler(get_nao_image).reference_mapping[(0, 0)]).reshape(1, -1, 2),
+                    np.float32(Connect4Handler(get_nao_image).front_hole_detector.reference_mapping[(0, 0)]).reshape(1,
+                                                                                                                     -1,
+                                                                                                                     2),
                     c4_detector.homography).reshape(-1, 2)
                 rows, cols, _ = img.shape
                 # print c4_detector.homography
@@ -258,58 +260,6 @@ def test2():
     return 0
 
 
-# def test():
-#     while True:
-#         #img = get_webcam_image()
-#         img = get_nao_image()
-#         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#         gray = cv2.GaussianBlur(gray, (3, 3), 0)
-#         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,60,
-#                             param1=50,param2=11,minRadius=25,maxRadius=31)
-#         # circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,1,10,
-#         #                     param1=50,param2=10,minRadius=5,maxRadius=8)
-#         if circles is not None:
-#             circles = np.uint16(np.around(circles))
-#             for i in circles[0,:]:
-#                 # draw the outer circle
-#                 cv2.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
-#                 # draw the center of the circle
-#                 cv2.circle(img,(i[0],i[1]),2,(0,0,255),3)
-#         if circles is not None:
-#             print detection.circles_matrix(circles[0], 100)
-#             lines = detection.detect_connect_4_lines(circles[0], 85, 200, max_missed=3, min_detected=5)
-#             for line in lines:
-#                 cv2.rectangle(img, (line[0][0]-20, line[0][1]-20), (line[-1][0]+20, line[-1][1]+20),(255,0,0))
-#         # canny = cv2.Canny(gray, 10, 100)
-#         # (cnts, _) = cv2.findContours(canny, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2:]
-#         # for c in cnts:
-#         #     # draw the contour and show it
-#         #     cv2.drawContours(img, [c], -1, (0, 0, 255), 2)
-#         # lines = 0.
-#         # cv2.HoughLines(canny, lines, 1., 1)
-#         cv2.imshow("Original Image", img)
-#         # cv2.imshow("Original Image", 255-img)
-#         if cv2.waitKey(1) == 27:
-#             print "Esc pressed : exit"
-#             close_camera()
-#             break
-#     return 0
-
-def test4():
-    global nao_video, nao_tracking, nao_motion
-    myc4 = Connect4Handler(get_nao_image)
-    while True:
-        img = get_nao_image(1)
-        cv2.imshow("TEST", img)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (3, 3), 0)
-        cv2.imshow("Contour", myc4.getUpperHoleCoordinates(gray, gray.copy()))
-        if cv2.waitKey(1) == 27:
-            print "Esc pressed : exit"
-            close_camera()
-            break
-
-
 def testBarCode():
     while True:
         img = get_nao_image(1, res=2)
@@ -331,24 +281,21 @@ def testBarCode():
 
 def test_front_holes_coordinates():
     global nao_motion
+    nao_motion = MotionController()
     myc4 = Connect4Handler(get_nao_image)
-    c4tracker = Connect4Tracker(myc4.model)
-    dist = 0.5
+    dist = 1.2
     sloped = False
     while True:
         try:
-            myc4.detectFrontHoles(dist, sloped, tries=4)
-            cv2.imshow("Connect4Handler", myc4.front_hole_detector.getPerspective())
-            rvec, tvec = myc4.front_hole_detector.match3DModel(data.CAM_MATRIX, data.CAM_DISTORSION)
-            print \
-                c4tracker.get_holes_coordinates(rvec, tvec, nao_motion.motion_proxy.getPosition("CameraTop", 0, True))[
-                    3]
+            coord = myc4.getUpperHoleCoordinatesUsingFrontHoles(dist, sloped, 3,
+                                                                nao_motion.get_camera_top_position_from_torso(),
+                                                                camera_matrix=data.CAM_MATRIX,
+                                                                camera_dist=data.CAM_DISTORSION,
+                                                                tries=4, debug=True)
+            print coord
         except c4.FrontHolesGridNotFoundException:
             pass
-        img2 = draw_circles(myc4.img, myc4.circles)
-        cv2.imshow("Circles detected", img2)
-        cv2.imshow("Original picture", myc4.img)
-        if cv2.waitKey(1) == 27:
+        if cv2.waitKey(50) == 27:
             print "Esc pressed : exit"
             close_camera()
             break
@@ -357,13 +304,14 @@ def test_front_holes_coordinates():
 
 def test_upper_holes_coordinates():
     global nao_motion
-    c4handler = Connect4Handler(DefaultModel())
+    c4handler = Connect4Handler(get_nao_image)
     while True:
         img = get_nao_image(1, res=2)
         try:
             nao_motion.put_hand_at(
-                c4handler.getUpperHoleCoordinates(img, 4, nao_motion.get_camera_bottom_position_from_torso(),
-                                                  data.CAM_MATRIX, data.CAM_DISTORSION))
+                c4handler.getUpperHoleCoordinatesUsingMarkers(4,
+                                                              nao_motion.get_camera_bottom_position_from_torso(),
+                                                              data.CAM_MATRIX, data.CAM_DISTORSION, True))
             if cv2.waitKey(100) == 27:
                 break
         except upper_hole.NotEnoughLandmarksException:
@@ -372,10 +320,10 @@ def test_upper_holes_coordinates():
 
 
 if __name__ == '__main__':
-    test3()
+    # test3()
     # test2()
     # test4()
     # testBarCode()
     # test_upper_holes_coordinates()
-    # test_front_holes_coordinates()
+    test_front_holes_coordinates()
     # test_wait_for_disc()

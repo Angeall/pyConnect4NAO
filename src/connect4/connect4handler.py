@@ -1,5 +1,3 @@
-import time
-
 import cv2
 import numpy as np
 from hampy import detect_markers
@@ -15,6 +13,16 @@ __author__ = 'Anthony Rouneau'
 DEFAULT_RESOLUTION = 320
 
 DEFAULT_MODEL = "DEFAULT_MODEL"
+
+
+def draw_circles(img, circles):
+    img2 = img.copy()
+    for i in circles:
+        # draw the outer circle
+        cv2.circle(img2, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        # draw the center of the circle
+        cv2.circle(img2, (i[0], i[1]), 2, (0, 0, 255), 2)
+    return img2
 
 
 class Connect4ModelNotFound(Exception):
@@ -138,15 +146,25 @@ class Connect4Handler(object):
         if self.sloped:
             self.param2 = 8
 
-    def detectFrontHoles(self, distance, sloped=False, res=DEFAULT_RESOLUTION, tries=1):
+    def detectFrontHoles(self, distance, sloped=False, res=DEFAULT_RESOLUTION, tries=1, debug=False):
         """
         :param distance: The distance between the robot and the connect4
-        :param sloped: true if the connect4 is sloped
+        :type distance: float
+        :param sloped: True if the connect4 is sloped or in an unknown position
+        :type sloped: bool
         :param res: the resolution of the image
+        :type res: int
         :param tries: the number of success the algorithm must perform to mark the Connect 4 as detected
+        :type tries: int
+        :param debug: if True, displays image of the current detection
+        :type debug: bool
+        Detect the front holes in the next image of the "next_img_func".
+        If the connect 4 is not found in one attempt, the whole detection fails (see the 'tries' parameter).
         """
+        last_0_0_coord = None
         for i in range(tries):
-            self.img = self.next_img_func()
+            print "try", i
+            self.img = self.next_img_func(0)  # We detect the front holes using the top camera
             self.circles = []
             if not self.front_holes_detection_prepared:
                 self.prepareFrontHolesDetection(distance, sloped, res)
@@ -160,81 +178,123 @@ class Connect4Handler(object):
                                        param1=self.param1, param2=self.param2, minRadius=self.min_radius,
                                        maxRadius=self.max_radius)
             if circles is not None:
+
                 self.circles = circles[0]
                 self.front_hole_detector.runDetection(self.circles, pixel_error_margin=self.pixel_error_margin,
                                                       img=self.img)
+                if debug:
+                    img2 = draw_circles(self.img, self.circles)
+                    cv2.imshow("Circles detected", img2)
+                    cv2.imshow("Original picture", self.img)
+                (cur_0_0_coord, cur_1_0_coord) = cv2.perspectiveTransform(
+                    np.float32(np.array([self.front_hole_detector.reference_mapping[(0, 0)],
+                                         self.front_hole_detector.reference_mapping[(1, 0)]])).reshape(1, -1, 2),
+                    self.front_hole_detector.homography).reshape(-1, 2)
+                if last_0_0_coord is not None:
+
+                    vertical_max_dist = geom.point_distance(cur_0_0_coord, cur_1_0_coord)
+                    # If the distance between two board detection exceed 3/4 * distance between two rows,
+                    #    the detection is considered as unstable because two different grids have been detected
+                    if geom.point_distance(cur_0_0_coord, last_0_0_coord) > 0.75 * vertical_max_dist:
+                        raise FrontHolesGridNotFoundException(
+                            "The detection was not stable as it detected two different boards during {0} attempt(s)"
+                                .format(str(i)))
+                last_0_0_coord = cur_0_0_coord
+                if debug:
+                    cv2.imshow("Perspective", self.front_hole_detector.getPerspective())
+                    if cv2.waitKey(1) == 27:
+                        print "Esc pressed : exit"
+                        cv2.destroyAllWindows()
+                        raise FrontHolesGridNotFoundException("The detection was interrupted")
             else:
-                raise FrontHolesGridNotFoundException()
+                raise FrontHolesGridNotFoundException(
+                    "The detection was not stable as it lost the board after {0} attempt(s)".format(str(i)))
 
-    def getUpperHoleRefinedCoordinates(self, img, approx_coordinates):
+    def getUpperHoleCoordinatesUsingMarkers(self, index, camera_position, camera_matrix, camera_dist,
+                                            tries=1, debug=False):
         """
-        Detect a hole inside the approx_coordinates in the image.
-        :param img: the image in which the hole will be detected
-        :param approx_coordinates: rectangle of coordinates indicating, using the solvePnP results, where the
-                                   hole is approximately.
-                                   /!\ must be ordered by top-left, top-right, bottom-right, and bottom-left
-        :rtype: np.array
+        :param index: the index of the hole
+        :type index: int
+        :param camera_position: the 6D position of the camera used for the detection (the bottom one),
+                                    from the robot torso
+        :type camera_position: tuple
+        :param camera_matrix: the camera distortion matrix
+        :type camera_matrix: np.array
+        :param camera_dist: the camera distortion coefficients vector
+        :type camera_dist: np.array
+        :param debug: if True, draw the detected markers
+        :type debug: bool
+        :param tries: the number of times the detection will be run. If one try fails,
+                      the whole detection is considered as failed
+        :type tries: int
+        Get an upper hole's coordinates using the Hamming markers on the Connect 4.
+        This method assumes that the Hamming codes are visible on the image it will
+            acquire using its "next_img_func". Otherwise, the detection fails
         """
-        (tl, tr, br, bl) = approx_coordinates
-        # Enlarge the rectangle to consider in order to detect the whole hole
-        approx_error = 50 * (self.res / 320)
-        tl = [tl[0] - approx_error, tl[1] - approx_error]
-        tr = [tr[0] + approx_error, tr[1] - approx_error]
-        br = [br[0] + approx_error, br[1] + approx_error]
-        bl = [bl[0] - approx_error, bl[1] + approx_error]
-        # Computes the new maximal width
-        x_1 = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
-        x_2 = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
-        max_width = max(int(x_1), int(x_2))
-        # Computes the new maximal height
-        y_1 = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
-        y_2 = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-        max_height = max(int(y_1), int(y_2))
-        # The coordinates of the new rectangle containing the transformed image
-        new_size = np.array([[0, 0],
-                             [max_width - 1, 0],
-                             [max_width - 1, max_height - 1],
-                             [0, max_height - 1]], dtype="float32")
-        # Computes the transformation matrix and warp the original image
-        trans_matrix = cv2.getPerspectiveTransform(approx_coordinates, new_size)
-        transformed_img = cv2.warpPerspective(img, trans_matrix, (max_width, max_height))
-        # Find contours in the reshaped img
-        contours, _ = cv2.findContours(transformed_img, 1, 2)
-        for cnt in contours:
-            # approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-            cv2.drawContours(transformed_img, [cnt], 0, 255, -1)
-            rect = cv2.minAreaRect(cnt)
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            cv2.drawContours(transformed_img, [box], 0, (0, 0, 255), 2)
-            print cv2.contourArea(cnt)
-            print cv2.contourArea(rect)
-            # print cv2.contourArea(box)
-        # TODO : Test and change return when ok
-        return transformed_img, img
+        max_nb_of_markers = 0
+        rvec = None
+        tvec = None
+        for i in range(tries):
+            img = self.next_img_func(1)  # We get the image from the bottom camera
+            min_nb_of_codes = 2
+            markers = detect_markers(img)
+            if markers is not None and len(markers) >= min_nb_of_codes:
+                if debug:
+                    for m in markers:
+                        m.draw_contour(img)
+                        cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+                    cv2.imshow("Debug", img)
+                self.upper_hole_detector._hamcodes = markers
+                self.upper_hole_detector.runDetection([], markers)
+                if len(markers) > max_nb_of_markers:
+                    max_nb_of_markers = len(markers)
+                    rvec, tvec = self.upper_hole_detector.match3DModel(camera_matrix, camera_dist)
+            else:
+                raise NotEnoughLandmarksException("The model needs at least " + str(min_nb_of_codes) + " detected codes")
+        return self._getUpperHoleCoordinates(rvec, tvec, index, camera_position)
 
-    def getUpperHoleCoordinates(self, img, index, bottom_camera_position, camera_matrix, camera_dist, debug=False):
+    def getUpperHoleCoordinatesUsingFrontHoles(self, distance, sloped, index, camera_position, camera_matrix,
+                                               camera_dist, debug=False, tries=1):
+        """
+        :param distance: The distance between the robot and the connect4
+        :type distance: float
+        :param sloped: True if the connect4 is sloped or in an unknown position
+        :type sloped: bool
+        :param index: the index of the hole
+        :type index: int
+        :param camera_position: the 6D position of the camera used for the detection (the top one),
+                                    from the robot torso
+        :type camera_position: tuple
+        :param camera_matrix: the camera distortion matrix
+        :type camera_matrix: np.array
+        :param camera_dist: the camera distortion coefficients vector
+        :type camera_dist: np.array
+        :param debug: if True, draw the detected markers
+        :type debug: bool
+        :param tries: the number of times the detection will be run. If one try fails,
+                      the whole detection is considered as failed
+        :type tries: int
+        Get an upper hole's coordinates using the front holes of the Connect 4.
+        This method assumes that the front holes are visible on the image it will
+            acquire using its "next_img_func". Otherwise, the detection fails
+        """
+        self.detectFrontHoles(distance, sloped, tries=tries, debug=debug)
+        rvec, tvec = self.front_hole_detector.match3DModel(camera_matrix, camera_dist)
+        return self._getUpperHoleCoordinates(rvec, tvec, index, camera_position)
+
+    def _getUpperHoleCoordinates(self, rvec, tvec, index, camera_position):
         """
         :param img: the image in which the hole will be detected
         :type img: np.ndarray
+        :param index: the index of the hole
+        :type index: int
+        :param camera_position: the 6D position of the camera used for the detection, from the robot torso
+        :type camera_position: tuple
         :return: The asked upper hole 3D coordinates
         :rtype: np.array
         Detect holes in the image using the Hamming codes.
         """
-        min_number_of_codes = 2
-        markers = detect_markers(img)
-        if debug:
-            if len(markers) > 0:
-                for m in markers:
-                    m.draw_contour(img)
-                    cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-        if markers is not None and len(markers) >= min_number_of_codes:
-            self.upper_hole_detector._hamcodes = markers
-            self.upper_hole_detector.runDetection([], markers)
-            rvec, tvec = self.upper_hole_detector.match3DModel(camera_matrix, camera_dist)
-            coords = self.tracker.get_holes_coordinates(rvec, tvec, bottom_camera_position)[index]
-            coords[2] += 0.1
-            time.sleep(1)
-            return coords.tolist()
-        raise NotEnoughLandmarksException("The model needs at least " + str(min_number_of_codes) + " detected codes")
+        coords = self.tracker.get_holes_coordinates(rvec, tvec, camera_position, index)
+        coords[2] += 0.1  # So the hand of NAO is located above the connect 4, not on it
+        return coords

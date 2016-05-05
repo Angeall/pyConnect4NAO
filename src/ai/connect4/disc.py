@@ -11,6 +11,8 @@ def color_string(_color):
         return "red"
     elif _color == GREEN:
         return "green"
+    elif _color == EMPTY:
+        return "empty"
     else:
         return "??"
 

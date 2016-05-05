@@ -3,6 +3,11 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 __author__ = 'Anthony Rouneau'
 
 
+class InvalidStateException(BaseException):
+    def __init__(self, msg):
+        super(InvalidStateException, self).__init__(msg)
+
+
 class GameState:
     __metaclass__ = ABCMeta
 

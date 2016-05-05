@@ -47,7 +47,7 @@ class CircleGridDetector(object):
         self._noise_circles = []
         self._original_arc_indices = None
         self._original_arc_vectors = None
-        self._circle_grid_mapping = None
+        self.circle_grid_mapping = None
         self.object_perspective = None
         self._up_vectors = None
         self._right_vectors = None
@@ -63,7 +63,7 @@ class CircleGridDetector(object):
         self._noise_circles = []
         self._original_arc_indices = None
         self._original_arc_vectors = None
-        self._circle_grid_mapping = None
+        self.circle_grid_mapping = None
         self.object_perspective = None
         self._up_vectors = None
         self._right_vectors = None
@@ -112,7 +112,7 @@ class CircleGridDetector(object):
         self._img = img
 
         if self.reference_mapping is not None:
-            self._circle_grid_mapping = geom.index_mapping_into_pixel_mapping(self._relative_coordinates, self._circles)
+            self.circle_grid_mapping = geom.index_mapping_into_pixel_mapping(self._relative_coordinates, self._circles)
             if img is not None:
                 # TODO : 3D Model
                 if ref_img is not None:
@@ -125,7 +125,7 @@ class CircleGridDetector(object):
                  Example : {(0, 0): (34, 43), (0, 1): (54, 43), ... }
         :rtype: dict
         """
-        return self._circle_grid_mapping
+        return self.circle_grid_mapping
 
     def checkInBounds(self, point):
         """
@@ -498,9 +498,9 @@ class CircleGridDetector(object):
         """
         obj = []
         scene = []
-        for key in self._circle_grid_mapping.keys():
+        for key in self.circle_grid_mapping.keys():
             obj.append(self.reference_mapping[key])
-            scene.append(self._circle_grid_mapping[key])
+            scene.append(self.circle_grid_mapping[key])
         obj = np.array(obj)
         scene = np.array(scene)
         self.homography = cv2.findHomography(obj, scene, cv2.LMEDS)[0]

@@ -3,6 +3,8 @@ from random import Random
 from ai.connect4 import disc
 from ai.connect4.c4_state import C4State
 from ai.connect4.player import Player
+from ai.connect4.strategy.human import Human
+from ai.connect4.strategy.naive import Naive
 
 __author__ = 'Anthony Rouneau'
 
@@ -51,7 +53,7 @@ class Game(object):
             self.draw = True
         self.next_player = (self.next_player + 1) % 2
 
-    def play(self):
+    def play_loop(self):
         while True:
             print self.game_state.board
             if self.draw:
@@ -65,5 +67,11 @@ class Game(object):
                 break
             next_move = self.players[self.next_player].choose_move(self.game_state.copy())
             self.make_move(next_move)
+
+if __name__ == "__main__":
+    game = Game()
+    game.register_player(Naive())
+    game.register_player(Human())
+    game.play_loop()
 
 
