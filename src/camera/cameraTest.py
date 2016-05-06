@@ -308,10 +308,12 @@ def test_upper_holes_coordinates():
     while True:
         img = get_nao_image(1, res=2)
         try:
-            nao_motion.put_hand_at(
-                c4handler.getUpperHoleCoordinatesUsingMarkers(4,
-                                                              nao_motion.get_camera_bottom_position_from_torso(),
-                                                              data.CAM_MATRIX, data.CAM_DISTORSION, True))
+            coord = c4handler.getUpperHoleCoordinatesUsingMarkers(2,
+                                                                  nao_motion.get_camera_bottom_position_from_torso(),
+                                                                  data.CAM_MATRIX, data.CAM_DISTORSION, True)
+            coord[3:] = [-1.55, -0.35, -1.05]
+            coord[1] += 0.028
+            nao_motion.put_hand_at(coord, mask=63)
             if cv2.waitKey(100) == 27:
                 break
         except upper_hole.NotEnoughLandmarksException:
@@ -319,11 +321,18 @@ def test_upper_holes_coordinates():
     return 0
 
 
+def test_hand_angles():
+    global nao_motion
+    nao_motion = MotionController()
+    nao_motion.put_hand_at((0.13, 0.08, 0.0715, -1.6, -1.0, -1.), mask=63)
+
+
 if __name__ == '__main__':
     # test3()
     # test2()
     # test4()
     # testBarCode()
-    # test_upper_holes_coordinates()
-    test_front_holes_coordinates()
+    test_upper_holes_coordinates()
+    # test_front_holes_coordinates()
     # test_wait_for_disc()
+    # test_hand_angles()

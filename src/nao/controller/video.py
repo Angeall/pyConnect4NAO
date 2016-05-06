@@ -5,7 +5,7 @@ import nao.data as nao
 
 __author__ = 'Anthony Rouneau'
 
-SUBSCRIBER_ID = "Connect4NAO"
+SUBSCRIBER_ID = "C4N"
 
 
 class VideoController(object):
@@ -18,6 +18,7 @@ class VideoController(object):
         self.ip = robot_ip
         self.port = robot_port
         self.video_device = ALProxy("ALVideoDevice", robot_ip, robot_port)
+        self.disconnectFromCamera()
         # self.barcode_reader = ALProxy("ALBarcodeReader,", robot_ip, port)
         # self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_ids = [SUBSCRIBER_ID + "_CAM_0", SUBSCRIBER_ID + "_CAM_1"]
@@ -59,9 +60,8 @@ class VideoController(object):
         """
         try:
             if camera_num is None:
-                for i in range(7):
-                    self.video_device.unsubscribe(self.subscriber_ids[0] + "_" + str(i))
-                    self.video_device.unsubscribe(self.subscriber_ids[1] + "_" + str(i))
+                for subscriber in self.video_device.getSubscribers():
+                    self.video_device.unsubscribe(subscriber)
             else:
                 for i in range(7):
                     self.video_device.unsubscribe(self.subscriber_ids[camera_num] + "_" + str(i))

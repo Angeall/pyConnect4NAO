@@ -245,6 +245,8 @@ class Connect4Handler(object):
                         cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
                     cv2.imshow("Debug", img)
+                    if cv2.waitKey(100) == 27:
+                        raise NotEnoughLandmarksException("The detection was interrupted")
                 self.upper_hole_detector._hamcodes = markers
                 self.upper_hole_detector.runDetection([], markers)
                 if len(markers) > max_nb_of_markers:
@@ -296,5 +298,6 @@ class Connect4Handler(object):
         Detect holes in the image using the Hamming codes.
         """
         coords = self.tracker.get_holes_coordinates(rvec, tvec, camera_position, index)
-        coords[2] += 0.1  # So the hand of NAO is located above the connect 4, not on it
+        coords[2] += 0.06  # So the hand of NAO is located above the connect 4, not on it
+        print coords
         return coords
