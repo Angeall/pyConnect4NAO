@@ -23,5 +23,5 @@ class Strategy:
         pass
 
     @abstractmethod
-    def display_action(self, action):
+    def displayAction(self, action):
         pass

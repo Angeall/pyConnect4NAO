@@ -21,7 +21,7 @@ class Naive(Strategy):
         factor = 1
         if other_player:
             factor = -1  # If we evaluate for the other player, we must oppose the result
-        current_player_won, other_player_won, draw = state.terminal_test()
+        current_player_won, other_player_won, draw = state.terminalTest()
         if current_player_won:
             # if other_player:
             #     print "MIN win"
@@ -38,7 +38,7 @@ class Naive(Strategy):
             return factor * self.DRAW
 
     def chooseNextAction(self, state):
-        return self.alpha_beta.alpha_beta_searching(state)
+        return self.alpha_beta.alphaBetaSearching(state)
 
-    def display_action(self, action):
+    def displayAction(self, action):
         print "Chosen action:", action

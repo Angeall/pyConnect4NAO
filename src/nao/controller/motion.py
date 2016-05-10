@@ -3,20 +3,28 @@ import math
 from naoqi import ALProxy
 
 import nao.data as nao
+from utils.camera import geom
 
 __author__ = "Anthony Rouneau"
 
-
-callbackObject = None
-memory_proxy = None
-broker = None
-
+# NAO coordinate systems
 FRAME_TORSO = 0
 FRAME_WORLD = 1
 FRAME_ROBOT = 2
 
+# Arm movement joints
+LARM_CHAIN = ["LShoulderPitch", "LShoulderRoll", "LElbowRoll", "LElbowYaw", "LWristYaw"]
+# Arm angles in radians :
+ARM_ALONGSIDE_BODY = [1.62, 0.32, -0.03, -1.31, -0.44]
+ASKING_HAND = [-0.07, 0.05, -0.55, -1.29, -0.77]
+INTERMEDIATE = [0.16, 1.22, -0.03, -1.31, -0.44]
+RAISED = [-1.22, 0.05, -0.55, -1.29, -0.77]
+
 
 class MotionController:
+    """
+    Represents a virtual controller for NAO's motion system
+    """
     def __init__(self, robot_ip=nao.IP, robot_port=nao.PORT):
         """
         :param robot_ip: The IP address of the robot
@@ -30,28 +38,70 @@ class MotionController:
 
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, robot_port)
-        self.track_proxy = ALProxy("ALTracker", robot_ip, robot_port)
-        self.localization_proxy = ALProxy("ALLocalization", robot_ip, robot_port)
+        self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
+        self.motion_proxy.setMoveArmsEnabled(False, False)
+        self.moveHead(0.174, 0, radians=True)
 
-    def get_camera_top_position_from_torso(self):
+    def getCameraTopPositionFromTorso(self):
+        """
+        :return: The 6D coordinates of the top camera of NAO
+                 6D coordinates : (x-translat., y-translat., z-translat., x-rot, y-rot, z-rot)
+        """
         return self.motion_proxy.getPosition("CameraTop",
                                              FRAME_TORSO,
                                              True)
 
-    def get_camera_bottom_position_from_torso(self):
+    def getCameraBottomPositionFromTorso(self):
+        """
+        :return: The 6D coordinates of the bottom camera of NAO
+                 6D coordinates : (x-translat., y-translat., z-translat., x-rot, y-rot, z-rot)
+        """
         return self.motion_proxy.getPosition("CameraBottom",
                                              FRAME_TORSO,
                                              True)
 
-    def put_hand_at(self, coord, mask=7):
-        self.motion_proxy.setPositions("LArm", FRAME_TORSO, coord, 0.3, mask)
-        # self.motion_proxy.positionInterpolations("LArm", 0, [tuple(coord)], mask, [5.0])
+    def getLeftHandPosition(self):
+        """
+        :return: The 6D coordinates of the left hand of NAO
+                 6D coordinates : (x-translat., y-translat., z-translat., x-rot, y-rot, z-rot)
+        """
+        # print self.motion_proxy.getBodyNames("Chains")
+        return self.motion_proxy.getPosition("LHand", FRAME_TORSO, True)
 
-    def move_at(self, coord, mask=7):
-        self.motion_proxy.setPositions("Legs", FRAME_TORSO, coord, 0.6, mask)
+    def setLeftHandPosition(self, coord, mask=7, time_limit=3.0):
+        """
+        :param coord: the coordinates, relative to the robot torso, where the hand will be placed if possible.
+                      6D coordinates : (x-translat., y-translat., z-translat., x-rot, y-rot, z-rot)
+        :type coord: list
+        :param mask: 6 bits unsigned integer that represents which axis will be moved / rotated.
+                     The sum of the following values will set the mask.
+                     1 : x-axis translation
+                     2 : y-axis translation
+                     4 : z-axis translation
+                     8 : x-axis rotation
+                     16: y-axis rotation
+                     32: z-axis rotation
+        :type mask: int
+        :param time_limit: The maximum time, in seconds, that the move can take. The shorter the faster.
+        :type time_limit: float
+        Move the hand to the given coordinates if possible.
+        """
+        self.motion_proxy.positionInterpolations("LArm", FRAME_TORSO, [tuple(coord)], mask, [time_limit])
 
-    def get_left_arm_angles(self):
+    def moveAt(self, x, y, z_rot):
+        """
+        :param x: the distance to travel forward (negative value = backward) in meters
+        :type x: float
+        :param y: the distance to travel to the left (negative value = to the right) in meters
+        :type y: float
+        :param z_rot: the rotation angle, in radians, around the vertical axis
+        :type z_rot: float
+        Move the robot to a certain position, defined by the three parameters.
+        """
+        self.motion_proxy.moveTo(x, y, z_rot)
+
+    def getLeftArmAngles(self):
         """
         :return: the angles in radians of the left arm of NAO in this order :
             [ShoulderPitch, ShoulderRoll, ElbowYaw, ElbowRoll, WristYaw]
@@ -61,16 +111,7 @@ class MotionController:
         use_sensors = True
         return self.motion_proxy.getAngles(joint_names, use_sensors)
 
-    def raise_left_arm(self):
-        """
-        Raise the robot left arm to the sky
-        """
-        joint_name = "LShoulderPitch"
-        angle = -2
-        fraction_max_speed = 0.4
-        self.motion_proxy.setAngles(joint_name, angle, fraction_max_speed)
-
-    def move_head(self, pitch, yaw, radians=False):
+    def moveHead(self, pitch, yaw, radians=False):
         """
         :param pitch: the future pitch of NAO's head
         :param yaw: the future yaw of NAO's head
@@ -84,9 +125,45 @@ class MotionController:
         fraction_max_speed = 0.1
         self.motion_proxy.setAngles(joint_names, angles, fraction_max_speed)
 
-
+    def compareToLeftHandPosition(self, coord):
+        """
+        :param coord: the 6D coordinates to compare with the left hand position
+        :type coord: list
+        :return: the difference of position from the hand to the given coordinates [x-axis, y-axis]
+        :rtype: np.array
+        """
+        hand_coord = self.getLeftHandPosition()
+        return geom.vectorize(hand_coord[0:2], coord[0:2])
 
     def playDisc(self, hole_coordinates):
-        pass
+        """
+        :param hole_coordinates: The 6D translation + rotation vector of the hole
+        """
+        self.setLeftHandPosition(hole_coordinates, mask=63)
+        self.motion_proxy.openHand("LHand")
+        self.motion_proxy.closeHand("LHand")
+        self.setLeftArmAlongsideBody()
+
+    def setLeftArmRaised(self):
+        """
+        Raise NAO's left arm to the sky
+        """
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, RAISED, 3., True)
+
+    def setLeftArmAlongsideBody(self):
+        """
+        Move the left arm of NAO alongside his body.
+        """
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, ARM_ALONGSIDE_BODY, 3., True)
+
+    def setLeftArmToAskingPosition(self):
+        """
+        Move the left arm of NAO in a "asking disc" position, and open his left hand.
+        """
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, ASKING_HAND, 3., True)
+        self.motion_proxy.openHand("LHand")
 
 

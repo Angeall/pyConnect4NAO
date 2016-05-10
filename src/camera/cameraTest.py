@@ -288,7 +288,7 @@ def test_front_holes_coordinates():
     while True:
         try:
             coord = myc4.getUpperHoleCoordinatesUsingFrontHoles(dist, sloped, 3,
-                                                                nao_motion.get_camera_top_position_from_torso(),
+                                                                nao_motion.getCameraTopPositionFromTorso(),
                                                                 camera_matrix=data.CAM_MATRIX,
                                                                 camera_dist=data.CAM_DISTORSION,
                                                                 tries=4, debug=True)
@@ -309,12 +309,15 @@ def test_upper_holes_coordinates():
         img = get_nao_image(1, res=2)
         try:
             coord = c4handler.getUpperHoleCoordinatesUsingMarkers(2,
-                                                                  nao_motion.get_camera_bottom_position_from_torso(),
+                                                                  nao_motion.getCameraBottomPositionFromTorso(),
                                                                   data.CAM_MATRIX, data.CAM_DISTORSION, True)
-            coord[3:] = [-1.55, -0.35, -1.05]
-            coord[1] += 0.028
-            nao_motion.put_hand_at(coord, mask=63)
-            if cv2.waitKey(100) == 27:
+            # coord[3:] = [coord[3] + -1.36, coord[4] + -0.0397, coord[5] + -0.45]
+            # coord[1] += 0.028
+            print coord
+            nao_motion.setLeftHandPosition(coord, mask=63)
+            sleep(2)
+            print nao_motion.getLeftHandPosition()
+            if cv2.waitKey(1000) == 27:
                 break
         except upper_hole.NotEnoughLandmarksException:
             continue
@@ -324,7 +327,16 @@ def test_upper_holes_coordinates():
 def test_hand_angles():
     global nao_motion
     nao_motion = MotionController()
-    nao_motion.put_hand_at((0.13, 0.08, 0.0715, -1.6, -1.0, -1.), mask=63)
+    coord = tuple([0.18313390016555786, 0.07440723478794098, 0.05254504457116127, -1.3699233531951904, -0.03973259776830673, -0.4530939757823944])
+    nao_motion.setLeftHandPosition(coord, mask=63)
+
+
+def test_get_position():
+    global nao_motion
+    nao_motion = MotionController()
+    while 1:
+        print nao_motion.getLeftHandPosition()
+        sleep(0.5)
 
 
 if __name__ == '__main__':
@@ -336,3 +348,4 @@ if __name__ == '__main__':
     # test_front_holes_coordinates()
     # test_wait_for_disc()
     # test_hand_angles()
+    # test_get_position()

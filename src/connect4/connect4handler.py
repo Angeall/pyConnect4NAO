@@ -297,7 +297,13 @@ class Connect4Handler(object):
         :rtype: np.array
         Detect holes in the image using the Hamming codes.
         """
-        coords = self.tracker.get_holes_coordinates(rvec, tvec, camera_position, index)
-        coords[2] += 0.06  # So the hand of NAO is located above the connect 4, not on it
-        print coords
+        coords = self.tracker.getHoleCoordinates(rvec, tvec, camera_position, index)
+        coords2 = self.tracker.getHoleCoordinates(rvec, tvec, camera_position, (index+1) % 7)
+        vector = geom.vectorize(coords[0:2], coords2[0:2], False)
+        angle = np.arctan2(vector[1], vector[0])
+        print angle
+        coords[5] = angle - 1.56
+        coords[2] += 0.03  # So the hand of NAO is located above the connect 4, not on it
+        coords[3:] = [-1.36, -0.0397, coords[5] + -0.45]
+        coords[1] += 0.028
         return coords

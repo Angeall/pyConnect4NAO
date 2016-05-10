@@ -29,5 +29,5 @@ class Disc(object):
     def __init__(self, _color):
         self.color = _color
 
-    def check_color(self, _color):
+    def checkColor(self, _color):
         return _color == self.color

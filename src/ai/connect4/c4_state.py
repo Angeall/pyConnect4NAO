@@ -7,10 +7,14 @@ __author__ = 'Anthony Rouneau'
 
 
 class C4State(GameState):
+    """
+    Represents a Conect 4 state, with the positions of the played discs and the next color to play.
+    """
     def __init__(self, _next_color=disc.RED, copied_state=None):
         """
-        :param _next_color:
-        :param copied_state:
+        :param _next_color: the next color that will play
+        :type _next_color: int
+        :param copied_state: the state from which this new state is created (used to simulate actions)
         :type copied_state: C4State
         """
         super(C4State, self).__init__()
@@ -27,39 +31,39 @@ class C4State(GameState):
             self.hash = copied_state.hash
             self.actions = copied_state.actions
 
-    def compute_possible_actions(self):
+    def computePossibleActions(self):
         """
         Refresh with a list of hole indices for which the last slot is still empty.
         """
         return np.dstack(np.where(self.board[0] == disc.EMPTY))[0][:, 0].ravel().tolist()
 
     # @Override
-    def possible_actions(self):
+    def possibleActions(self):
         """
         :return: the indices of the _holes that can be used
         """
         return self.actions
 
     # @Override
-    def perform_action(self, column_no):
+    def performAction(self, column_no):
         """
         :param column_no: the number of the column where the disc will be placed if possible
         :type column_no: int
         """
         if column_no not in self.actions:
             raise AttributeError("This column is full")
-        line_no = self.get_top_slot_number(column_no)
+        line_no = self.getTopSlotNumber(column_no)
         self.board[line_no][column_no] = self.next_color
         color_played = self.next_color
         # Now, it's the other player's turn
         self.next_color = disc.get_opposite_color(self.next_color)
         # We refresh the vars
-        self.actions = self.compute_possible_actions()
+        self.actions = self.computePossibleActions()
         self.hash = self.compute_hash()
-        self.terminal = self.compute_terminal_local(line_no, column_no, color_played)
+        self.terminal = self.computeTerminalStateLocally(line_no, column_no, color_played)
 
     # @Override
-    def terminal_test(self):
+    def terminalTest(self):
         """
         :return: a tuple containing three booleans : (red_won, green_won, draw).
                  red_won, green_won is True if there is 4 discs of that color in a row
@@ -68,7 +72,7 @@ class C4State(GameState):
         """
         return self.terminal
 
-    def compute_terminal_local(self, line, column, color):
+    def computeTerminalStateLocally(self, line, column, color):
         """
         :param line: The line of the last played disc
         :param column: The column of the last played disc
@@ -84,7 +88,7 @@ class C4State(GameState):
             return False, False, True
         red_won = False
         green_won = False
-        rows = self.enumerate_rows_local(line, column)
+        rows = self.enumerateLocalRows(line, column)
         for row in rows:
             i = 0
             j = 4
@@ -105,7 +109,7 @@ class C4State(GameState):
         else:
             return green_won, red_won, False
 
-    def compute_terminal_global(self):
+    def computeTerminalStateGlobally(self):
         """
         :return: a tuple containing three booleans : (red_won, green_won, draw).
                  red_won, green_won is True if there is 4 discs of that color in a row
@@ -119,7 +123,7 @@ class C4State(GameState):
             return False, False, True
         red_won = False
         green_won = False
-        rows = self.enumerate_rows_global()
+        rows = self.enumerateGlobalRows()
         for row in rows:
             i = 0
             j = 4
@@ -147,7 +151,7 @@ class C4State(GameState):
         else:
             return green_won, red_won, draw
 
-    def enumerate_rows_local(self, line, column):
+    def enumerateLocalRows(self, line, column):
         """
         :param line: the line of the last disc placed
         :param column: the column of the last disc placed
@@ -168,7 +172,7 @@ class C4State(GameState):
 
         return rows
 
-    def enumerate_rows_global(self):
+    def enumerateGlobalRows(self):
         """
         :return: a list of rows in which there could be 4 discs aligned
         """
@@ -208,14 +212,23 @@ class C4State(GameState):
         res = (tuple(self.board.ravel().tolist()), self.next_color).__hash__()
         return res
 
-    def get_top_slot_number(self, column_no):
+    def getTopSlotNumber(self, column_no):
+        """
+        :param column_no: the column in whinch we want the first available slot
+        :return: the number of the line in which is located the first available slot in the column column_no
+        """
         column = self.board[:, column_no]
         # has_disc is a vector of bool in which a slot is True if it contains a disc
         has_disc = column > disc.EMPTY
         # We take the lowest slot available by looking at the slot just before the first disc
         return (np.argmax(has_disc) - 1) % 6
 
-    def check_top_column(self, line_no, column_no):
+    def checkTopColumn(self, line_no, column_no):
+        """
+        :param line_no: the number of the line to check
+        :param column_no: the number of the column in which we want to check
+        :return: true if the slot at (line_no, column_no) is the first one available in the column.
+        """
         # We check if line_no is the lowest slot available by looking at the slot just before the first disc
-        return line_no == self.get_top_slot_number(column_no)
+        return line_no == self.getTopSlotNumber(column_no)
 

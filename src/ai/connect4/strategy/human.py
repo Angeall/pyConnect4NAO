@@ -26,8 +26,8 @@ class Human(Strategy):
         while not action_chosen:
             try:
                 action = int(raw_input("Veuillez choisir un trou parmis les suivants : \n"
-                                       + str(state.possible_actions()) + " : "))
-                if int(action) not in state.possible_actions():
+                                       + str(state.possibleActions()) + " : "))
+                if int(action) not in state.possibleActions():
                     continue
                 else:
                     break
@@ -35,7 +35,7 @@ class Human(Strategy):
                 continue
         return int(action)
 
-    def display_action(self, action):
+    def displayAction(self, action):
         print "Chosen action:", action
 
 

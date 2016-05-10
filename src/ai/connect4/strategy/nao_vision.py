@@ -53,7 +53,7 @@ def color_classifier(hsv):
         else:
             return disc.EMPTY
     else:  # We will work on brightness
-        if v < 33:
+        if v < 35:
             return disc.GREEN
         else:
             return disc.EMPTY
@@ -115,8 +115,8 @@ class NAOVision(Strategy):
         if img is None:
             img = self.c4_img_func()
         space = 3  # Number of pixels to take around the point
-        for column_no in state.possible_actions():
-            line_no = state.get_top_slot_number(column_no)
+        for column_no in state.possibleActions():
+            line_no = state.getTopSlotNumber(column_no)
             img_coord = self.hole_mapping[
                 (column_no, 5 - line_no)]  # The mapping is ordered differently (cols, 5-lines)
             # pixels = [img[coord[1]][coord[0]]]
@@ -124,7 +124,7 @@ class NAOVision(Strategy):
             color = color_classifier(hsv_mean(pixels))
             if state.board[line_no][column_no] != color:
                 # If the difference is not the color of the other player or the disc is not on top of a column
-                if color != self.player_id or not state.check_top_column(line_no, column_no):
+                if color != self.player_id or not state.checkTopColumn(line_no, column_no):
                     raise InvalidStateException("There is an abnormal modification in the game board")
                 else:
                     probable_actions.append(column_no)
@@ -158,7 +158,7 @@ class NAOVision(Strategy):
                 if not debug:
                     if state.board[line_no][column_no] != color:
                         # If the difference is not the color of this player or the disc is not on top of a column
-                        if color == self.player_id or not state.check_top_column(line_no, column_no):
+                        if color == self.player_id or not state.checkTopColumn(line_no, column_no):
                             raise InvalidStateException("There is an abnormal modification in the game board")
                         else:
                             probable_actions.append(column_no)
@@ -174,7 +174,7 @@ class NAOVision(Strategy):
         else:
             return probable_actions
 
-    def display_action(self, action):
+    def displayAction(self, action):
         if self.cheated:
             self.cheated_reaction()
         print "Action seen: ", action

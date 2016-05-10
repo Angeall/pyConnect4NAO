@@ -7,20 +7,20 @@ class Player(object):
         """
         :param _color: the color of the player's discs
         :type _color: int
-        :param _strategy: the strategy this player will choose_move
+        :param _strategy: the strategy this player will chooseMove
         :type _strategy: Strategy
         """
         self.color = _color
         self.won = False
         self.strategy = _strategy
 
-    def has_won(self):
+    def hasWon(self):
         return self.won
 
     def win(self):
         self.won = True
 
-    def choose_move(self, game_state):
+    def chooseMove(self, game_state):
         """
         :param game_state: the current state of the game
         :type game_state: C4State

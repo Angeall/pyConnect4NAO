@@ -22,7 +22,7 @@ class AlphaBeta(object):
         self.max_depth = _max_depth
         self.actions = {}  # Will retain the best action for a given state (will speed up the tree search)
 
-    def alpha_beta_searching(self, state):
+    def alphaBetaSearching(self, state):
         """
         :param state: The current state of the game (including the current player)
         :type state: GameState
@@ -31,11 +31,11 @@ class AlphaBeta(object):
         if self.actions.get(state) is not None:
             value, action = self.actions[state]
         else:
-            value, action, _ = self.max_value(state, -float('inf'), float('inf'), 0)
+            value, action, _ = self.maxValue(state, -float('inf'), float('inf'), 0)
             print action
         return action
 
-    def max_value(self, state, alpha, beta, depth):
+    def maxValue(self, state, alpha, beta, depth):
         """
         :param state: the state of the current node
         :type state: GameState
@@ -51,7 +51,7 @@ class AlphaBeta(object):
         if depth > self.max_depth:
             return self.eval(state, other_player=False), None, False
         # Check if the game state is final
-        elif np.array(state.terminal_test()).any():
+        elif np.array(state.terminalTest()).any():
             return self.eval(state, other_player=False), None, True
 
         # Initializing the best values
@@ -64,8 +64,8 @@ class AlphaBeta(object):
             return self.actions.get(state), True
 
         # Explore every possible actions from this point
-        for action in state.possible_actions():
-            value, _, reached_end = self.min_value(state.simulate_action(action), alpha, beta, depth + 1)
+        for action in state.possibleActions():
+            value, _, reached_end = self.minValue(state.simulateAction(action), alpha, beta, depth + 1)
             if value > best_value:
                 best_value = value
                 best_action = action
@@ -85,7 +85,7 @@ class AlphaBeta(object):
             self.actions[state] = best_value, best_action
         return best_value, best_action, best_reached_end
 
-    def min_value(self, state, alpha, beta, depth):
+    def minValue(self, state, alpha, beta, depth):
         """
         :param state: the state of the current node
         :type state: GameState
@@ -100,7 +100,7 @@ class AlphaBeta(object):
         if depth > self.max_depth:
             return self.eval(state, other_player=True), None, False
         # Check if the game state is final
-        if np.array(state.terminal_test()).any():
+        if np.array(state.terminalTest()).any():
             return self.eval(state, other_player=True), None, True
 
         # Initializing the best values
@@ -113,8 +113,8 @@ class AlphaBeta(object):
             return self.actions.get(state), True
 
         # Explore every possible actions from this point
-        for action in state.possible_actions():
-            value, _, reached_end = self.max_value(state.simulate_action(action), alpha, beta, depth + 1)
+        for action in state.possibleActions():
+            value, _, reached_end = self.maxValue(state.simulateAction(action), alpha, beta, depth + 1)
             if value < best_value:
                 best_value = value
                 best_action = action

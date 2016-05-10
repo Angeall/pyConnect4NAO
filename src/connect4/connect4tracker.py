@@ -7,22 +7,10 @@ __author__ = 'Anthony Rouneau'
 
 
 class Connect4Tracker(object):
-    CAMERA_TOP_OBJECT = "CameraTop"
-    UPPER_HOLE_0_OBJECT = "MyHole0"
-    UPPER_HOLE_1_OBJECT = "MyHole1"
-    UPPER_HOLE_2_OBJECT = "MyHole2"
-    UPPER_HOLE_3_OBJECT = "MyHole3"
-    UPPER_HOLE_4_OBJECT = "MyHole4"
-    UPPER_HOLE_5_OBJECT = "MyHole5"
-    UPPER_HOLE_6_OBJECT = "MyHole6"
-    WORLD_CATEGORY_NAME = "C4Tracker"
-    objects_tab = [UPPER_HOLE_0_OBJECT,
-                   UPPER_HOLE_1_OBJECT,
-                   UPPER_HOLE_2_OBJECT,
-                   UPPER_HOLE_3_OBJECT,
-                   UPPER_HOLE_4_OBJECT,
-                   UPPER_HOLE_5_OBJECT,
-                   UPPER_HOLE_6_OBJECT]
+    """
+    Represents the Connect 4 coordinates converter.
+     Its main goal is to convert coordinates from the camera space into NAO's.
+    """
 
     def __init__(self, model):
         """
@@ -39,7 +27,7 @@ class Connect4Tracker(object):
         self.connect4_rmat = None
         self.connect4_tvec = None
 
-    def get_holes_coordinates(self, rvec, tvec, camera_position6d, hole_index):
+    def getHoleCoordinates(self, rvec, tvec, camera_position6d, hole_index):
         # type: (np.array, np.array, tuple, int) -> list
         """
         :param rvec: The rotation vector given by SolvePnP to apply to the _model to get the Connect4Handler 3D coord.

@@ -54,10 +54,10 @@ def vectorize(p1, p2, signed=True):
     :param p2: point 2
     :type p2: tuple
     :param signed: false will make the vector positive in x and y
-    :type signed: false
+    :type signed: bool
     :return: The vector made by p1 and p2
-    :rtype: tuple
-    Computes the vector made by the two input points
+    :rtype: np.array
+    Computes the vector made by the two input points, p1 to p2
     """
     (x0, y0) = p1
     (x1, y1) = p2

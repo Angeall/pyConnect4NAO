@@ -14,20 +14,20 @@ class GameState:
     def __init__(self):
         pass
 
-    def simulate_action(self, action):
+    def simulateAction(self, action):
         """
         :param action: The action to simulate
         :return: A copy of this instance on which we performed the action
         :rtype: GameState
         """
-        if action not in self.possible_actions():
+        if action not in self.possibleActions():
             raise AssertionError("This action is not in the possible actions for this state")
         new_state = self.copy()
-        new_state.perform_action(action)
+        new_state.performAction(action)
         return new_state
 
     @abstractproperty
-    def possible_actions(self):
+    def possibleActions(self):
         """
         :return: The possible actions for this state
         :rtype: list
@@ -52,7 +52,7 @@ class GameState:
         pass  # ToImplement
 
     @abstractmethod
-    def perform_action(self, action):
+    def performAction(self, action):
         """
         :param action: The action to perform on this game state
         :except AssertionError: If the action is not contained in the possible moves,
@@ -61,10 +61,10 @@ class GameState:
         pass  # ToImplement
 
     @abstractproperty
-    def terminal_test(self):
+    def terminalTest(self):
         """
         Checks if the game is finished
-        :return: Three booleans : (current_player_has_won, previous_player_has_won, is_a_draw)
+        :return: Three booleans : (current_player_hasWon, previous_player_hasWon, is_a_draw)
         :rtype: tuple
         """
         pass
