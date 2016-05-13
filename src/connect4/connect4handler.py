@@ -244,15 +244,16 @@ class Connect4Handler(object):
                         m.draw_contour(img)
                         cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-                    cv2.imshow("Debug", img)
-                    if cv2.waitKey(100) == 27:
-                        raise NotEnoughLandmarksException("The detection was interrupted")
+
                 self.upper_hole_detector._hamcodes = markers
                 self.upper_hole_detector.runDetection([], markers)
                 if len(markers) > max_nb_of_markers:
                     max_nb_of_markers = len(markers)
                     rvec, tvec = self.upper_hole_detector.match3DModel(camera_matrix, camera_dist)
             else:
+                cv2.imshow("Debug", img)
+                if cv2.waitKey(100) == 27:
+                    raise NotEnoughLandmarksException("The detection was interrupted")
                 raise NotEnoughLandmarksException("The model needs at least " + str(min_nb_of_codes) + " detected codes")
         return self._getUpperHoleCoordinates(rvec, tvec, index, camera_position)
 
@@ -287,8 +288,10 @@ class Connect4Handler(object):
 
     def _getUpperHoleCoordinates(self, rvec, tvec, index, camera_position):
         """
-        :param img: the image in which the hole will be detected
-        :type img: np.ndarray
+        :param rvec: the rotation vector that will transform the 2D coordinates into 3D coordinates
+        :type rvec: np.array
+        :param tvec: the translation vector that will transform the 2D coordinates into 3D coordinates
+        :type tvec: np.array
         :param index: the index of the hole
         :type index: int
         :param camera_position: the 6D position of the camera used for the detection, from the robot torso
@@ -299,11 +302,19 @@ class Connect4Handler(object):
         """
         coords = self.tracker.getHoleCoordinates(rvec, tvec, camera_position, index)
         coords2 = self.tracker.getHoleCoordinates(rvec, tvec, camera_position, (index+1) % 7)
-        vector = geom.vectorize(coords[0:2], coords2[0:2], False)
-        angle = np.arctan2(vector[1], vector[0])
-        print angle
-        coords[5] = angle - 1.56
-        coords[2] += 0.03  # So the hand of NAO is located above the connect 4, not on it
-        coords[3:] = [-1.36, -0.0397, coords[5] + -0.45]
+        sign = 1
+        if index == 6:
+            sign = -1  # We invert it if we took a vector the other way
+        vector = sign * geom.vectorize(coords[0:2], coords2[0:2], False)
+        angle = np.arctan2(vector[1], vector[0]) - 1.56
+        # angle = np.arccos(vector)[0] - 1.56  # FIXME: Bad angle... Need tests + fix
+        sign = 1
+        if coords2[0] > coords[0]:
+            sign = -1
+        angle *= sign
+        coords[5] = angle
+        coords[2] += 0.12  # So the hand of NAO is located above the connect 4, not on it
+        coords[3:] = [-1.542, -0.0945, angle - 0.505]
         coords[1] += 0.028
+        coords[0] -= 0.01
         return coords

@@ -136,7 +136,7 @@ class DefaultModel(object):
     NUMBER_OF_HAMCODE_CORNERS = 28
 
     def __init__(self, disc_diameter=0.056, length=0.519, width=0.066, height=0.337,
-                 hole_length=0.0585, hole_width=0.0095, hole_h_space=0.0095, hole_v_margin=0.004, hole_h_margin=0.0275,
+                 hole_length=0.0585, hole_width=0.0095, hole_h_space=0.0095, hole_v_margin=0.005, hole_h_margin=0.0275,
                  circle_diameter=0.046, circle_h_space=0.02183, circle_v_space=0.009, circle_h_margin=0.033,
                  circle_v_margin=0.008, hamcode_side=0.0425, hamcode_h_space=0.0255, hamcode_h_margin=0.03525,
                  hamcode_v_margin=0.019, hamcode_hole_space=0.01, ):
@@ -269,6 +269,11 @@ class DefaultModel(object):
             else:
                 current_z += self.hamcode_side
                 current_x += self.hamcode_h_space
+
+        hamcodes[8] = np.array([hamcodes[8][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.001])
+        hamcodes[9] = np.array([hamcodes[9][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.001])
+        hamcodes[10] = np.array([hamcodes[10][0], -0.018, self.hole_v_margin + self.hole_width + 0.001])
+        hamcodes[11] = np.array([hamcodes[11][0], -0.018, self.hole_v_margin + self.hole_width + 0.001])
 
         model = np.array([corners, front_holes, upper_holes, hamcodes])
         return model

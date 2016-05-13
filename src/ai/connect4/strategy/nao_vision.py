@@ -59,7 +59,7 @@ def color_classifier(hsv):
             return disc.EMPTY
 
 
-class ActionNotYetPerformedException(InvalidStateException):
+class ActionNotYetPerformedException(BaseException):
     def __init__(self, msg):
         super(ActionNotYetPerformedException, self).__init__(msg)
 

@@ -17,11 +17,16 @@ LARM_CHAIN = ["LShoulderPitch", "LShoulderRoll", "LElbowRoll", "LElbowYaw", "LWr
 # Arm angles in radians :
 ARM_ALONGSIDE_BODY = [1.62, 0.32, -0.03, -1.31, -0.44]
 ASKING_HAND = [-0.07, 0.05, -0.55, -1.29, -0.77]
-INTERMEDIATE = [0.16, 1.22, -0.03, -1.31, -0.44]
+INTERMEDIATE_TOP = [-1.56, 1.22, -0.03, -1.31, -0.44]
+INTERMEDIATE_BOTTOM = [1.56, 1.22, -0.03, -1.31, -0.44]
 RAISED = [-1.22, 0.05, -0.55, -1.29, -0.77]
 
 
 class MotionController:
+    # NAO Default head position in radians
+    DEFAULT_HEAD_PITCH = -0.05
+    DEFAULT_HEAD_YAW = 0.0
+
     """
     Represents a virtual controller for NAO's motion system
     """
@@ -41,7 +46,7 @@ class MotionController:
         self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
         self.motion_proxy.setMoveArmsEnabled(False, False)
-        self.moveHead(0.174, 0, radians=True)
+        self.moveHead(0.114, 0, radians=True)
 
     def getCameraTopPositionFromTorso(self):
         """
@@ -133,6 +138,8 @@ class MotionController:
         :rtype: np.array
         """
         hand_coord = self.getLeftHandPosition()
+        print coord
+        print hand_coord
         return geom.vectorize(hand_coord[0:2], coord[0:2])
 
     def playDisc(self, hole_coordinates):
@@ -144,25 +151,29 @@ class MotionController:
         self.motion_proxy.closeHand("LHand")
         self.setLeftArmAlongsideBody()
 
-    def setLeftArmRaised(self):
+    def setLeftArmRaised(self, secure=False):
         """
         Raise NAO's left arm to the sky
         """
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        if secure:
+            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
+            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
         self.motion_proxy.angleInterpolation(LARM_CHAIN, RAISED, 3., True)
 
     def setLeftArmAlongsideBody(self):
         """
         Move the left arm of NAO alongside his body.
         """
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
         self.motion_proxy.angleInterpolation(LARM_CHAIN, ARM_ALONGSIDE_BODY, 3., True)
 
     def setLeftArmToAskingPosition(self):
         """
         Move the left arm of NAO in a "asking disc" position, and open his left hand.
         """
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
         self.motion_proxy.angleInterpolation(LARM_CHAIN, ASKING_HAND, 3., True)
         self.motion_proxy.openHand("LHand")
 

@@ -23,6 +23,13 @@ class Game(object):
         self.next_player = None
         self.first_color = Random().randint(disc.RED, disc.GREEN)
 
+    def checkPlayerTurn(self, player):
+        """
+        :param player: the payer we want to know if it is its turn to play
+        :return: true if its the given player's turn.
+        """
+        return player is self.players[self.next_player]
+
     def registerPlayer(self, _strategy):
         """
         :param _strategy: the strategy that the player uses
@@ -42,6 +49,7 @@ class Game(object):
                 self.next_player = 1
             else:
                 self.next_player = 0
+        return self.players[-1]
 
     def makeMove(self, _column):
         """

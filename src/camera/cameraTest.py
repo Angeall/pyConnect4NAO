@@ -314,8 +314,8 @@ def test_upper_holes_coordinates():
             # coord[3:] = [coord[3] + -1.36, coord[4] + -0.0397, coord[5] + -0.45]
             # coord[1] += 0.028
             print coord
-            nao_motion.setLeftHandPosition(coord, mask=63)
-            sleep(2)
+            # nao_motion.setLeftHandPosition(coord, mask=63)
+            sleep(1)
             print nao_motion.getLeftHandPosition()
             if cv2.waitKey(1000) == 27:
                 break
@@ -344,8 +344,8 @@ if __name__ == '__main__':
     # test2()
     # test4()
     # testBarCode()
-    test_upper_holes_coordinates()
+    # test_upper_holes_coordinates()
     # test_front_holes_coordinates()
     # test_wait_for_disc()
     # test_hand_angles()
-    # test_get_position()
+    test_get_position()
