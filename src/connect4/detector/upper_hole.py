@@ -80,31 +80,31 @@ class UpperHolesDetector(object):
         else:
             return None, None, None
 
-    def _filterIncludedRectangles(self):
-        """
-        :return: the list containing all the rectangle centres that passed through the filter
-        :rtype: list
-        Filters the _rectangles that are partially included with each other.
-        """
-        filtered_rectangle_centres = []
-        number_of_neighbours = 2
-        max_common_area = 0.4
-        to_ignore = {}
-        for rect_centre in self._centres_to_indices.keys():
-            if not to_ignore.get(rect_centre, False):
-                added = False
-                neighbours = self._kdtree.query(rect_centre, number_of_neighbours)[1]
-                rect1_index = self._centres_to_indices[rect_centre]
-                rect1 = self._rectangles[rect1_index]
-                for neighbour in neighbours:
-                    if not to_ignore.get(neighbour, False):
-                        common_area = geom.common_boxes_area(self._boxes[rect1_index], self._boxes[neighbour])
-                        if common_area / geom.rectangle_area(rect1) > max_common_area:
-                            to_ignore[neighbour] = True
-                            if not added:
-                                filtered_rectangle_centres.append(rect_centre)
-                                added = True
-        return filtered_rectangle_centres
+    # def _filterIncludedRectangles(self):
+    #     """
+    #     :return: the list containing all the rectangle centres that passed through the filter
+    #     :rtype: list
+    #     Filters the _rectangles that are partially included with each other.
+    #     """
+    #     filtered_rectangle_centres = []
+    #     number_of_neighbours = 2
+    #     max_common_area = 0.4
+    #     to_ignore = {}
+    #     for rect_centre in self._centres_to_indices.keys():
+    #         if not to_ignore.get(rect_centre, False):
+    #             added = False
+    #             neighbours = self._kdtree.query(rect_centre, number_of_neighbours)[1]
+    #             rect1_index = self._centres_to_indices[rect_centre]
+    #             rect1 = self._rectangles[rect1_index]
+    #             for neighbour in neighbours:
+    #                 if not to_ignore.get(neighbour, False):
+    #                     common_area = geom.common_boxes_area(self._boxes[rect1_index], self._boxes[neighbour])
+    #                     if common_area / geom.rectangle_area(rect1) > max_common_area:
+    #                         to_ignore[neighbour] = True
+    #                         if not added:
+    #                             filtered_rectangle_centres.append(rect_centre)
+    #                             added = True
+    #     return filtered_rectangle_centres
 
     def _filterOtherRectangles(self):
         filtered_rectangle_centres = []

@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from shapely.geometry import Polygon
+# from shapely.geometry import Polygon
 
 __author__ = 'Anthony Rouneau'
 
@@ -278,31 +278,31 @@ def convert_euler_to_matrix(rvec):
                       [m20, m21, m22]])
 
 
-def common_area(rect1, rect2):
-    """
-    :param rect1: the first rectangle
-    :param rect2: the second rectangle
-    :return: the common area between the two _rectangles
-    :rtype: double
-    Get the common area between two _rectangles
-    """
-    return common_boxes_area(cv2.boxPoints(rect1), cv2.boxPoints(rect2))
+# def common_area(rect1, rect2):
+#     """
+#     :param rect1: the first rectangle
+#     :param rect2: the second rectangle
+#     :return: the common area between the two _rectangles
+#     :rtype: double
+#     Get the common area between two _rectangles
+#     """
+#     return common_boxes_area(cv2.boxPoints(rect1), cv2.boxPoints(rect2))
 
 
-def common_boxes_area(box1, box2):
-    """
-    :param box1: the first box, an array of edges coordinates
-    :param box2: the second box, an array of edges coordinates
-    :return: the common area between the two _boxes
-    :rtype: double
-    Get the common  area between two _boxes
-    """
-    # The order in the result of the boxPoints : bottom_l, up_l, up_r, bottom_r.
-    if not (box1[0] == box1[-1]).all():  # If the box is not closed, we close it
-        box1 = np.append(box1, [box1[0]], axis=0)
-    if not (box2[0] == box2[-1]).all():  # If the box is not closed, we close it
-        box2 = np.append(box2, [box2[0]], axis=0)
-    return Polygon(box1).intersection(Polygon(box2)).area
+# def common_boxes_area(box1, box2):
+#     """
+#     :param box1: the first box, an array of edges coordinates
+#     :param box2: the second box, an array of edges coordinates
+#     :return: the common area between the two _boxes
+#     :rtype: double
+#     Get the common  area between two _boxes
+#     """
+#     # The order in the result of the boxPoints : bottom_l, up_l, up_r, bottom_r.
+#     if not (box1[0] == box1[-1]).all():  # If the box is not closed, we close it
+#         box1 = np.append(box1, [box1[0]], axis=0)
+#     if not (box2[0] == box2[-1]).all():  # If the box is not closed, we close it
+#         box2 = np.append(box2, [box2[0]], axis=0)
+#     return Polygon(box1).intersection(Polygon(box2)).area
 
 
 def rectangle_area(rect):
