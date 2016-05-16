@@ -15,8 +15,8 @@ class NAOVisionTestCase(unittest.TestCase):
 
     def setUp(self):
         ref_mapping = DefaultConnect4Image().generate2DReference()
-        img = cv2.imread("state_detection_test.png")
-        self.strategy = NAOVision(ref_mapping, lambda: img)
+        self.img = cv2.imread("state_detection_test.png")
+        self.strategy = NAOVision(ref_mapping, lambda: self.img)
         self.strategy.player_id = disc.GREEN
 
     def test_analyse(self):
@@ -30,3 +30,13 @@ class NAOVisionTestCase(unittest.TestCase):
         test_state.board = test_board
         chosen_action = self.strategy.chooseNextAction(test_state)
         self.assertTrue(chosen_action == 2)
+
+    def test_debug(self):
+        test_state = C4State()
+        board = self.strategy.analyseFullImage(test_state, img=self.img, debug=True)
+        self.assertTrue((board == np.array([[-1, -1, -1, -1, -1, -1, -1],
+                                            [-1, -1,  1, -1, -1, -1, -1],
+                                            [-1, -1,  1,  1, -1, -1, -1],
+                                            [ 0,  0,  1,  0, -1, -1, -1],
+                                            [ 1,  1,  0,  0, -1, -1, -1],
+                                            [ 0,  0,  1,  1,  1, -1,  0]])).all())

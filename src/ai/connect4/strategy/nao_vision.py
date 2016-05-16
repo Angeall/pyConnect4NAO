@@ -46,9 +46,9 @@ def hsv_mean(bgr_list):
 def color_classifier(hsv):
     h, s, v = hsv
     if s > 35:  # We are sure of the color
-        if h > 200 or h < 50:  # If the color is in the RED range
+        if h > 115 or h < 50:  # If the color is in the RED range
             return disc.RED
-        elif 75 < h < 200:  # If the color is in the GREEN range
+        elif 75 < h < 115:  # If the color is in the GREEN range
             return disc.GREEN
         else:
             return disc.EMPTY
@@ -97,14 +97,14 @@ class NAOVision(Strategy):
         action = None
         while attempt < tries:
             img = self.c4_img_func()
-            action = self._AnalysePossibleActions(state, img)
+            action = self.analysePossibleActions(state, img)
             if previous_action is not None:
                 if action != previous_action:
                     raise InvalidStateException("The action detection was unstable")
             attempt += 1
         return action
 
-    def _AnalysePossibleActions(self, state, img=None):
+    def analysePossibleActions(self, state, img=None):
         """
         :param state:
         :type state: C4State
@@ -131,10 +131,11 @@ class NAOVision(Strategy):
         if len(probable_actions) == 0:
             raise ActionNotYetPerformedException("This player has not yet performed his action")
         elif len(probable_actions) > 1:
+            self.cheated_reaction()
             raise TooManyDifferencesException("The other player has cheated")
         return probable_actions[0]
 
-    def _AnalyseFullImage(self, state, img=None, debug=False):
+    def analyseFullImage(self, state, img=None, debug=False):
         """
         :param state:
         :type state: C4State
@@ -168,13 +169,9 @@ class NAOVision(Strategy):
             if len(probable_actions) == 0:
                 raise ActionNotYetPerformedException("This player has not yet performed his action")
             elif len(probable_actions) > 1:
+                self.cheated_reaction()
                 raise TooManyDifferencesException("The player has cheated")
         if debug:
             return board
         else:
             return probable_actions
-
-    def displayAction(self, action):
-        if self.cheated:
-            self.cheated_reaction()
-        print "Action seen: ", action

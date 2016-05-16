@@ -32,11 +32,12 @@ class Connect4ModelNotFound(Exception):
 
 
 class Connect4Handler(object):
-    def __init__(self, next_img_func, model_type=DEFAULT_MODEL):
+    def __init__(self, next_img_func, cam_no=-1, model_type=DEFAULT_MODEL):
         if model_type == DEFAULT_MODEL:
             self.model = DefaultModel()
         else:
             raise Connect4ModelNotFound(model_type)
+        self.cam_no = cam_no
         self.img = None
         self.next_img_func = next_img_func
         self.front_hole_detector = FrontHolesDetector(self.model)
@@ -163,8 +164,10 @@ class Connect4Handler(object):
         """
         last_0_0_coord = None
         for i in range(tries):
-            print "try", i
-            self.img = self.next_img_func(0)  # We detect the front holes using the top camera
+            if self.cam_no == -1:
+                self.img = self.next_img_func(0)  # We detect the front holes using the top camera
+            else:
+                self.img = self.next_img_func(self.cam_no)
             self.circles = []
             if not self.front_holes_detection_prepared:
                 self.prepareFrontHolesDetection(distance, sloped, res)
@@ -235,7 +238,10 @@ class Connect4Handler(object):
         rvec = None
         tvec = None
         for i in range(tries):
-            img = self.next_img_func(1)  # We get the image from the bottom camera
+            if self.cam_no == -1:
+                img = self.next_img_func(1)  # We get the image from the bottom camera
+            else:
+                img = self.next_img_func(self.cam_no)
             min_nb_of_codes = 2
             markers = detect_markers(img)
             if markers is not None and len(markers) >= min_nb_of_codes:
@@ -307,7 +313,6 @@ class Connect4Handler(object):
             sign = -1  # We invert it if we took a vector the other way
         vector = sign * geom.vectorize(coords[0:2], coords2[0:2], False)
         angle = np.arctan2(vector[1], vector[0]) - 1.56
-        # angle = np.arccos(vector)[0] - 1.56  # FIXME: Bad angle... Need tests + fix
         sign = 1
         if coords2[0] > coords[0]:
             sign = -1

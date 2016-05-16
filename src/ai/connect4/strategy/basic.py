@@ -4,9 +4,12 @@ from utils.ai.strategy import Strategy
 __author__ = 'Anthony Rouneau'
 
 
-class Naive(Strategy):
+ALPHA_BETA_MAX_DEPTH = 6
+
+
+class Basic(Strategy):
     """
-    Naive strategy that consists of evaluating if
+    Basic strategy that consists of evaluating if
     it loses or if it wins, nothing more, nothing less.
     """
     WIN = 1000
@@ -14,8 +17,8 @@ class Naive(Strategy):
     DRAW = 5
 
     def __init__(self):
-        super(Naive, self).__init__()
-        self.alpha_beta = AlphaBeta(self.eval, _max_depth=6)
+        super(Basic, self).__init__()
+        self.alpha_beta = AlphaBeta(self.eval, _max_depth=ALPHA_BETA_MAX_DEPTH)
 
     def eval(self, state, other_player=False):
         factor = 1
@@ -23,22 +26,15 @@ class Naive(Strategy):
             factor = -1  # If we evaluate for the other player, we must oppose the result
         current_player_won, other_player_won, draw = state.terminalTest()
         if current_player_won:
-            # if other_player:
-            #     print "MIN win"
-            # else:
-            #     print "MAX win"
             return factor * self.WIN
         elif other_player_won:
-            # if other_player:
-            #     print "MAX win"
-            # else:
-            #     print "MIN win"
             return factor * self.LOSE
         else:
             return factor * self.DRAW
 
     def chooseNextAction(self, state):
-        return self.alpha_beta.alphaBetaSearching(state)
+        action = self.alpha_beta.alphaBetaSearching(state)
+        print "Chosen column: ", action
+        print
+        return action
 
-    def displayAction(self, action):
-        print "Chosen action:", action

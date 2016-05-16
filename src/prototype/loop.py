@@ -1,11 +1,8 @@
-import threading
 import time
-
-from naoqi import ALModule, ALProxy, ALBroker
 
 import nao.data
 from ai.connect4.game import Game
-from ai.connect4.strategy.naive import Naive
+from ai.connect4.strategy.basic import Basic
 from ai.connect4.strategy.nao_vision import NAOVision, ActionNotYetPerformedException, TooManyDifferencesException
 from connect4.connect4handler import Connect4Handler
 from connect4.connect4tracker import Connect4Tracker
@@ -13,76 +10,58 @@ from connect4.detector.front_holes import FrontHolesDetector, FrontHolesGridNotF
 from connect4.detector.upper_hole import UpperHolesDetector, NotEnoughLandmarksException
 from connect4.model.default_model import DefaultModel
 from nao import data
-from nao.controller.motion import MotionController
-from nao.controller.video import VideoController
 from utils.ai.game_state import InvalidStateException
 from utils.camera import geom
 
 __author__ = 'Anthony Rouneau'
 
-# Global variables for the event reaction of the waitForDisc method.
-event = threading.Event()
-callbackObject = None
-memory_proxy = None
-broker = None
-motion = None
+
+HEAD_STEP = 5
+MAX_YAW = 30
+MAX_PITCH = 30
 
 
-class HeadSensorCallbackModule(ALModule):
-    """ Mandatory docstring
-        Module that will be used to react to the "Head touched" event.
-    """
-
-    def __init__(self):
-        global memory_proxy, callbackObject
-        self._module_name = "callbackObject"
-        ALModule.__init__(self, self._module_name)
-        # Preparing the callback method
-        memory_proxy = ALProxy("ALMemory")
-
-        memory_proxy.subscribeToEvent("FrontTactilTouched", "callbackObject", "headTouched")
-        memory_proxy.subscribeToEvent("MiddleTactilTouched", "callbackObject", "headTouched")
-        memory_proxy.subscribeToEvent("RearTactilTouched", "callbackObject", "headTouched")
-
-    # Call back function registered with subscribeOnDataChange that handles
-    # changes in LandMarkDetection results.
-    def headTouched(self, eventName, val, subscriberId):
-        """ Mandatory docstring.
-            Method that will be called by the "headTouched" event.
-        """
-        memory_proxy.unsubscribeToEvent("FrontTactilTouched", "callbackObject")
-        memory_proxy.unsubscribeToEvent("MiddleTactilTouched", "callbackObject")
-        memory_proxy.unsubscribeToEvent("RearTactilTouched", "callbackObject")
-        global event
-        motion.motion_proxy.closeHand("LHand")
-        event.set()
-
-
-class DiscNotObtainedException(BaseException):
-    """
-    Exception raised when the waitForDisc method reaches a timeout.
-    """
-
-    def __init__(self, msg):
-        super(DiscNotObtainedException, self).__init__(msg)
-
-
-class Connect4NAO(object):
+class LogicalLoop(object):
     """
     Class that holds the main loop of the project.
     """
 
-    def __init__(self, robot_ip=data.IP, robot_port=data.PORT):
-        self.estimated_distance = -1
-        global motion
+    def __init__(self, nao_motion, nao_video, nao_tts, ppA=0.05, cA=0.005, rA=0.8, min_detections=3, dist=-1,
+                 sloped=True, nao_strategy=Basic(), other_strategy=None):
+        """
+        :param nao_motion: an instance of the motion controller of NAO
+        :type nao_motion: nao.controller.motion.MotionController
+        :param nao_video: an instance of the video controller of NAO
+        :type nao_video: nao.controller.video.VideoController
+        :param nao_tts: an instance of the TTS proxy of NAO
+        :type nao_tts: naoqi.ALProxy
+        :param ppA: the perfect position accuracy in meters. While the robot is not located to the perfect
+                    position, with a sharper accuracy than ppA, the robot continues to move
+        :param cA: the coordinates accuracy in meters. While the robot's hand has not reached this
+                   accuracy, the robot will continue to move to get its hand to a better place.
+        :param rA: the rotation accuracy in radians. While the robot's hand is not inclined with this accuracy
+                   compared to the perfect position, the robot will continue to move.
+        :param min_detections: the minimum number of success before a detection is considered as successful
+        :param dist: the distance in meters between NAO and the game board, -1 = unknown
+        :param sloped: True if the game board is sloped from NAO
+        :param nao_strategy: the class that defines NAO's strategy
+        :param other_strategy: the class that defines the other player's strategy
+        """
+        self.rA = rA
+        self.cA = cA
+        self.ppA = ppA
+        self.estimated_distance = dist
+        self.min_detections = min_detections
+        self.sloped = sloped
         # Setting NAO's controllers
-        self.tts = ALProxy("ALTextToSpeech", robot_ip, robot_port)
-        self.nao_motion = MotionController()
-        motion = self.nao_motion
-        self.nao_video = VideoController()
+        self.tts = nao_tts
+        self.nao_motion = nao_motion
+        self.nao_video = nao_video
         self.camera_subscribed = [False, False]
-        self.head_position_index = 1
-        self.head_positions = [(5, 0), (10, 0), (15, 0), (5, 10), (5, 20), (5, -10), (5, -20)]
+        self.current_yaw = self.nao_motion.DEFAULT_HEAD_YAW
+        self.current_pitch = self.nao_motion.DEFAULT_HEAD_PITCH
+        self.yaw_sign = 1
+        self.pitch_sign = -1
 
         # Connect 4 detectors and models
         self.c4_model = DefaultModel()
@@ -92,9 +71,12 @@ class Connect4NAO(object):
         self.upper_hole_detector = UpperHolesDetector(self.c4_model)
         self.c4_coords = [0, 0, 0, 0, 0, 0]
         # Creating the strategies that will play the game
-        self.strategy = Naive()
-        self.vision_strategy = NAOVision(self.c4_model.image_of_reference.pixel_mapping,
-                                         self.front_hole_detector.getPerspective())
+        self.strategy = nao_strategy()
+        if other_strategy is NAOVision:
+            self.vision_strategy = NAOVision(self.c4_model.image_of_reference.pixel_mapping,
+                                             self.front_hole_detector.getPerspective())
+        else:
+            self.vision_strategy = other_strategy()
         # Creating the game and registering the players
         self.game = Game()
         self.NAO_player = self.game.registerPlayer(self.strategy)
@@ -107,7 +89,6 @@ class Connect4NAO(object):
         :return: An OpenCV readable image that comes from NAO's camera
         """
         if not self.camera_subscribed[camera_num]:
-            self.nao_video = VideoController()
             ret = self.nao_video.connectToCamera(res=camera_num + 1, fps=30, camera_num=camera_num,
                                                  subscriber_id="C4N_" + str(camera_num))
             if ret < 0:
@@ -127,10 +108,10 @@ class Connect4NAO(object):
             for dist in distances:
                 try:
                     coords = self.c4_handler \
-                        .getUpperHoleCoordinatesUsingFrontHoles(dist, True, 3,
+                        .getUpperHoleCoordinatesUsingFrontHoles(dist, self.sloped, 3,
                                                                 self.nao_motion.getCameraTopPositionFromTorso(),
                                                                 nao.data.CAM_MATRIX, nao.data.CAM_DISTORSION,
-                                                                debug=False, tries=2)
+                                                                debug=False, tries=self.min_detections)
                     self.estimated_distance = dist
                     self.c4_coords = coords
                     break
@@ -139,9 +120,8 @@ class Connect4NAO(object):
                     if i > 5:
                         i = 0
                         self.tts.say("Je ne trouve pas le Puissance 4...")
-                        self.moveHeadToNextPosition()
+                        self.nao_motion.moveAt(0, 0, 0.8)
                     continue
-                    # TODO : Walk around checking for a Connect 4 (variate distances)
 
     def inverseKinematicsConvergence(self, hole_index):
         """
@@ -150,7 +130,7 @@ class Connect4NAO(object):
         """
         self.head_position_index = 0
         self.nao_motion.moveHead(self.nao_motion.DEFAULT_HEAD_PITCH, self.nao_motion.DEFAULT_HEAD_YAW, True)
-        max_tries = 5  # If we don't see any marker after 5 tries, we assume we are not in front of the Connect4
+        max_tries = 2  # If we don't see any marker after 2 tries, we move NAO's head
         i = 0
         stable = False
         while not stable:
@@ -159,20 +139,21 @@ class Connect4NAO(object):
                     hole_coord = self.c4_handler \
                         .getUpperHoleCoordinatesUsingMarkers(hole_index,
                                                              self.nao_motion.getCameraBottomPositionFromTorso(),
-                                                             data.CAM_MATRIX, data.CAM_DISTORSION, True)
+                                                             data.CAM_MATRIX, data.CAM_DISTORSION,
+                                                             tries=self.min_detections)
 
-                    if abs(hole_coord[5] + 0.45) > 1:  # If the board is too sloped from the robot, we need to rotate it
+                    if abs(hole_coord[5] + 0.45) > self.rA:  # If the board is sloped from NAO, we need to rotate NAO
                         self.nao_motion.moveAt(0, 0, hole_coord[5] + 0.505)
                         continue
                     dist_from_optimal = geom.vectorize((0.161, 0.113), (hole_coord[0], hole_coord[1]))
-                    if abs(dist_from_optimal[0]) > 0.02 or abs(dist_from_optimal[1]) > 0.02:
+                    if abs(dist_from_optimal[0]) > self.ppA or abs(dist_from_optimal[1]) > 2 * self.ppA:
                         self.nao_motion.moveAt(dist_from_optimal[0], dist_from_optimal[1], hole_coord[5] + 0.505)
                         continue
                     self.estimated_distance = hole_coord[0]
                     i = 0
                     self.nao_motion.setLeftHandPosition(hole_coord, mask=63)
                     diff = self.nao_motion.compareToLeftHandPosition(hole_coord)
-                    if abs(diff[0]) < 0.005 and abs(diff[1]) < 0.01:
+                    if abs(diff[0]) < self.cA and abs(diff[1]) < 2 * self.cA:
                         stable = True
                         self.nao_motion.playDisc(hole_coord)
                         break
@@ -240,43 +221,24 @@ class Connect4NAO(object):
         pass
         # TODO : optionnal, robot interaction with human
 
-    def wait_for_disc(self, timeout=105000):
-        """
-        :param timeout: the maximum time to wait, in milliseconds, for a disc, after that, raises a
-                        DiscNotObtainedException.
-        """
-        global event, callbackObject, broker
-        self.nao_motion.setLeftArmToAskingPosition()
-        # self.memory_proxy.subscribeToEvent("FrontTactilTouched", "HeadSensorCallbackModule", "HeadTouched")
-        callbackObject = HeadSensorCallbackModule()
-        # Waiting for the detector to detect landmarks
-        if not event.wait(timeout / 1000.0):
-            raise DiscNotObtainedException("NAO has not been tapped on the head")
-        self.nao_motion.setLeftArmRaised()
-        # time.sleep(timeout)
-        # Exiting...
-        # broker.shutdown()
-        event.clear()
-
     def moveHeadToNextPosition(self):
         """
-        Move NAO's head to the next position
-        :return:
+        Move NAO's head to the next position of the spiral
         """
-        pitch, yaw = self.head_positions[self.head_position_index]
-        self.head_position_index += 1
-        if self.head_position_index == len(self.head_positions):
-            self.head_position_index = 0
-        self.nao_motion.moveHead(pitch, yaw)
-
-
-if __name__ == "__main__":
-    ip = nao.data.IP
-    port = nao.data.PORT
-    broker = ALBroker("myBroker", "0.0.0.0", 0, ip, port)
-    try:
-        c4nao = Connect4NAO()
-        c4nao.wait_for_disc()
-        c4nao.inverseKinematicsConvergence(2)
-    except KeyboardInterrupt:
-        broker.shutdown()
+        if self.pitch_sign == -1:
+            if self.yaw_sign == 1:
+                self.yaw_sign = -1
+                self.current_yaw += HEAD_STEP
+            else:
+                if self.yaw_sign == -1:
+                    self.pitch_sign = 1
+                    self.current_pitch += HEAD_STEP
+        elif self.yaw_sign == -1:
+            self.yaw_sign = 1
+            self.current_yaw += HEAD_STEP
+        else:
+            self.pitch_sign = -1
+            self.current_pitch += HEAD_STEP
+        self.nao_motion.moveHead(self.current_pitch * self.pitch_sign,
+                                 self.current_yaw * self.yaw_sign,
+                                 radians=False)

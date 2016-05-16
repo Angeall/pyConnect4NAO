@@ -21,7 +21,3 @@ class Strategy:
     @abstractmethod
     def eval(self, state, other_player=False):
         pass
-
-    @abstractmethod
-    def displayAction(self, action):
-        pass

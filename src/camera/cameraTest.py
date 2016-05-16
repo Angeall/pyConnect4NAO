@@ -27,8 +27,7 @@ def nothing(x):
 def clean():
     global nao_video, cap
     if nao_video is not None:
-        for i in range(7):
-            nao_video.disconnectFromCamera()
+        nao_video.disconnectFromCamera()
 
 
 def get_webcam_image():
@@ -79,7 +78,6 @@ def test():
     connect4_model = DefaultModel()
     c4_detector = c4.FrontHolesDetector(connect4_model)
     while True:
-        i = 0
         # img = get_webcam_image()
         img = get_nao_image(0)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

@@ -35,7 +35,4 @@ class Human(Strategy):
                 continue
         return int(action)
 
-    def displayAction(self, action):
-        print "Chosen action:", action
-
 

@@ -32,7 +32,6 @@ class AlphaBeta(object):
             value, action = self.actions[state]
         else:
             value, action, _ = self.maxValue(state, -float('inf'), float('inf'), 0)
-            print action
         return action
 
     def maxValue(self, state, alpha, beta, depth):
@@ -73,14 +72,8 @@ class AlphaBeta(object):
                 if best_value >= beta:
                     if best_reached_end:  # If the reached state was final, we can stock the best action for this state
                         self.actions[state] = best_value, best_action
-                    if depth == 0:
-                        print "Action : ", best_action
-                        print "Value : ", best_value
                     return best_value, best_action, best_reached_end
             alpha = max(alpha, value)
-        if depth == 0:
-            print "Action : ", best_action
-            print "Value : ", best_value
         if best_reached_end:  # If the reached state was final, we can stock the best action for this state
             self.actions[state] = best_value, best_action
         return best_value, best_action, best_reached_end

@@ -3,8 +3,6 @@ from random import Random
 from ai.connect4 import disc
 from ai.connect4.c4_state import C4State
 from ai.connect4.player import Player
-from ai.connect4.strategy.human import Human
-from ai.connect4.strategy.naive import Naive
 
 __author__ = 'Anthony Rouneau'
 
@@ -90,11 +88,3 @@ class Game(object):
                 break
             next_move = self.players[self.next_player].chooseMove(self.game_state.copy())
             self.makeMove(next_move)
-
-if __name__ == "__main__":
-    game = Game()
-    game.registerPlayer(Naive())
-    game.registerPlayer(Human())
-    game.playLoop()
-
-
