@@ -23,7 +23,7 @@
 
  <!--- [//]: # "- [`Shapely`] <> (https://pypi.python.org/pypi/Shapely)" -->
 
- ## How to launch
+## How to launch
  - Install the dependencies
  - Launch a terminal emulator in the `src` folder
  - The following line lists and explains each command available in the software:
