@@ -189,12 +189,10 @@ class MotionController:
         Make NAO look to the hypothetical game board position, located at "dist" meters from the robot
         """
         self.crouch()
-        if dist == 1:
-            dist = 1.005  # The distance can not be exactly the distance of reference for the angle computation.
-        height = 0.165  # The height of NAO's head compared to the middle of the board
-        b = geom.pythagore(height, 1)  # The length of the side between NAO's head and a one meter board
+        height = 0.165
+        b = height
         c = geom.pythagore(height, dist)  # The length of the side betwaeen NAO's head and the board to look at
-        a = dist - 1  # The difference between the theoretical position (1m) and the actual position (dist)
+        a = dist  # The difference between the theoretical position (1m) and the actual position (dist)
         pitch_angle = geom.al_kashi(b, a, c, None)
         self.moveHead(pitch_angle, 0, radians=True)
 
