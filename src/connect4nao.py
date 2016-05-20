@@ -263,7 +263,8 @@ def get_nao_image(camera_num=0, res=1):
     global nao_video, nao_motion, nao_tracking
     if nao_video is None:
         nao_video = VideoController()
-        nao_motion = MotionController()
+        if nao_motion is None:
+            nao_motion = MotionController()
         nao_video.disconnectFromCamera()
         ret = nao_video.connectToCamera(res=res, fps=30, camera_num=camera_num)
         if ret < 0:
@@ -392,6 +393,7 @@ def markers(args, must_print=True):
 
 
 def state(args):
+    global nao_motion
     print
     print "-1 = Empty, 0 = Red, 1 = Green"
     print
@@ -410,6 +412,8 @@ def state(args):
 
     strategy.player_id = disc.GREEN
     test_state = C4State()
+    nao_motion = MotionController()
+    nao_motion.lookAtGameBoard(dist)
     while True:
         try:
             myc4.detectFrontHoles(dist, sloped, tries=tries)

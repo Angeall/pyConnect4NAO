@@ -435,7 +435,7 @@ class CircleGridDetector(object):
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 circles.append(self._relative_coordinates[(x, y)])
                 lines_counter[y] = lines_counter.get(x, 0) + 1
-        if lines_counter[max(lines_counter.keys())] < self._MIN_CIRCLES_PER_LINE \
+        if len(lines_counter.keys()) > 0 and lines_counter[max(lines_counter.keys())] < self._MIN_CIRCLES_PER_LINE \
                 or lines_counter[min(lines_counter.keys())] < self._MIN_CIRCLES_PER_LINE:
             return -1
 
