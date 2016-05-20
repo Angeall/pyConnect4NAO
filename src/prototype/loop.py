@@ -221,7 +221,8 @@ class LogicalLoop(object):
         self.nao_motion.lookAtGameBoard(self.estimated_distance)
         while not played:
             try:
-                self.c4_handler.detectFrontHoles(self.estimated_distance, False)
+                if type(self.strategy) is NAOVision:
+                    self.c4_handler.detectFrontHoles(self.estimated_distance, False)
                 action = self.vision_strategy.chooseNextAction(self.game.game_state)
                 self.game.makeMove(action)
                 print self.game.game_state
@@ -264,7 +265,6 @@ class LogicalLoop(object):
             if i > 10:
                 i = 0
                 self.tts.say("Je t'attends pour jouer")
-        pass
 
     def taunt(self):
         pass

@@ -162,7 +162,7 @@ PLAY = """Usage: connect4nao.py play [options]
                             for the detection to be considered as successful
   --nao-strategy=<str>      Defines the strategy of NAO [default: basic].
                             Can be either basic (choice-making AI) or input (human-controlled).
-  --other-strategy=<str>    Defines the strategy of the other player [default: vision].
+  --other-strategy=<str>    Defines the strategy of the other player [default: human].
                             Can be either vision (vision state analysis) or human (human-controlled).
   --max-depth=<int>         Defines the maximum depth of the alpha-beta exploration [default: 6]
   --ppA=FLOAT               The perfect position accuracy in meters. While the robot is not located to the perfect
