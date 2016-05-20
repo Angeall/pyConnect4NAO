@@ -62,7 +62,7 @@ class Connect4Handler(object):
         :param dist: The distance from the board in meters
         :return: The estimated minimum radius to detect
         """
-        return int(np.ceil(5.1143 * (dist ** (-1.1446)) / (self.model.circle_diameter / 0.046)))
+        return int(np.ceil(4.4143 * (dist ** (-1.1446)) / (self.model.circle_diameter / 0.046)))
 
     def estimateMaxRadius(self, dist):
         """
@@ -96,9 +96,10 @@ class Connect4Handler(object):
         alpha = geom.al_kashi(a=de, b=ad, c=ae)  # Angle of vision of the robot to the closest vector
         return alpha / beta
 
-    def computeMinMaxRadius(self, distance, sloped=False):
+    def computeMinMaxRadius(self, distance, sloped=False, res=DEFAULT_RESOLUTION):
         """
         Get the minimum and the maximum radius to detect during the detection
+        :param res: The resolution (length) of the picture.
         :param distance: The distance between the robot and the farthest circle in the Connect 4 grid in meters
         :type distance: float
         :param sloped: True if the connect 4 can be considered as sloped for the robot vision
@@ -108,6 +109,9 @@ class Connect4Handler(object):
         """
         min_radius = self.estimateMinRadius(distance)
         max_radius = self.estimateMaxRadius(distance)
+        res_diff = res / DEFAULT_RESOLUTION
+        min_radius *= res_diff
+        max_radius *= res_diff
         if sloped:
             radius_ratio = self.computeMaxRadiusRatio(distance * 100)
             max_radius *= radius_ratio
@@ -139,11 +143,11 @@ class Connect4Handler(object):
         """
         self.front_holes_detection_prepared = True
         self.res = res
-        self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped)
+        self.min_radius, self.max_radius = self.computeMinMaxRadius(distance, sloped, res)
         self.pixel_error_margin = self.computeMaxPixelError(self.min_radius)
         self.min_dist = int(self.min_radius * 2.391 * (self.res / 320))
-        self.param1 = 70
-        self.param2 = 10.5
+        self.param1 = 77
+        self.param2 = 9.25
         if self.sloped:
             self.param2 = 8
 
@@ -163,11 +167,15 @@ class Connect4Handler(object):
         If the connect 4 is not found in one attempt, the whole detection fails (see the 'tries' parameter).
         """
         last_0_0_coord = None
+        if res == 640:
+            i_res = 2
+        else:
+            i_res = 1
         for i in range(tries):
             if self.cam_no == -1:
-                self.img = self.next_img_func(0)  # We detect the front holes using the top camera
+                self.img = self.next_img_func(0, res=i_res)  # We detect the front holes using the top camera
             else:
-                self.img = self.next_img_func(self.cam_no)
+                self.img = self.next_img_func(self.cam_no, res=i_res)
             self.circles = []
             if not self.front_holes_detection_prepared:
                 self.prepareFrontHolesDetection(distance, sloped, res)
@@ -214,8 +222,9 @@ class Connect4Handler(object):
                     "The detection was not stable as it lost the board after {0} attempt(s)".format(str(i)))
 
     def getUpperHoleCoordinatesUsingMarkers(self, index, camera_position, camera_matrix, camera_dist,
-                                            tries=1, debug=False):
+                                            tries=1, debug=False, res=640):
         """
+        :param res: The resolution length
         :param index: the index of the hole
         :type index: int
         :param camera_position: the 6D position of the camera used for the detection (the bottom one),
@@ -237,11 +246,15 @@ class Connect4Handler(object):
         max_nb_of_markers = 0
         rvec = None
         tvec = None
+        if res == 640:
+            i_res = 2
+        else:
+            i_res = 1
         for i in range(tries):
             if self.cam_no == -1:
-                img = self.next_img_func(1)  # We get the image from the bottom camera
+                img = self.next_img_func(1, res=i_res)  # We get the image from the bottom camera
             else:
-                img = self.next_img_func(self.cam_no)
+                img = self.next_img_func(self.cam_no, res=i_res)
             min_nb_of_codes = 2
             markers = detect_markers(img)
             if markers is not None and len(markers) >= min_nb_of_codes:
@@ -257,7 +270,8 @@ class Connect4Handler(object):
                     max_nb_of_markers = len(markers)
                     rvec, tvec = self.upper_hole_detector.match3DModel(camera_matrix, camera_dist)
             else:
-                cv2.imshow("Debug", img)
+                if debug:
+                    cv2.imshow("Debug", img)
                 if cv2.waitKey(100) == 27:
                     raise NotEnoughLandmarksException("The detection was interrupted")
                 raise NotEnoughLandmarksException("The model needs at least " + str(min_nb_of_codes) + " detected codes")

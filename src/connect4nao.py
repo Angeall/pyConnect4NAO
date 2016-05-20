@@ -81,7 +81,7 @@ MARKERS = """Usage: connect4nao.py markers [options]
 
   --ip=<str>        IP of the robot [default: 169.254.254.250].
   --port=<int>      Port of the robot [default: 9559].
-  --cam-no=<int>    Defines the camera used [default: 1.0].
+  --cam-no=<int>    Defines the camera used [default: 1].
                     If the robot is used : 0=Top_Camera, 1=Bottom_Camera,
                     otherwise, defines the camera hardware used.
 """
@@ -134,7 +134,7 @@ IK = """Usage: connect4nao.py ik [options]
 
   --ip=<str>        IP of the robot [default: 169.254.254.250].
   --port=<int>      Port of the robot [default: 9559].
-  --hole=<int>      Defines the hole in which we want to drop a disc [default: 3]
+  --hole=<int>      Defines the hole in which we want to drop a disc [default: 2]
   --ppA=FLOAT       The perfect position accuracy in meters. While the robot is not located to the perfect
                     position, with a sharper accuracy than ppA, the robot continues to move
                     [default: 0.05]
@@ -151,6 +151,8 @@ PLAY = """Usage: connect4nao.py play [options]
 
   -h --help                 Show this screen.
   --sloped                  If set, the detection consider the board as sloped
+  --no-grab                 If set, NAO will not grab a disc and will
+                            assume it already has one.
 
   --ip=<ip>                 IP of the robot [default: 169.254.254.250].
   --port=<int>              Port of the robot [default: 9559].
@@ -163,6 +165,16 @@ PLAY = """Usage: connect4nao.py play [options]
   --other-strategy=<str>    Defines the strategy of the other player [default: vision].
                             Can be either vision (vision state analysis) or human (human-controlled).
   --max-depth=<int>         Defines the maximum depth of the alpha-beta exploration [default: 6]
+  --ppA=FLOAT               The perfect position accuracy in meters. While the robot is not located to the perfect
+                            position, with a sharper accuracy than ppA, the robot continues to move
+                            [default: 0.05]
+  --cA=FLOAT                The coordinates accuracy in meters. While the robot's hand has not reached this
+                            accuracy, the robot will continue to move to get its hand to a better place.
+                            [default: 0.005]
+  --rA=FLOAT                The rotation accuracy in radians.
+                            While the robot's hand is not inclined with this accuracy
+                            compared to the perfect position, the robot will continue to move.
+                            [default: 0.8]
 """
 
 # The global functions
@@ -220,9 +232,10 @@ class DiscNotObtainedException(BaseException):
 
 
 def close_camera():
-    global nao_video, cap
+    global nao_video, cap, nao_motion
     if nao_video is not None:
         nao_video.disconnectFromCamera()
+        nao_motion.crouch()
     if cap is not None:
         cap.release()
     return 0
@@ -251,7 +264,7 @@ def get_nao_image(camera_num=0, res=1):
     if nao_video is None:
         nao_video = VideoController()
         nao_motion = MotionController()
-        close_camera()
+        nao_video.disconnectFromCamera()
         ret = nao_video.connectToCamera(res=res, fps=30, camera_num=camera_num)
         if ret < 0:
             print "Could not open camera"
@@ -276,7 +289,8 @@ def wait_for_disc(timeout=180000):
     global event, callbackObject, broker
     nao_motion.setLeftArmToAskingPosition()
     # self.memory_proxy.subscribeToEvent("FrontTactilTouched", "HeadSensorCallbackModule", "HeadTouched")
-    callbackObject = HeadSensorCallbackModule()
+    if callbackObject is None:
+        callbackObject = HeadSensorCallbackModule()
     # Waiting for the detector to detect landmarks
     event.wait(timeout / 1000.0)
     nao_motion.setLeftArmRaised()
@@ -316,6 +330,7 @@ def game(args):
 
 
 def board(args):
+    global nao_motion
     data.IP = args['--ip']
     data.PORT = int(args['--port'])
     next_img_func = get_nao_image
@@ -325,6 +340,8 @@ def board(args):
     dist = float(args['--dist'])
     sloped = args['--sloped']
     tries = int(args['--min-detections'])
+    nao_motion = MotionController()
+    nao_motion.lookAtGameBoard(dist)
     while True:
         try:
             myc4.detectFrontHoles(dist, sloped, tries=tries)
@@ -334,11 +351,10 @@ def board(args):
         img2 = draw_circles(myc4.img, myc4.circles)
         cv2.imshow("Circles detected", img2)
         cv2.imshow("Original picture", myc4.img)
-        if cv2.waitKey(1) == 27:
+        if cv2.waitKey(10) == 27:
             print "Esc pressed : exit"
             close_camera()
             break
-        sleep(0.5)
     return 0
 
 
@@ -346,8 +362,11 @@ def markers(args, must_print=True):
     data.IP = args['--ip']
     data.PORT = int(args['--port'])
     next_img_func = get_nao_image
-    if args['--no-robot']:
-        next_img_func = get_webcam_image
+    try:
+        if args['--no-robot']:
+            next_img_func = get_webcam_image
+    except KeyError:
+        pass
     end_reached = False
     while not end_reached:
         img = next_img_func(int(args['--cam-no']), res=2)
@@ -359,7 +378,8 @@ def markers(args, must_print=True):
             cv2.putText(img, str(m.id), tuple(int(p) for p in m.center),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
             if must_print:
-                print "ID: ", str(m.id), "\n", "Contours: ", str(m.contours)
+                print "ID: ", str(m.id), "\n", "Contours: ", str(m.contours.ravel().reshape(-1, 2).tolist())
+                print
             else:
                 end_reached = True
         print
@@ -368,7 +388,7 @@ def markers(args, must_print=True):
         if cv2.waitKey(1) == 27:
             print "Esc pressed : exit"
             close_camera()
-            break
+            return 0
 
 
 def state(args):
@@ -398,6 +418,7 @@ def state(args):
                 cv2.imshow("Perspective", perspective)
             game_state = strategy.analyseFullImage(test_state, img=perspective, debug=True)
             print game_state
+            print
         except BaseException:
             pass
         if cv2.waitKey(1) == 27:
@@ -427,34 +448,43 @@ def coordinates(args):
                                                                      camera_matrix=data.CAM_MATRIX,
                                                                      camera_dist=data.CAM_DISTORSION,
                                                                      tries=tries, debug=not(args['--no-image']))
+                # We want the coordinates of the center of the hole, not the hand ideal position
+                coords[2] -= 0.12
+                coords[5] -= 0.505
+                coords[1] -= 0.028
+                coords[0] += 0.25
                 print coords
             except FrontHolesGridNotFoundException:
-                pass
-            if cv2.waitKey(50) == 27:
-                print "Esc pressed : exit"
-                close_camera()
-                break
+                print
+            if not(args['--no-image']):
+                if cv2.waitKey(50) == 27:
+                    print "Esc pressed : exit"
+                    close_camera()
+                    return 0
     else:
+        nao_motion.stand()
         while True:
             try:
                 coords = myc4.getUpperHoleCoordinatesUsingMarkers(int(args['--hole']),
                                                                   camera_position_func(),
-                                                                  data.CAM_MATRIX, data.CAM_DISTORSION)
+                                                                  data.CAM_MATRIX, data.CAM_DISTORSION,
+                                                                  res=640,
+                                                                  debug=False)
                 if not args['--no-image']:
                     markers(args, must_print=False)
                 # We want the coordinates of the center of the hole, not the hand ideal position
                 coords[2] -= 0.12
-                coords[5] = [coords[5] - 0.505]
+                coords[5] -= 0.505
                 coords[1] -= 0.028
                 coords[0] += 0.01
                 print coords
                 sleep(0.5)
             except NotEnoughLandmarksException:
-                continue
+                pass
             if cv2.waitKey(50) == 27:
                 print "Esc pressed : exit"
                 close_camera()
-                break
+                return 0
     return 0
 
 
@@ -465,17 +495,21 @@ def ik(args):
     broker = ALBroker("myBroker", "0.0.0.0", 0, data.IP, data.PORT)
     nao_motion = MotionController()
     nao_video = VideoController()
+    nao_motion.stand()
     nao_tts = ALProxy("ALTextToSpeech", data.IP, data.PORT)
     try:
         loop = LogicalLoop(nao_motion=nao_motion, nao_video=nao_video, nao_tts=nao_tts,
                            ppA=float(args['--ppA']), cA=float(args['--cA']), rA=float(args['--rA']),
-                           min_detections=1)
+                           min_detections=1, wait_disc_func=lambda: None)
         if not args['--no-grab']:
             wait_for_disc()
-        loop.inverseKinematicsConvergence(args['--hole'])
+        else:
+            nao_motion.motion_proxy.closeHand("LHand")
+            nao_motion.setLeftArmRaised(secure=True)
+        loop.inverseKinematicsConvergence(int(args['--hole']))
+        nao_motion.crouch()
     except KeyboardInterrupt:
         print "Keyboard interrupt"
-    finally:
         broker.shutdown()
     return 0
 
@@ -506,11 +540,9 @@ def play(args):
         loop = LogicalLoop(nao_motion=nao_motion, nao_video=nao_video, nao_tts=nao_tts,
                            ppA=float(args['--ppA']), cA=float(args['--cA']), rA=float(args['--rA']),
                            min_detections=int(args['--min-detections']), sloped=args['--sloped'],
-                           dist=args['--dist'], nao_strategy=nao_strat, other_strategy=other_strat)
-        if not args['--no-grab']:
-            wait_for_disc()
-        #FIXME
-        loop.inverseKinematicsConvergence(args['--hole'])
+                           dist=float(args['--dist']), nao_strategy=nao_strat, other_strategy=other_strat,
+                           wait_disc_func=wait_for_disc, )
+        loop.loop()
     except KeyboardInterrupt:
         print "Keyboard interrupt"
     finally:

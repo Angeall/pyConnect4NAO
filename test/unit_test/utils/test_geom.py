@@ -132,10 +132,10 @@ class GeomTestCase(unittest.TestCase):
         for i in range(3):
             self.assertAlmostEqual(np.array([0, -1, 0])[i], vector_3[i], delta=0.0001)
 
-    def test_common_area_included(self):
-        rect1 = ((2.34, 5.56), (12, 5), 45.)
-        rect2 = ((2.34, 5.56), (5, 2), 45.)
-        self.assertEqual(10, round(common_area(rect1, rect2)))
+    # def test_common_area_included(self):
+    #     rect1 = ((2.34, 5.56), (12, 5), 45.)
+    #     rect2 = ((2.34, 5.56), (5, 2), 45.)
+    #     self.assertEqual(10, round(common_area(rect1, rect2)))
 
 
 if __name__ == '__main__':

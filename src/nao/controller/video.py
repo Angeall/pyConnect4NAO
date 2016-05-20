@@ -50,6 +50,13 @@ class VideoController(object):
             self.disconnectFromCamera(camera_num)
             self.cam_connected = True
             self.subscriber_ids[camera_num] = self.video_device.subscribeCamera(subscriber_id, camera_num, res, color_space, fps)
+            self.video_device.setAllCameraParametersToDefault(self.subscriber_ids[camera_num])
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 2, 255)
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 3, -180)
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 6, 255)
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 12, 1)
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 24, 7)
+            self.video_device.setCameraParameter(self.subscriber_ids[camera_num], 1, 64)
         except BaseException, err:
             print "ERR: cannot connect to camera : %s" % err
             return -1
@@ -64,7 +71,8 @@ class VideoController(object):
         try:
             if camera_num is None:
                 for subscriber in self.video_device.getSubscribers():
-                    self.video_device.unsubscribe(subscriber)
+                    if "C4N" in subscriber:
+                        self.video_device.unsubscribe(subscriber)
             else:
                 for i in range(7):
                     self.video_device.unsubscribe(self.subscriber_ids[camera_num] + "_" + str(i))

@@ -47,6 +47,15 @@ def al_kashi(a=None, b=None, c=None, angle=None):
         raise ImpossibleEquationException("There is no unknown")
 
 
+def pythagore(a, b):
+    """
+    :param a: one side of the rectangle
+    :param b: the second side of the rectangle
+    :return: the length of the hypotenuse of the triangle formed by the side "a" and "b"
+    """
+    return np.sqrt(np.square(a) + np.square(b))
+
+
 def vectorize(p1, p2, signed=True):
     """
     :param p1: point 1

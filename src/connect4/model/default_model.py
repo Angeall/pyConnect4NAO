@@ -270,8 +270,8 @@ class DefaultModel(object):
                 current_z += self.hamcode_side
                 current_x += self.hamcode_h_space
 
-        hamcodes[8] = np.array([hamcodes[8][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.001])
-        hamcodes[9] = np.array([hamcodes[9][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.001])
+        hamcodes[8] = np.array([hamcodes[8][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.002])
+        hamcodes[9] = np.array([hamcodes[9][0], -0.065, 2*self.hole_v_margin + self.hole_width + 0.002])
         hamcodes[10] = np.array([hamcodes[10][0], -0.018, self.hole_v_margin + self.hole_width + 0.001])
         hamcodes[11] = np.array([hamcodes[11][0], -0.018, self.hole_v_margin + self.hole_width + 0.001])
 

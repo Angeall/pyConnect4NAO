@@ -43,10 +43,10 @@ class MotionController:
 
         # Connect and wake up the robot
         self.motion_proxy = ALProxy("ALMotion", robot_ip, robot_port)
-        self.motion_proxy.wakeUp()
+        # self.motion_proxy.wakeUp()
         self.motion_proxy.setCollisionProtectionEnabled("Arms", True)
         self.motion_proxy.setMoveArmsEnabled(False, False)
-        self.moveHead(0.114, 0, radians=True)
+        # self.moveHead(0.114, 0, radians=True)
 
     def getCameraTopPositionFromTorso(self):
         """
@@ -92,6 +92,7 @@ class MotionController:
         :type time_limit: float
         Move the hand to the given coordinates if possible.
         """
+        self.stand()
         self.motion_proxy.positionInterpolations("LArm", FRAME_TORSO, [tuple(coord)], mask, [time_limit])
 
     def moveAt(self, x, y, z_rot):
@@ -104,6 +105,8 @@ class MotionController:
         :type z_rot: float
         Move the robot to a certain position, defined by the three parameters.
         """
+        self.stand()
+        self.motion_proxy.wakeUp()
         self.motion_proxy.moveTo(x, y, z_rot)
 
     def getLeftArmAngles(self):
@@ -127,8 +130,7 @@ class MotionController:
             yaw = math.radians(yaw)
             pitch = math.radians(pitch)
         angles = [yaw, pitch]
-        fraction_max_speed = 0.1
-        self.motion_proxy.setAngles(joint_names, angles, fraction_max_speed)
+        self.motion_proxy.angleInterpolation(joint_names, angles, 1., True)
 
     def compareToLeftHandPosition(self, coord):
         """
@@ -146,6 +148,7 @@ class MotionController:
         """
         :param hole_coordinates: The 6D translation + rotation vector of the hole
         """
+        self.stand()
         self.setLeftHandPosition(hole_coordinates, mask=63)
         self.motion_proxy.openHand("LHand")
         self.motion_proxy.closeHand("LHand")
@@ -155,26 +158,71 @@ class MotionController:
         """
         Raise NAO's left arm to the sky
         """
+        self.stand()
         if secure:
-            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
-            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, RAISED, 3., True)
+            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
+            self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 2., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, RAISED, 2., True)
 
     def setLeftArmAlongsideBody(self):
         """
         Move the left arm of NAO alongside his body.
         """
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, ARM_ALONGSIDE_BODY, 3., True)
+        self.stand()
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 2., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, ARM_ALONGSIDE_BODY, 2., True)
 
     def setLeftArmToAskingPosition(self):
         """
         Move the left arm of NAO in a "asking disc" position, and open his left hand.
         """
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 3., True)
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 3., True)
-        self.motion_proxy.angleInterpolation(LARM_CHAIN, ASKING_HAND, 3., True)
+        self.stand()
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 2., True)
+        self.motion_proxy.angleInterpolation(LARM_CHAIN, ASKING_HAND, 2., True)
         self.motion_proxy.openHand("LHand")
+
+    def lookAtGameBoard(self, dist):
+        """
+        :param dist: the supposed distance between NAO and the board
+        Make NAO look to the hypothetical game board position, located at "dist" meters from the robot
+        """
+        self.crouch()
+        if dist == 1:
+            dist = 1.005  # The distance can not be exactly the distance of reference for the angle computation.
+        height = 0.165  # The height of NAO's head compared to the middle of the board
+        b = geom.pythagore(height, 1)  # The length of the side between NAO's head and a one meter board
+        c = geom.pythagore(height, dist)  # The length of the side betwaeen NAO's head and the board to look at
+        a = dist - 1  # The difference between the theoretical position (1m) and the actual position (dist)
+        pitch_angle = geom.al_kashi(b, a, c, None)
+        self.moveHead(pitch_angle, 0, radians=True)
+
+    def stand(self):
+        """
+        Make the robot stand up
+        """
+        if not self.motion_proxy.robotIsWakeUp():
+            self.motion_proxy.wakeUp()
+
+    def crouch(self):
+        """
+        Crouch the robot, but stiff the head
+        """
+        self.motion_proxy.rest()
+        self.motion_proxy.setStiffnesses("HeadPitch", 1.0)
+
+    def stiffHead(self):
+        """
+        Set the stiffness of the head to 1 (Max stiff)
+        """
+        self.motion_proxy.setStiffnesses(["HeadPitch", "HeadYaw"], [1, 1])
+
+    def releaseHead(self):
+        """
+        Release the stiffness of the head
+        """
+        self.motion_proxy.setStiffnesses(["HeadPitch", "HeadYaw"], [0, 0])
+
 
 

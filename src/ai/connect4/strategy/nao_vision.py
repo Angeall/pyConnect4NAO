@@ -45,15 +45,18 @@ def hsv_mean(bgr_list):
 
 def color_classifier(hsv):
     h, s, v = hsv
-    if s > 35:  # We are sure of the color
-        if h > 115 or h < 50:  # If the color is in the RED range
-            return disc.RED
-        elif 75 < h < 115:  # If the color is in the GREEN range
-            return disc.GREEN
+    if h > 220 or h < 70:  # If the color is in the RED range
+        return disc.RED
+    elif s > 65:  # We are sure of the color
+        if 70 < h < 210:  # If the color is in the GREEN range
+            if h > 165:
+                return disc.EMPTY
+            else:
+                return disc.GREEN
         else:
             return disc.EMPTY
     else:  # We will work on brightness
-        if v < 35:
+        if v < 45:
             return disc.GREEN
         else:
             return disc.EMPTY
@@ -149,13 +152,16 @@ class NAOVision(Strategy):
             board = np.ones((6, 7)) * disc.EMPTY
         else:
             board = state.board
-        space = 3  # Number of pixels to take around the point
+        space = 7  # Number of pixels to take around the point
         for line_no in range(6):
             for column_no in range(7):
                 img_coord = self.hole_mapping[
                     (column_no, 5 - line_no)]  # The mapping is ordered differently (cols, 5-lines)
                 pixels = img[img_coord[1] - space:img_coord[1] + space, img_coord[0] - space:img_coord[0] + space]
-                color = color_classifier(hsv_mean(pixels))
+
+                mean = hsv_mean(pixels)
+                color = color_classifier(mean)
+                # print "(", 5-line_no, ",", column_no, ")", mean, disc.color_string(color)
                 if not debug:
                     if state.board[line_no][column_no] != color:
                         # If the difference is not the color of this player or the disc is not on top of a column

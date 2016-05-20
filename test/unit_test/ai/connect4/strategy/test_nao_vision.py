@@ -34,9 +34,9 @@ class NAOVisionTestCase(unittest.TestCase):
     def test_debug(self):
         test_state = C4State()
         board = self.strategy.analyseFullImage(test_state, img=self.img, debug=True)
-        self.assertTrue((board == np.array([[-1, -1, -1, -1, -1, -1, -1],
-                                            [-1, -1,  1, -1, -1, -1, -1],
-                                            [-1, -1,  1,  1, -1, -1, -1],
-                                            [ 0,  0,  1,  0, -1, -1, -1],
-                                            [ 1,  1,  0,  0, -1, -1, -1],
-                                            [ 0,  0,  1,  1,  1, -1,  0]])).all())
+        self.assertTrue((board == np.array([[-1, -1,  0,  1, -1, -1, -1],
+                                            [-1, -1,  0,  1, -1, -1, -1],
+                                            [-1, -1,  0,  1, -1, -1, -1],
+                                            [-1, -1,  0,  1, -1, -1, -1],
+                                            [-1, -1,  0,  1, -1, -1,  0],
+                                            [ 1,  0,  0,  1, -1,  0,  1]])).all())
