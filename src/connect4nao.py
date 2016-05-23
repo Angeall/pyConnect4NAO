@@ -144,7 +144,7 @@ IK = """Usage: connect4nao.py ik [options]
   --rA=FLOAT        The rotation accuracy in radians.
                     While the robot's hand is not inclined with this accuracy
                     compared to the perfect position, the robot will continue to move.
-                    [default: 0.8]
+                    [default: 0.26]
 """
 
 PLAY = """Usage: connect4nao.py play [options]
@@ -174,7 +174,7 @@ PLAY = """Usage: connect4nao.py play [options]
   --rA=FLOAT                The rotation accuracy in radians.
                             While the robot's hand is not inclined with this accuracy
                             compared to the perfect position, the robot will continue to move.
-                            [default: 0.8]
+                            [default: 0.26]
 """
 
 # The global functions
