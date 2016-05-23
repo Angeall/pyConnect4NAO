@@ -1,3 +1,4 @@
+Pillow
 scipy ~= 0.16.1
 numpy ~= 1.8.1
 cv2 ~= 1.0
