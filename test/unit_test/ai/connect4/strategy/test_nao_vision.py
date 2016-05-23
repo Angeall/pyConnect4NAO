@@ -20,16 +20,16 @@ class NAOVisionTestCase(unittest.TestCase):
         self.strategy.player_id = disc.GREEN
 
     def test_analyse(self):
-        test_board = np.array([[disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY],
-                               [disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY],
-                               [disc.EMPTY, disc.EMPTY, disc.GREEN, disc.GREEN, disc.EMPTY, disc.EMPTY, disc.EMPTY],
-                               [disc.RED,   disc.RED,   disc.GREEN, disc.RED,   disc.EMPTY, disc.EMPTY, disc.EMPTY],
-                               [disc.GREEN, disc.GREEN, disc.RED,   disc.RED,   disc.EMPTY, disc.EMPTY, disc.EMPTY],
-                               [disc.RED,   disc.RED,   disc.GREEN, disc.GREEN, disc.GREEN, disc.EMPTY, disc.RED]])
+        test_board = np.array([[disc.EMPTY, disc.EMPTY, disc.RED, disc.EMPTY, disc.EMPTY, disc.EMPTY, disc.EMPTY],
+                               [disc.EMPTY, disc.EMPTY, disc.RED, disc.GREEN, disc.EMPTY, disc.EMPTY, disc.EMPTY],
+                               [disc.EMPTY, disc.EMPTY, disc.RED, disc.GREEN, disc.EMPTY, disc.EMPTY, disc.EMPTY],
+                               [disc.EMPTY, disc.EMPTY, disc.RED, disc.GREEN, disc.EMPTY, disc.EMPTY, disc.EMPTY],
+                               [disc.EMPTY, disc.EMPTY, disc.RED, disc.GREEN, disc.EMPTY, disc.EMPTY, disc.RED],
+                               [disc.GREEN, disc.RED,   disc.RED, disc.GREEN, disc.RED,   disc.RED,   disc.GREEN]])
         test_state = C4State()
         test_state.board = test_board
         chosen_action = self.strategy.chooseNextAction(test_state)
-        self.assertTrue(chosen_action == 2)
+        self.assertTrue(chosen_action == 3)
 
     def test_debug(self):
         test_state = C4State()
