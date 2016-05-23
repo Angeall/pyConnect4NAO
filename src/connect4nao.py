@@ -183,6 +183,7 @@ cap = None
 nao_video = None
 nao_motion = None
 nao_tracking = None
+reg_id = 0
 connect4_model = DefaultModel()
 
 # Global variables for the event reaction of the waitForDisc method.
@@ -198,15 +199,9 @@ class HeadSensorCallbackModule(ALModule):
     """
 
     def __init__(self):
-        global memory_proxy, callbackObject
+        global memory_proxy, callbackObject, reg_id
         self._module_name = "callbackObject"
         ALModule.__init__(self, self._module_name)
-        # Preparing the callback method
-        memory_proxy = ALProxy("ALMemory")
-
-        memory_proxy.subscribeToEvent("FrontTactilTouched", "callbackObject", "headTouched")
-        memory_proxy.subscribeToEvent("MiddleTactilTouched", "callbackObject", "headTouched")
-        memory_proxy.subscribeToEvent("RearTactilTouched", "callbackObject", "headTouched")
 
     # Call back function registered with subscribeOnDataChange that handles
     # changes in LandMarkDetection results.
@@ -214,6 +209,9 @@ class HeadSensorCallbackModule(ALModule):
         """ Mandatory docstring.
             Method that will be called by the "headTouched" event.
         """
+        memory_proxy.unsubscribeToEvent("FrontTactilTouched", "callbackObject")
+        memory_proxy.unsubscribeToEvent("MiddleTactilTouched", "callbackObject")
+        memory_proxy.unsubscribeToEvent("RearTactilTouched", "callbackObject")
         global event
         nao_motion.motion_proxy.closeHand("LHand")
         event.set()
@@ -284,13 +282,22 @@ def wait_for_disc(timeout=180000):
     """
     :param timeout: the maximum time to wait, in milliseconds, for a disc, after that, assumes it has the disc
     """
-    global event, callbackObject, broker
+    global event, callbackObject, broker, memory_proxy
     nao_motion.setLeftArmToAskingPosition()
     # self.memory_proxy.subscribeToEvent("FrontTactilTouched", "HeadSensorCallbackModule", "HeadTouched")
     if callbackObject is None:
         callbackObject = HeadSensorCallbackModule()
+
+    # Preparing the callback method
+    if memory_proxy is None:
+        memory_proxy = ALProxy("ALMemory", data.IP, data.PORT)
+
+    memory_proxy.subscribeToEvent("FrontTactilTouched", "callbackObject", "headTouched")
+    memory_proxy.subscribeToEvent("MiddleTactilTouched", "callbackObject", "headTouched")
+    memory_proxy.subscribeToEvent("RearTactilTouched", "callbackObject", "headTouched")
     # Waiting for the detector to detect landmarks
     event.wait(timeout / 1000.0)
+
     nao_motion.setLeftArmRaised()
     # time.sleep(timeout)
     # Exiting...

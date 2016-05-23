@@ -111,7 +111,7 @@ class LogicalLoop(object):
         while True:
             for dist in distances:
                 try:
-                    self.nao_motion.lookAtGameBoard(self.estimated_distance)
+                    self.nao_motion.lookAtGameBoard(dist)
                     coords = self.c4_handler \
                         .getUpperHoleCoordinatesUsingFrontHoles(dist, self.sloped, 3,
                                                                 self.nao_motion.getCameraTopPositionFromTorso(),

@@ -20,7 +20,9 @@ ARM_ALONGSIDE_BODY = [1.62, 0.32, -0.03, -1.31, -0.44]
 ARM_ALONGSIDE_BODY_R = [1.62, -0.32, 0.03, 1.31, -0.44]
 ASKING_HAND = [-0.07, 0.05, -0.55, -1.29, -0.77]
 INTERMEDIATE_TOP = [-1.56, 1.22, -0.03, -1.31, -0.44]
+INTERMEDIATE_TOP_R = [1.56, -1.22, 0.03, 1.31, -0.44]
 INTERMEDIATE_BOTTOM = [1.56, 1.22, -0.03, -1.31, -0.44]
+INTERMEDIATE_BOTTOM_R = [-1.56, -1.22, 0.03, 1.31, -0.44]
 RAISED = [-1.22, 0.05, -0.55, -1.29, -0.77]
 
 
@@ -139,7 +141,7 @@ class MotionController:
         angles = [yaw, pitch]
         self.motion_proxy.angleInterpolation(joint_names, angles, 1., True)
 
-    def compareToLeftHandPosition(self, coord):
+    def compareToLeftHandPosition(self, coord, must_print=False):
         """
         :param coord: the 6D coordinates to compare with the left hand position
         :type coord: list
@@ -147,8 +149,9 @@ class MotionController:
         :rtype: np.array
         """
         hand_coord = self.getLeftHandPosition()
-        print coord
-        print hand_coord
+        if must_print:
+            print coord
+            print hand_coord
         return geom.vectorize(hand_coord[0:2], coord[0:2])
 
     def playDisc(self, hole_coordinates):
@@ -185,11 +188,7 @@ class MotionController:
         Move the left arm of NAO alongside his body.
         """
         self.stand()
-        self.motion_proxy.angleInterpolation(RARM_CHAIN, INTERMEDIATE_TOP, 2., True)
-        self.motion_proxy.angleInterpolation(RARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
-        self.motion_proxy.angleInterpolation(RARM_CHAIN, ARM_ALONGSIDE_BODY, 2., True)
-
-
+        self.motion_proxy.angleInterpolation(RARM_CHAIN, ARM_ALONGSIDE_BODY_R, 2., True)
 
     def setLeftArmToAskingPosition(self):
         """
