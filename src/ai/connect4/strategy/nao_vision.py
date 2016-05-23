@@ -2,7 +2,7 @@ import numpy as np
 
 from ai.connect4 import disc
 from ai.connect4.c4_state import C4State
-from utils.ai.game_state import GameState, InvalidStateException
+from utils.ai.game_state import InvalidStateException
 from utils.ai.strategy import Strategy
 
 __author__ = 'Anthony Rouneau'
