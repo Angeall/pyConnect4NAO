@@ -82,7 +82,10 @@ class LogicalLoop(object):
         self.NAO_player = self.game.registerPlayer(self.strategy)
         self.human_player = self.game.registerPlayer(self.other_strategy)
         print "Lancement du jeu, la couleur de NAO est le {0}".format(disc.color_string(self.NAO_player.color))
-        print "Le premier joueur est la couleur : {0}".format(disc.color_string(self.game.next_player))
+        next_player = "NAO"
+        if not self.game.checkPlayerTurn(self.NAO_player):
+            next_player = "Joueur humain"
+        print "Le premier joueur est : {0}".format(next_player)
 
     def getNaoImage(self, camera_num=0, res=1):
         """
