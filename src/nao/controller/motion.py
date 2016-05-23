@@ -14,8 +14,10 @@ FRAME_ROBOT = 2
 
 # Arm movement joints
 LARM_CHAIN = ["LShoulderPitch", "LShoulderRoll", "LElbowRoll", "LElbowYaw", "LWristYaw"]
+RARM_CHAIN = ["RShoulderPitch", "RShoulderRoll", "RElbowRoll", "RElbowYaw", "RWristYaw"]
 # Arm angles in radians :
 ARM_ALONGSIDE_BODY = [1.62, 0.32, -0.03, -1.31, -0.44]
+ARM_ALONGSIDE_BODY_R = [1.62, -0.32, 0.03, 1.31, -0.44]
 ASKING_HAND = [-0.07, 0.05, -0.55, -1.29, -0.77]
 INTERMEDIATE_TOP = [-1.56, 1.22, -0.03, -1.31, -0.44]
 INTERMEDIATE_BOTTOM = [1.56, 1.22, -0.03, -1.31, -0.44]
@@ -30,7 +32,7 @@ class MotionController:
     """
     Represents a virtual controller for NAO's motion system
     """
-    def __init__(self, robot_ip=nao.IP, robot_port=nao.PORT):
+    def __init__(self, robot_ip=None, robot_port=None):
         """
         :param robot_ip: The IP address of the robot
         :type robot_ip: str
@@ -38,6 +40,11 @@ class MotionController:
         :type robot_port: int
         Creates a new Virtual Controller for NAO
         """
+        if robot_ip is None:
+            robot_ip = nao.IP
+        if robot_port is None:
+            robot_port = nao.PORT
+
         self.ip = robot_ip
         self.port = robot_port
 
@@ -172,6 +179,17 @@ class MotionController:
         self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_TOP, 2., True)
         self.motion_proxy.angleInterpolation(LARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
         self.motion_proxy.angleInterpolation(LARM_CHAIN, ARM_ALONGSIDE_BODY, 2., True)
+
+    def setRightArmAlongsideBody(self):
+        """
+        Move the left arm of NAO alongside his body.
+        """
+        self.stand()
+        self.motion_proxy.angleInterpolation(RARM_CHAIN, INTERMEDIATE_TOP, 2., True)
+        self.motion_proxy.angleInterpolation(RARM_CHAIN, INTERMEDIATE_BOTTOM, 2., True)
+        self.motion_proxy.angleInterpolation(RARM_CHAIN, ARM_ALONGSIDE_BODY, 2., True)
+
+
 
     def setLeftArmToAskingPosition(self):
         """

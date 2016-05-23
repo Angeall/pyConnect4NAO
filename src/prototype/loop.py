@@ -73,14 +73,14 @@ class LogicalLoop(object):
         # Creating the strategies that will play the game
         self.strategy = nao_strategy()
         if other_strategy is NAOVision:
-            self.vision_strategy = NAOVision(self.c4_model.image_of_reference.pixel_mapping,
-                                             self.c4_handler.front_hole_detector.getPerspective)
+            self.other_strategy = NAOVision(self.c4_model.image_of_reference.pixel_mapping,
+                                            self.c4_handler.front_hole_detector.getPerspective)
         else:
-            self.vision_strategy = other_strategy()
+            self.other_strategy = other_strategy()
         # Creating the game and registering the players
         self.game = Game()
         self.NAO_player = self.game.registerPlayer(self.strategy)
-        self.human_player = self.game.registerPlayer(self.vision_strategy)
+        self.human_player = self.game.registerPlayer(self.other_strategy)
         print "Lancement du jeu, la couleur de NAO est le {0}".format(disc.color_string(self.NAO_player.color))
         print "Le premier joueur est la couleur : {0}".format(disc.color_string(self.game.next_player))
 
@@ -176,21 +176,23 @@ class LogicalLoop(object):
 
     def loop(self):
         self.findGameBoard()
-        self.walkTowardConnect4(analysis=True)
+        self.walkTowardConnect4(analysis=not self.game.checkPlayerTurn(self.NAO_player))
         finished = 0
         while not finished:
-            finished = self.analyseGameState()
-            print finished
+            if not self.game.checkPlayerTurn(self.NAO_player):
+                finished = self.analyseGameState()
             if not finished:
                 self.playingRoutine()
 
     def playingRoutine(self):
         action = self.strategy.chooseNextAction(self.game.game_state)
         self.game.makeMove(action)
-        self.walkTowardConnect4()
+        if self.estimated_distance > 0.3:
+            self.walkTowardConnect4()
         self.wait_disc_func()
         self.inverseKinematicsConvergence(action)
-        self.walkBack()
+        if type(self.other_strategy) is NAOVision:
+            self.walkBack()
 
     def walkBack(self):
         """
@@ -223,9 +225,9 @@ class LogicalLoop(object):
             try:
                 if type(self.strategy) is NAOVision:
                     self.c4_handler.detectFrontHoles(self.estimated_distance, False)
-                action = self.vision_strategy.chooseNextAction(self.game.game_state)
+                action = self.other_strategy.chooseNextAction(self.game.game_state)
                 self.game.makeMove(action)
-                print self.game.game_state
+                print self.game.game_state.board
                 if self.NAO_player.won:
                     self.tts.say("Je gagne !")
                     return 1
@@ -291,6 +293,7 @@ class LogicalLoop(object):
         if self.current_yaw > 40 or self.current_pitch > 40:
             self.nao_motion.releaseHead()
             self.tts.say("Veuillez placer ma tete au bon endroit s'il vous plait")
+            time.sleep(5)
         else:
             self.nao_motion.moveHead(self.current_pitch * self.pitch_sign,
                                      self.current_yaw * self.yaw_sign,

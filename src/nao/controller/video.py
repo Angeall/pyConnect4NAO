@@ -12,12 +12,16 @@ class VideoController(object):
     """
     Represents a virtual controller for NAO's videos devices
     """
-    def __init__(self, robot_ip=nao.IP, robot_port=nao.PORT):
+    def __init__(self, robot_ip=None, robot_port=None):
         """
         :param robot_ip: the ip address of the robot
         :param robot_port: the port of the robot
         Connect to the robot camera proxy
         """
+        if robot_ip is None:
+            robot_ip = nao.IP
+        if robot_port is None:
+            robot_port = nao.PORT
         self.ip = robot_ip
         self.port = robot_port
         self.video_device = ALProxy("ALVideoDevice", robot_ip, robot_port)

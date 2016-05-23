@@ -14,10 +14,11 @@
 ## Dependencies
 
  - [`Python 2.7`](https://www.python.org/downloads/)
+ - [`Python NAOqi SDK`](http://doc.aldebaran.com/2-1/dev/python/install_guide.html)
  - [`OpenCV 3.0`](http://opencv.org/downloads.html)
  - [`Numpy`](https://pypi.python.org/pypi/numpy/1.10.1)
  - [`Scipy`](https://pypi.python.org/pypi/scipy/0.17.0)
- - [`Hampy`](https://pypi.python.org/pypi/hampy/1.4.1)
+ - [`Hampy`](https://pypi.python.org/pypi/hampy/1.4.1) (requires [`PIL`](http://www.pythonware.com/products/pil/))
  - [`Docopt`](https://pypi.python.org/pypi/docopt/0.6.2)
    [//]: # "- [`Shapely`] <> (https://pypi.python.org/pypi/Shapely)"
 

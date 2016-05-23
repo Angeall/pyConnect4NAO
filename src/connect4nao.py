@@ -156,8 +156,8 @@ PLAY = """Usage: connect4nao.py play [options]
 
   --ip=<ip>                 IP of the robot [default: 169.254.254.250].
   --port=<int>              Port of the robot [default: 9559].
-  --dist=<int>              Defines the distance in meters [default: 1.0]
-                            between the robot and the game board
+  --dist=<int>              Defines the distance in meters [default: -1.0]
+                            between the robot and the game board (-1 = unknown)
   --min-detections=<int>    Defines the minimum number of stable detections [default: 3]
                             for the detection to be considered as successful
   --nao-strategy=<str>      Defines the strategy of NAO [default: basic].
@@ -214,9 +214,6 @@ class HeadSensorCallbackModule(ALModule):
         """ Mandatory docstring.
             Method that will be called by the "headTouched" event.
         """
-        memory_proxy.unsubscribeToEvent("FrontTactilTouched", "callbackObject")
-        memory_proxy.unsubscribeToEvent("MiddleTactilTouched", "callbackObject")
-        memory_proxy.unsubscribeToEvent("RearTactilTouched", "callbackObject")
         global event
         nao_motion.motion_proxy.closeHand("LHand")
         event.set()
@@ -360,6 +357,7 @@ def board(args):
 
 
 def markers(args, must_print=True):
+    global nao_motion
     data.IP = args['--ip']
     data.PORT = int(args['--port'])
     next_img_func = get_nao_image
@@ -369,6 +367,8 @@ def markers(args, must_print=True):
     except KeyError:
         pass
     end_reached = False
+    nao_motion = MotionController()
+    nao_motion.stand()
     while not end_reached:
         img = next_img_func(int(args['--cam-no']), res=2)
 
