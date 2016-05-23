@@ -11,6 +11,10 @@ nao_video = None
 
 
 def bgr_to_hsv(bgr_list):
+    """
+    :param bgr_list: sequence of triplet (b, g, r)
+    :return: the sequence of hsv values, resulting of the conversion of each bgr value of the initial sequence
+    """
     hsv_list = []
     for bgr in bgr_list:
         _bgr = [bgr[0] / 255.0, bgr[1] / 255.0, bgr[2] / 255.0]
@@ -35,6 +39,10 @@ def bgr_to_hsv(bgr_list):
 
 
 def hsv_mean(bgr_list):
+    """
+    :param bgr_list: sequence of triplet (b, g, r)
+    :return: the mean of the bgr values, transformed into hsv values.
+    """
     hsv_list = bgr_to_hsv(bgr_list.ravel().reshape(-1, 3))
     res = np.array([0, 0, 0])
     for hsv in hsv_list:
@@ -44,6 +52,10 @@ def hsv_mean(bgr_list):
 
 
 def color_classifier(hsv):
+    """
+    :param hsv: The hsv value to classify
+    :return: the color represented by the HSV value
+    """
     h, s, v = hsv
     if h > 220 or h < 70:  # If the color is in the RED range
         return disc.RED
@@ -63,11 +75,17 @@ def color_classifier(hsv):
 
 
 class ActionNotYetPerformedException(BaseException):
+    """
+    Raised when the image analysis concluded that there was not action since the last game state
+    """
     def __init__(self, msg):
         super(ActionNotYetPerformedException, self).__init__(msg)
 
 
 class TooManyDifferencesException(InvalidStateException):
+    """
+    Raised when there are too many changes in the game state compared to the last game state in memory
+    """
     def __init__(self, msg):
         super(TooManyDifferencesException, self).__init__(msg)
 
@@ -91,8 +109,8 @@ class NAOVision(Strategy):
     def chooseNextAction(self, state):
         """
         :param state: the state before this player's action
-        :type state: GameState
-        :return: thge action performed by this player
+        :type state: C4State
+        :return: the action performed by this player
         """
         previous_action = None
         tries = 3
