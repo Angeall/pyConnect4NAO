@@ -1,3 +1,6 @@
+import random
+
+from ai.connect4.c4_state import C4State
 from utils.ai.alpha_beta import AlphaBeta
 from utils.ai.strategy import Strategy
 
@@ -33,7 +36,17 @@ class Basic(Strategy):
             return factor * self.DRAW
 
     def chooseNextAction(self, state):
-        action = self.alpha_beta.alphaBetaSearching(state)
+        """
+        :param state: the current state of the game
+        :type state: C4State
+        :return: the action chosn by the strategy
+        :rtype: int
+        """
+        if not state.empty:
+            action = self.alpha_beta.alphaBetaSearching(state)
+        else:
+            possible_actions = state.possibleActions()
+            action = possible_actions[random.Random().randint(0, len(possible_actions)-1)]
         print "Chosen column: ", action
         print
         return action

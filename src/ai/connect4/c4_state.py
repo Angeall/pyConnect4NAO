@@ -25,8 +25,10 @@ class C4State(GameState):
             self.actions = range(7)
             self.terminal = False, False, False
             self.hash = self.compute_hash()
+            self.empty = True
         else:  # If this C4State is created from another one
             self.board = copied_state.board.copy()
+            self.empty = copied_state.empty
             self.terminal = copied_state.terminal
             self.hash = copied_state.hash
             self.actions = copied_state.actions
@@ -50,6 +52,7 @@ class C4State(GameState):
         :param column_no: the number of the column where the disc will be placed if possible
         :type column_no: int
         """
+        self.empty = False
         if column_no not in self.actions:
             raise AttributeError("This column is full")
         line_no = self.getTopSlotNumber(column_no)

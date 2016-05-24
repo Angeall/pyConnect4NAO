@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 from game_state import GameState
@@ -20,6 +22,7 @@ class AlphaBeta(object):
         """
         self.eval = eval_fct
         self.max_depth = _max_depth
+        self.random = random.Random()
         self.actions = {}  # Will retain the best action for a given state (will speed up the tree search)
 
     def alphaBetaSearching(self, state):
@@ -55,7 +58,7 @@ class AlphaBeta(object):
 
         # Initializing the best values
         best_value = -float('inf')
-        best_action = None
+        best_actions = []
         best_reached_end = False
 
         # If we already made the computations, no need to do more
@@ -67,13 +70,17 @@ class AlphaBeta(object):
             value, _, reached_end = self.minValue(state.simulateAction(action), alpha, beta, depth + 1)
             if value > best_value:
                 best_value = value
-                best_action = action
+                best_actions = [action]
                 best_reached_end = reached_end
                 if best_value >= beta:
+                    best_action = best_actions[self.random.randint(0, len(best_actions)-1)]
                     if best_reached_end:  # If the reached state was final, we can stock the best action for this state
                         self.actions[state] = best_value, best_action
                     return best_value, best_action, best_reached_end
+            elif value == best_value:
+                best_actions.append(action)
             alpha = max(alpha, value)
+        best_action = best_actions[self.random.randint(0, len(best_actions) - 1)]
         if best_reached_end:  # If the reached state was final, we can stock the best action for this state
             self.actions[state] = best_value, best_action
         return best_value, best_action, best_reached_end
@@ -98,7 +105,7 @@ class AlphaBeta(object):
 
         # Initializing the best values
         best_value = float('inf')
-        best_action = None
+        best_actions = []
         best_reached_end = False
 
         # If we already made the computations, no need to do more
@@ -110,13 +117,17 @@ class AlphaBeta(object):
             value, _, reached_end = self.maxValue(state.simulateAction(action), alpha, beta, depth + 1)
             if value < best_value:
                 best_value = value
-                best_action = action
+                best_actions = [action]
                 best_reached_end = reached_end
                 if best_value <= alpha:
+                    best_action = best_actions[self.random.randint(0, len(best_actions) - 1)]
                     if best_reached_end:  # If the reached state was final, we can stock the best action for this state
                         self.actions[state] = best_value, best_action
                     return best_value, best_action, best_reached_end
+            elif value == best_value:
+                best_actions.append(action)
             beta = min(beta, value)
+        best_action = best_actions[self.random.randint(0, len(best_actions) - 1)]
         if best_reached_end:  # If the reached state was final, we can stock the best action for this state
             self.actions[state] = best_value, best_action
         return best_value, best_action, best_reached_end
