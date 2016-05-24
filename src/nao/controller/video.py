@@ -26,8 +26,6 @@ class VideoController(object):
         self.port = robot_port
         self.video_device = ALProxy("ALVideoDevice", robot_ip, robot_port)
         self.disconnectFromCamera()
-        # self.barcode_reader = ALProxy("ALBarcodeReader,", robot_ip, port)
-        # self.memory_proxy = ALProxy("ALMemory", robot_ip, port)
         self.subscriber_ids = [SUBSCRIBER_ID + "_CAM_0", SUBSCRIBER_ID + "_CAM_1"]
         self.cam_connected = False
         self.cam_matrix = nao.CAM_MATRIX
@@ -74,9 +72,11 @@ class VideoController(object):
         """
         try:
             if camera_num is None:
-                for subscriber in self.video_device.getSubscribers():
-                    if "C4N" in subscriber:
-                        self.video_device.unsubscribe(subscriber)
+                subscribers = self.video_device.getSubscribers()
+                if len(subscribers) > 5:  # If too many connections, unsubscribe them all
+                    for subscriber in subscribers:
+                        if "C4N" in subscriber:
+                            self.video_device.unsubscribe(subscriber)
             else:
                 for i in range(7):
                     self.video_device.unsubscribe(self.subscriber_ids[camera_num] + "_" + str(i))
