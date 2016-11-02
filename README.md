@@ -9,6 +9,8 @@
 ## Goal
  The goal of this solution is to made the humanoid robot [NAO](https://www.aldebaran.com/fr/cool-robots/nao) 
    play the Connect 4 game.
+
+[![Connect4NAO](http://i.imgur.com/kXAWzcl.png)](https://www.youtube.com/watch?v=UyRx1V4rx-M "")
  
 
 ## Dependencies
