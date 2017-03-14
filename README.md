@@ -22,7 +22,7 @@
  - [`Scipy`](https://pypi.python.org/pypi/scipy/0.17.0)
  - [`Hampy`](https://pypi.python.org/pypi/hampy/1.4.1) (requires [`PIL`](http://www.pythonware.com/products/pil/))
  - [`Docopt`](https://pypi.python.org/pypi/docopt/0.6.2)
-   [//]: # "- [`Shapely`] <> (https://pypi.python.org/pypi/Shapely)"
+   <!--- - [`Shapely`] <> (https://pypi.python.org/pypi/Shapely) --->
 
 ## How to launch
  - Install the dependencies
