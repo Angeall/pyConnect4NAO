@@ -5,6 +5,7 @@
   (UMONS) for a Master degree in Computer Sciences.
  - The project was made under the direction of the Professor Tom Mens
   and M. Pierre Hauweele.
+ - Every technical detail is written in the file `Connect4NAO-Report.pdf`
 
 ## Goal
  The goal of this solution is to made the humanoid robot [NAO](https://www.aldebaran.com/fr/cool-robots/nao) 
